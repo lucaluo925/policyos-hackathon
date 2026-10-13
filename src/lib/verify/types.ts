@@ -21,8 +21,8 @@ export type Verdict = (typeof VERDICTS)[number];
 
 /** Shared by the prompt builder and the evidence record. */
 export const ADJUDICATION_EXCERPT_LIMIT = 900;
-/** Multiple query-reranked Extract chunks can contain a rule and its separate
- * publication metadata. Keep a bounded longer excerpt for official hosts. */
+/** Official page reads can separate scope, exceptions and dates across nearby
+ * paragraphs. Preserve bounded context in both prompts and the evidence record. */
 export const OFFICIAL_ADJUDICATION_EXCERPT_LIMIT = 2400;
 
 /**
@@ -56,6 +56,8 @@ export interface EvidenceDoc {
   extractionRequestId?: string;
   /** Direct, bounded HTML read of the Tavily-discovered issuer URL. */
   issuerHtmlRead?: boolean;
+  /** Direct source discovered through a current issuer index, not returned by Search. */
+  issuerDiscovery?: {seedUrl: string; indexUrl: string; seedRequestId?: string; readBytes: number};
 }
 
 export interface SourceInspectionRecord {
@@ -108,6 +110,18 @@ export interface VerificationResult {
     adjudicationEvidence: Record<string, EvidenceDoc[]>;
     /** Absent means this optional mode was not used or an older run did not record it. */
     sourceInspection?: Record<string, SourceInspectionRecord>;
+    /** Successful Search draws; absent in historical recordings. */
+    searches?: Array<{
+      assertionId: string;
+      kind: 'open' | 'recovery' | 'official';
+      requestId: string;
+      query: string;
+      depth: 'basic' | 'advanced';
+      includeDomains: string[];
+      returnedUrls: string[];
+      excludedNavigationUrls: string[];
+      elapsedMs: number;
+    }>;
     /** Direct issuer HTML reads are separate from Tavily Search/Extract IDs. */
     issuerHtmlReads?: Record<string, Array<{ url: string; status: 'used' | 'unavailable'; bytes?: number }>>;
     /** Metadata from actual model invocations; older recordings retain its absence. */

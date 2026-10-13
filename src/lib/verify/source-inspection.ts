@@ -187,6 +187,53 @@ function prepaymentDeliveryAnchor(
   return best && { index: best.index, length: best.length };
 }
 
+/** Search text locates passages, never supplies replacement page text. Matching
+ * whole sentences works across languages without assuming an English claim's
+ * words occur in the issuing body's language. Keep all matched passages in page
+ * order and mark gaps explicitly; never select by agreement with claimed values.
+ */
+function matchedSourcePassages(content: string, searchExcerpt: string, limit: number): string | null {
+  type Span = { start: number; end: number };
+  const merge = (spans: Span[]): Span[] => {
+    const result: Span[] = [];
+    for (const span of [...spans].sort((a, b) => a.start - b.start)) {
+      const previous = result.at(-1);
+      if (previous && span.start <= previous.end + 2) previous.end = Math.max(previous.end, span.end);
+      else result.push({ ...span });
+    }
+    return result;
+  };
+  const separator = '\n[...]\n';
+  const size = (spans: Span[]) => spans.reduce((sum, span) => sum + span.end - span.start, 0) +
+    Math.max(0, spans.length - 1) * separator.length;
+  const matches: Span[] = [];
+  for (const part of searchExcerpt.replace(/\[\.\.\.\]/g, '\n').split(/(?<=[.!?])\s+|\n+/).slice(0, 64)) {
+    const sentence = part.trim().replace(/^#{1,6}\s+/, '');
+    if (sentence.length < 40 || sentence.length > limit) continue;
+    const escaped = sentence.split(/\s+/).map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+    const match = new RegExp(escaped, 'iu').exec(content);
+    if (match) matches.push({ start: match.index, end: match.index + match[0].length });
+  }
+  let spans = merge(matches);
+  if (spans.length < 2 || size(spans) > limit) return null;
+  const first = spans[0].start;
+  const last = spans.at(-1)!.end;
+  if (last - first <= limit) {
+    const start = Math.min(content.length - limit, Math.max(0, first - Math.floor((limit - (last - first)) / 2)));
+    return content.slice(start, start + limit);
+  }
+  // Expand to complete paragraphs where possible, keeping qualifications that
+  // follow a matched sentence. Do not cut an anchor to make more context fit.
+  for (const match of matches) {
+    const start = content.lastIndexOf('\n', match.start - 1) + 1;
+    const nextBreak = content.indexOf('\n', match.end);
+    const end = nextBreak < 0 ? content.length : nextBreak;
+    const candidate = merge([...spans, { start, end }]);
+    if (size(candidate) <= limit) spans = candidate;
+  }
+  return spans.map(span => content.slice(span.start, span.end)).join(separator);
+}
+
 export function selectSourceExcerpt(content: string, assertionText = '', searchExcerpt = '',
   limit = ADJUDICATION_EXCERPT_LIMIT): string {
   if (content.length <= limit || !assertionText) {
@@ -222,6 +269,10 @@ export function selectSourceExcerpt(content: string, assertionText = '', searchE
         Math.max(0, datedCondition.index - Math.floor(limit * 0.42)));
       return content.slice(start, start + limit);
     }
+  }
+  if (!amendment && searchExcerpt && limit >= OFFICIAL_ADJUDICATION_EXCERPT_LIMIT) {
+    const passages = matchedSourcePassages(content, searchExcerpt, limit);
+    if (passages) return passages;
   }
   // A Search excerpt is a lead, not proof. Use it as a locator only when an
   // entire relevant sentence also occurs verbatim on the extracted page.
@@ -319,13 +370,12 @@ export function inspectSourceExcerpts(
   // the first row can erase a later, decisive official passage.
   const passages = docs.map(doc => {
     const page = fullPages.get(doc.url);
-    // Tavily separates query-reranked chunks with a visible gap marker. Only
-    // these multi-chunk official extracts need a longer window; a normal
-    // contiguous page keeps the original tighter locator/provenance behavior.
-    const multiChunkOfficial = page !== undefined && isOfficialSource(doc.url) &&
-      /\s\[\.\.\.\]\s/.test(page);
+    // A contiguous official page can separate eligibility, exceptions and
+    // rollout dates too. Keep bounded context regardless of provider chunk
+    // formatting; the adjudication prompt and saved record use the same cap.
+    const extendedOfficial = Boolean(assertionText) && isOfficialSource(doc.url);
     return page === undefined ? null : selectSourceExcerpt(page, assertionText, doc.snippet,
-      multiChunkOfficial ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT);
+      extendedOfficial ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT);
   });
   const extractedUrls = requestedUrls.filter(url => fullPages.has(url));
   const preserve = docs.map((doc, index) => {

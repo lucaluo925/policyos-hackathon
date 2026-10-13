@@ -28,9 +28,12 @@ import { hasClaimDateRelation, inspectSourceExcerpts, readIssuerHtml,
 import { needsOfficialSearch, officialSearchDomains, officialSearchQuery,
   isInSearchScope, scopedHitAddsSection, scopedHitAddsYear, scopedHitAddsBoundary,
   lacksExceptionDisposition, scopedHitAddsDisposition, scopedHitAddsRoute,
-  scopedHitAddsGroup } from './official-search';
+  scopedHitAddsGroup, officialSearchCollections } from './official-search';
 import { preserveTopicalOfficialSource, screeningJudgements } from './screening';
 import { reusableIssuerEvidence } from './evidence-reuse';
+import { qualifierSearchQuery, scopedHitAddsQualifier } from './qualifiers';
+import { isSourceNavigation, currentInstructionTitle } from './source-navigation';
+import { discoverCurrentManual } from './manual-discovery';
 import { isOfficialSource } from './sources';
 import { preserveClaimYears, preserveDatedContractEligibility, preserveIndependentReferents,
   preserveScopeDateRelation } from './decomposition';
@@ -302,6 +305,7 @@ export async function* runVerification(
 
   const tavily = new TavilyClient(opts.tavilyBudget);
   const requestIds: string[] = [];
+  const searches: NonNullable<NonNullable<VerificationResult['provenance']>['searches']> = [];
   const adjudicationEvidence: Record<string, EvidenceDoc[]> = {};
   const sourceInspection: Record<string, SourceInspectionRecord> = {};
   const issuerHtmlReads: NonNullable<NonNullable<VerificationResult['provenance']>['issuerHtmlReads']> = {};
@@ -426,22 +430,32 @@ export async function* runVerification(
     let retrievalDegraded = false;
     try {
       const toDocs = (hits: Awaited<ReturnType<TavilyClient['search']>>['hits'], requestId: string) =>
-        hits.map((h) => ({
+        hits.filter(h => !isSourceNavigation(h.url)).map((h) => ({
           url: h.url,
           title: h.title,
           retrievalScore: h.score,
-          snippet: h.content.slice(0, 1200),
+          snippet: h.content.slice(0, isOfficialSource(h.url)
+            ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : 1200),
           searchRequestId: requestId,
         }));
       const topScore = (ds: EvidenceDoc[]) =>
         ds.length ? Math.max(...ds.map((d) => d.retrievalScore)) : 0;
+      const recordSearch = (result: Awaited<ReturnType<TavilyClient['search']>>, query: string,
+        kind: typeof searches[number]['kind'], includeDomains: string[] = [],
+        depth: 'basic' | 'advanced' = 'basic') => {
+        requestIds.push(result.requestId);
+        searches.push({assertionId: assertion.id, kind, query, depth, includeDomains,
+          requestId: result.requestId, returnedUrls: result.hits.map(hit => hit.url),
+          excludedNavigationUrls: result.hits.filter(hit => isSourceNavigation(hit.url)).map(hit => hit.url),
+          elapsedMs: result.elapsedMs});
+      };
 
       const search = await tavily.search(assertion.searchQuery, {
         maxResults: opts.resultsPerAssertion,
         signal: opts.signal,
         fetch: opts.fetch,
       });
-      requestIds.push(search.requestId);
+      recordSearch(search, assertion.searchQuery, 'open');
       let evidenceRequestId = search.requestId;
       docs = toDocs(search.hits, search.requestId);
 
@@ -462,7 +476,7 @@ export async function* runVerification(
             signal: opts.signal,
             fetch: opts.fetch,
           });
-          requestIds.push(retry.requestId);
+          recordSearch(retry, assertion.text, 'recovery');
           const retryDocs = toDocs(retry.hits, retry.requestId);
           if (topScore(retryDocs) > topScore(docs)) {
             docs = retryDocs;
@@ -486,18 +500,26 @@ export async function* runVerification(
       if (domains.length && needsOfficialSearch(claim, [...docs, ...officialEvidenceCache], domains, assertion.text) &&
           tavily.callsUsed < opts.tavilyBudget) {
         try {
-          const scoped = await tavily.search(officialSearchQuery(claim, assertion.searchQuery), {
+          const baseQuery = officialSearchQuery(claim, assertion.searchQuery);
+          // Keep the French authority-language query monolingual; it already
+          // names VAT scope, receipt, issuance and small-business categories.
+          const query = domains[0] === 'impots.gouv.fr' ? baseQuery
+            : qualifierSearchQuery(baseQuery, assertion.text);
+          const collections = officialSearchCollections(claim);
+          const scoped = await tavily.search(query, {
             maxResults: opts.resultsPerAssertion,
-            includeDomains: domains,
+            includeDomains: collections,
+            searchDepth: 'advanced',
             signal: opts.signal,
             fetch: opts.fetch,
           });
-          requestIds.push(scoped.requestId);
+          recordSearch(scoped, query, 'official', collections, 'advanced');
           const additions = toDocs(scoped.hits, scoped.requestId)
             .filter(doc => {
               if (!isInSearchScope(doc.url, domains)) return false;
               const existing = docs.find(value => value.url === doc.url);
-              return !existing || scopedHitAddsSection(claim, existing.snippet, doc.snippet) ||
+              return !existing || scopedHitAddsQualifier(assertion.text, existing.snippet, doc.snippet) ||
+                scopedHitAddsSection(claim, existing.snippet, doc.snippet) ||
                 scopedHitAddsYear(assertion.text, existing.snippet, doc.snippet) ||
                 scopedHitAddsGroup(assertion.text, existing.snippet, doc.snippet) ||
                 scopedHitAddsBoundary(assertion.text, existing.snippet, doc.snippet) ||
@@ -651,6 +673,24 @@ export async function* runVerification(
       }
     }
 
+    // A dated instruction can be indexed more prominently than its current
+    // edition. Resolve at most one discovered title through the issuer's
+    // contents page, then read that exact same-host link with separate provenance.
+    if (opts.inspectSources) {
+      const seed = docs.find(doc => currentInstructionTitle(assertion.text, [doc]));
+      if (seed) {
+        try {
+          const current = await discoverCurrentManual(assertion.text, seed,
+            {fetch: opts.fetch, signal: opts.signal});
+          if (current && !docs.some(doc => doc.url === current.url)) {
+            docs = [current, ...docs];
+            yield {type: 'evidence', assertionId: assertion.id, docs,
+              tavilyRequestId: seed.searchRequestId ?? ''};
+          }
+        } catch { opts.signal?.throwIfAborted(); }
+      }
+    }
+
     // The BOE open-data record is a bounded, issuer-published supplement for
     // publication dates that may be absent from Tavily's law-text extraction.
     // It never supplies an entry-into-force conclusion by itself.
@@ -676,7 +716,9 @@ export async function* runVerification(
     let unjudged = docs.length;
     try {
       const listing = docs
-        .map((d, i) => `[${i}] ${d.title}\n${d.url}\n${d.snippet.slice(0, ADJUDICATION_EXCERPT_LIMIT)}`)
+        .map((d, i) => `[${i}] ${d.title}\n${d.url}\n${d.snippet.slice(0,
+          isOfficialSource(d.url) && (d.extractionRequestId || d.issuerDiscovery)
+            ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT)}`)
         .join('\n\n');
       modelCalls += 1;
       const out = await callTool<{
@@ -747,6 +789,7 @@ export async function* runVerification(
         ...(doc.searchRequestId === undefined ? {} : { searchRequestId: doc.searchRequestId }),
         ...(doc.extractionRequestId === undefined ? {} : { extractionRequestId: doc.extractionRequestId }),
         ...(doc.issuerHtmlRead ? { issuerHtmlRead: true } : {}),
+        ...(doc.issuerDiscovery ? { issuerDiscovery: doc.issuerDiscovery } : {}),
       });
     }
     // Three assertions can each add at most two scoped hits; keep their six
@@ -803,12 +846,12 @@ export async function* runVerification(
       const submittedDocs = [...relevant].sort((a, b) =>
         evidencePriority(a.url) - evidencePriority(b.url)).map((d) => ({
         url: d.url, title: d.title, retrievalScore: d.retrievalScore,
-        snippet: d.snippet.slice(0, isOfficialSource(d.url) && d.extractionRequestId &&
-          d.snippet.includes('[...]')
+        snippet: d.snippet.slice(0, isOfficialSource(d.url) && (d.extractionRequestId || d.issuerDiscovery)
           ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT),
         ...(d.searchRequestId === undefined ? {} : { searchRequestId: d.searchRequestId }),
         ...(d.extractionRequestId === undefined ? {} : { extractionRequestId: d.extractionRequestId }),
         ...(d.issuerHtmlRead ? { issuerHtmlRead: true } : {}),
+        ...(d.issuerDiscovery ? { issuerDiscovery: d.issuerDiscovery } : {}),
       }));
       adjudicationEvidence[assertion.id] = submittedDocs;
       const evidence = submittedDocs
@@ -926,6 +969,7 @@ export async function* runVerification(
         ...(wholeClaimFallback ? { decompositionFallback: 'whole_claim' as const } : {}),
         adjudicationEvidence,
         modelCalls: modelCallRecords,
+        searches,
         ...(opts.inspectSources ? { sourceInspection } : {}),
         ...(Object.keys(issuerHtmlReads).length ? { issuerHtmlReads } : {}),
       },

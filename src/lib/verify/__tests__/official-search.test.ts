@@ -1,11 +1,29 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { needsOfficialSearch, officialSearchDomains, officialSearchQuery,
+import { needsOfficialSearch, officialSearchDomains, officialSearchQuery, officialSearchCollections,
   isInSearchScope, scopedHitAddsSection, scopedHitAddsYear, scopedHitAddsBoundary,
   scopedHitAddsDisposition, scopedHitAddsRoute, scopedHitAddsGroup,
   lacksExceptionDisposition } from '../official-search';
 import { runVerification } from '../pipeline';
 import type { VerifyEvent } from '../types';
+
+test('German issuer search covers the finance ministry and retains multi-country ambiguity', () => {
+  for (const claim of ['Germany tax rules', 'German reporting rules', 'Deutschland Steuerregeln', '德国税收规则']) {
+    assert.deepEqual(officialSearchDomains(claim), ['bund.de', 'bundesfinanzministerium.de']);
+    assert.equal(needsOfficialSearch(claim, [{url: 'https://vendor.example/guide', snippet: 'Tax summary'}], officialSearchDomains(claim)), true);
+  }
+  assert.deepEqual(officialSearchDomains('Germany and France changed tax rules'), []);
+  assert.deepEqual(officialSearchDomains('Germanium export controls'), []);
+  assert.equal(isInSearchScope('https://www.bundesfinanzministerium.de/guide', officialSearchDomains('Germany tax rules')), true);
+  assert.equal(isInSearchScope('https://www.bundesfinanzministerium.de.attacker.test/guide', officialSearchDomains('Germany tax rules')), false);
+  const claim = 'German Kleinunternehmer must issue electronic invoices from 1 January 2031.';
+  assert.deepEqual(officialSearchDomains(claim), ['bundesfinanzministerium.de']);
+  assert.deepEqual(officialSearchCollections(claim), ['bundesfinanzministerium.de/Content/DE/FAQ',
+    'bundesfinanzministerium.de/Content/DE/Standardartikel']);
+  assert.match(officialSearchQuery(claim, 'English query'), /E-Rechnung Kleinunternehmer/);
+  assert.doesNotMatch(officialSearchQuery(claim, 'English query'), /2031|2025|befreit|empfangen müssen/);
+  assert.match(officialSearchQuery('Germany electronic invoice requirements', ''), /E-Rechnung Unternehmen/);
+});
 
 test('official search scopes only one explicit jurisdiction and checks the URL host', () => {
   assert.deepEqual(officialSearchDomains('Singapore GST changed in 2024'), ['gov.sg']);
@@ -58,6 +76,17 @@ test('Spanish decree scoped search targets the issuing gazette without repeating
     {url: 'https://www.boe.es/diario_boe/txt.php?id=BOE-A-2024-24099',
       snippet: 'Publicado 20 noviembre 2024. Entrada en vigor 20 mayo 2025.'},
   ], ['boe.es'], "Spain's Royal Decree 1155/2024 took effect on 20 May 2025."), false);
+});
+
+test('French invoice search uses the tax authority and neutral issuer vocabulary', () => {
+  const claim = 'French businesses subject to VAT must receive electronic invoices in 2026.';
+  assert.deepEqual(officialSearchDomains(claim), ['impots.gouv.fr']);
+  assert.deepEqual(officialSearchDomains('France housing policy changed'), ['gouv.fr']);
+  assert.deepEqual(officialSearchDomains('France and Canada electronic invoicing'), []);
+  const query = officialSearchQuery(claim, 'French invoices receive 2026');
+  assert.match(query, /facturation électronique/);
+  assert.match(query, /assujetties TVA/);
+  assert.doesNotMatch(query, /2026|2027|September|septembre/);
 });
 
 test('Spanish decree inspection sends a neutral reranking query and preserves distant BOE dates', async () => {

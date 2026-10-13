@@ -50,6 +50,7 @@ export interface VerificationReport {
   stats: RecordedVerification['stats'];
   tavilyRequestIds: string[] | null;
   sourceInspection?: NonNullable<VerificationResult['provenance']>['sourceInspection'];
+  searches?: NonNullable<VerificationResult['provenance']>['searches'];
   issuerHtmlReads?: NonNullable<VerificationResult['provenance']>['issuerHtmlReads'];
   modelCalls: NonNullable<NonNullable<VerificationResult['provenance']>['modelCalls']> | null;
   reviewPersistence?: ReviewPersistence;
@@ -85,6 +86,7 @@ export function liveReport(
     ...(result.provenance?.decompositionFallback ? { decompositionFallback: result.provenance.decompositionFallback } : {}),
     stats: result.stats, tavilyRequestIds: result.tavilyRequestIds,
     modelCalls: result.provenance?.modelCalls ?? null,
+    ...(result.provenance?.searches ? { searches: result.provenance.searches } : {}),
     ...(reviewPersistence ? { reviewPersistence } : {}),
     ...(result.provenance?.sourceInspection ? { sourceInspection: result.provenance.sourceInspection } : {}),
     ...(result.provenance?.issuerHtmlReads ? { issuerHtmlReads: result.provenance.issuerHtmlReads } : {}),
@@ -110,6 +112,7 @@ export function recordedReport(
     ...(recording.provenance?.decompositionFallback ? { decompositionFallback: recording.provenance.decompositionFallback } : {}),
     stats: recording.stats, tavilyRequestIds: recording.tavilyRequestIds ?? null,
     modelCalls: recording.provenance?.modelCalls ?? null,
+    ...(recording.provenance?.searches ? { searches: recording.provenance.searches } : {}),
     ...(recording.provenance?.sourceInspection ? { sourceInspection: recording.provenance.sourceInspection } : {}),
     ...(recording.provenance?.issuerHtmlReads ? { issuerHtmlReads: recording.provenance.issuerHtmlReads } : {}),
     ...(recording.publicEvidenceScope ? { publicEvidenceScope: recording.publicEvidenceScope } : {}),
@@ -171,6 +174,16 @@ export function reportMarkdown(report: VerificationReport): string {
           : 'status not recorded; do not assume saved'}`,
     '',
   );
+  if (report.searches?.length) {
+    lines.push('## Search trail', '', 'Search settings and returned URLs are retrieval provenance, not proof that a claim is true.', '');
+    for (const search of report.searches) {
+      lines.push(`### ${text(search.assertionId)} — ${text(search.kind)}`, '',
+        quote(search.query), '',
+        `Depth: ${search.depth}; scope: ${search.includeDomains.map(text).join(', ') || 'open web'}`,
+        `Request: ${text(search.requestId)}; elapsed: ${search.elapsedMs} ms`, '',
+        ...search.returnedUrls.map(url => `${sourceLink(url)}${search.excludedNavigationUrls.includes(url) ? ' — navigation page, excluded from evidence' : ''}`), '');
+    }
+  }
   if (report.leadContext) lines.push('## Original lead (unverified context)', '',
     quote(report.leadContext.headline), '', sourceLink(report.leadContext.sourceUrl), '',
     `Selected: ${text(report.leadContext.selectedAt)} (selection time, not publication time)`, '',
@@ -224,8 +237,11 @@ export function reportMarkdown(report: VerificationReport): string {
       lines.push(`**${text(doc.title)}**`, '', sourceLink(doc.url), '',
         ...(doc.searchRequestId === undefined ? [] : [`Search request ID: ${text(doc.searchRequestId || 'Not recorded')}`, '']),
         ...(doc.extractionRequestId === undefined ? [] : [`Excerpt origin: Tavily Extract; request ID: ${text(doc.extractionRequestId || 'Not recorded')}`, '']),
-        ...(doc.issuerHtmlRead ? ['Excerpt origin: bounded direct HTML read of the Tavily-discovered source URL', ''] : []),
-        `Search relevance: ${doc.retrievalScore}; screening: ${doc.relevant === undefined ? 'not recorded' : doc.relevant ? 'kept' : 'discarded'}; cited: ${assertion.citedUrls.includes(doc.url) ? 'yes' : 'no'}`, '',
+        ...(doc.issuerHtmlRead ? ['Excerpt origin: bounded direct HTML read', ''] : []),
+        ...(doc.issuerDiscovery ? [`Discovered section: ${sourceLink(doc.issuerDiscovery.seedUrl)}`,
+          `Issuer index: ${sourceLink(doc.issuerDiscovery.indexUrl)}`,
+          `Seed Search request: ${text(doc.issuerDiscovery.seedRequestId ?? 'Not recorded')}`, ''] : []),
+        `Search relevance: ${doc.issuerDiscovery ? 'not scored (issuer-index discovery)' : doc.retrievalScore}; screening: ${doc.relevant === undefined ? 'not recorded' : doc.relevant ? 'kept' : 'discarded'}; cited: ${assertion.citedUrls.includes(doc.url) ? 'yes' : 'no'}`, '',
         doc.snippet ? quote(doc.snippet) : 'Excerpt not saved in this recording.', '');
     }
     lines.push(report.publicEvidenceScope === 'selected_adjudication'
@@ -237,6 +253,7 @@ export function reportMarkdown(report: VerificationReport): string {
       if (!docs.length) lines.push('No documents were submitted to adjudication for this assertion.', '');
       for (const doc of docs) lines.push(sourceLink(doc.url), '',
         ...(doc.issuerHtmlRead ? ['Excerpt origin: bounded direct source URL HTML read', ''] : []),
+        ...(doc.issuerDiscovery ? [`Issuer index: ${sourceLink(doc.issuerDiscovery.indexUrl)}; seed: ${sourceLink(doc.issuerDiscovery.seedUrl)}`, ''] : []),
         quote(doc.snippet), '');
     }
   }

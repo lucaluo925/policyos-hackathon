@@ -101,7 +101,7 @@ export class TavilyClient {
   async search(
     query: string,
     opts: { maxResults?: number; timeoutMs?: number; signal?: AbortSignal; fetch?: typeof fetch;
-      includeDomains?: readonly string[] } = {},
+      includeDomains?: readonly string[]; searchDepth?: 'basic' | 'advanced' } = {},
   ): Promise<TavilySearchResult> {
     opts.signal?.throwIfAborted();
     if (!this.apiKey) {
@@ -127,7 +127,7 @@ export class TavilyClient {
         body: JSON.stringify({
           query,
           max_results: opts.maxResults ?? 5,
-          search_depth: 'basic',
+          search_depth: opts.searchDepth ?? 'basic',
           ...(opts.includeDomains?.length ? {
             include_domains: opts.includeDomains,
             include_domains_mode: 'restrict',

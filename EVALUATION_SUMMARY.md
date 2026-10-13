@@ -1,6 +1,10 @@
 # Dated verification evaluation summary
 
-Latest: [V65 funded hosted evaluation](EVALUATION_V65.txt), 13 October 2026,
+Latest new-case check: [V73 and V75 evidence review](EVALUATION_V73_V75.txt), 13 October 2026: **2/2 labels but 1/2 strict grounding** on two new developer-selected cases. Germany lacked issuing-body evidence; Ireland passed. A separate German retrieval repair passed one known-case retest in V75, which does not replace V73 or establish general accuracy. These are local candidate results, not hosted acceptance.
+
+Latest local candidate: [V72 known-case development regression](EVALUATION_V72.txt), 13 October 2026: **3/3 label matches and 3/3 strict issuer-grounding passes**, after V71 passed 2/3. These familiar cases informed the changes; this is not unseen accuracy or hosted acceptance. The candidate has not been deployed.
+
+Latest hosted evaluation: [V65 funded hosted evaluation](EVALUATION_V65.txt), 13 October 2026,
 executed the frozen V59 packet on source `10ee555`: **3/3 completed and label
 matches; 1/3 strict whole-claim issuer-grounding passes**. Each case ran once.
 French tax-authority scope/citation and New Zealand Transit coverage were

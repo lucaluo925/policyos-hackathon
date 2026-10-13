@@ -30,6 +30,9 @@ const OFFICIAL_HOST_SUFFIXES = [
   // live ministry or agency site before enabling the map search action.
   '.gov.sa', '.go.ke', '.gov.ph', '.gov.ng',
   'irishimmigration.ie', 'regjeringen.no', 'skatteetaten.no',
+  // BMF uses its own domain outside bund.de. Publisher verified in its legal
+  // notice: https://www.bundesfinanzministerium.de/Content/DE/Impressum/impressum.html
+  'bundesfinanzministerium.de',
   // EU and multilateral
   'europa.eu', 'wto.org', 'oecd.org', 'un.org', 'unfccc.int', 'imf.org',
   'worldbank.org', 'iea.org', 'wipo.int', 'ilo.org',
@@ -54,7 +57,7 @@ const COUNTRY_GOVERNMENT_SUFFIXES: Readonly<Record<string, readonly string[]>> =
   // https://tdra.gov.ae/en/About/initiatives/mgov/the-government-official-portal-uae
   AE: ['gov.ae', 'u.ae'], AU: ['gov.au'], BR: ['gov.br'],
   CA: ['gc.ca', 'canada.ca'], CH: ['admin.ch'],
-  CN: ['gov.cn'], DE: ['bund.de'], ES: ['gob.es', 'boe.es'], FR: ['gouv.fr'],
+  CN: ['gov.cn'], DE: ['bund.de', 'bundesfinanzministerium.de'], ES: ['gob.es', 'boe.es'], FR: ['gouv.fr'],
   GB: ['gov.uk'], HK: ['gov.hk'], IE: ['gov.ie', 'irishimmigration.ie'],
   IN: ['gov.in'], JP: ['go.jp'], KR: ['go.kr'], MY: ['gov.my'],
   MX: ['gob.mx'], NO: ['regjeringen.no', 'skatteetaten.no'],
