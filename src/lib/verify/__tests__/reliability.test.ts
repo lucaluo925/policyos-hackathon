@@ -97,6 +97,60 @@ test('a completed API stream and export say when local review storage was skippe
   assert.match(reportMarkdown(report), /fresh-search-id/);
 });
 
+test('visitor SSE completes honestly after two decomposition transport failures', async () => {
+  const priorDatabase = process.env.DATABASE_URL;
+  const priorVercel = process.env.VERCEL;
+  const priorShared = process.env.VERIFY_REQUIRE_SHARED_QUOTA;
+  delete process.env.DATABASE_URL;
+  delete process.env.VERCEL;
+  delete process.env.VERIFY_REQUIRE_SHARED_QUOTA;
+  const claim = 'The policy takes effect in 2026.';
+  const events: VerifyEvent[] = [];
+  let decompositionCalls = 0, searchCalls = 0;
+  try {
+    await isolated(async () => {
+      const response = await POST(new Request('http://localhost/api/verify', {
+        method: 'POST', body: JSON.stringify({ claim }),
+      }));
+      assert.equal(response.status, 200);
+      await consumeVerificationStream(response.body!, event => events.push(event));
+    }, async (url, init) => {
+      if (String(url).includes('tavily')) {
+        searchCalls += 1;
+        return Response.json({ request_id: 'fallback-search-id', results: [
+          { url: SOURCE, title: 'Policy notice', score: 0.95, content: claim },
+        ] });
+      }
+      const name = JSON.parse(String(init?.body)).tool_choice.function.name;
+      if (name === 'record_assertions') {
+        decompositionCalls += 1;
+        throw new TypeError('simulated connection reset');
+      }
+      return completion(name, name === 'record_screening'
+        ? { judgements: [{ index: 0, relevant: true, leaning: 'supports' }] }
+        : { verdict: 'supported', confidence: 0.8, cited_urls: [SOURCE],
+            rationale: 'The policy notice states the date.' });
+    });
+  } finally {
+    if (priorDatabase === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = priorDatabase;
+    if (priorVercel === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = priorVercel;
+    if (priorShared === undefined) delete process.env.VERIFY_REQUIRE_SHARED_QUOTA;
+    else process.env.VERIFY_REQUIRE_SHARED_QUOTA = priorShared;
+  }
+  const done = events.at(-1);
+  assert.ok(done?.type === 'done');
+  assert.equal(done.result.overall, 'supported');
+  assert.equal(done.result.provenance?.decompositionFallback, 'whole_claim');
+  assert.deepEqual(done.reviewPersistence, { status: 'skipped', savedAssertions: 0 });
+  assert.equal(decompositionCalls, 2);
+  assert.equal(searchCalls, 1);
+  assert.ok(!events.some(event => event.type === 'error'));
+  const report = liveReport(done.result, {}, undefined, null, done.reviewPersistence);
+  assert.match(reportMarkdown(report), /Decomposition fallback: original claim checked/);
+});
+
 for (const [label, response] of [
   ['wrong tool', () => completion('unexpected', {})],
   ['truncated completion', () => completion('expected', {}, 'length')],

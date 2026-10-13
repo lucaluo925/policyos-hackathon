@@ -154,6 +154,90 @@ test('an explicit decomposition model stays fixed across a transport retry', asy
   assert.equal(done.result.provenance?.models.decomposer, MODEL_DECOMPOSER);
 });
 
+test('two transport timeouts check the original claim without pretending decomposition succeeded', async () => {
+  const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
+  process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
+  const claim = 'The policy starts in 2026.';
+  const events: VerifyEvent[] = [];
+  let decomposeCalls = 0, searchCalls = 0;
+  try {
+    for await (const event of runVerification(claim, {
+      decomposeTimeoutMs: 10,
+      fetch: async (url, init) => {
+        if (String(url).includes('tavily')) {
+          searchCalls += 1;
+          assert.equal(JSON.parse(String(init?.body)).query, claim);
+          return Response.json({ request_id: 'fallback-search', results: [
+            { url: 'https://example.gov/notice', title: 'Notice', score: .9, content: claim },
+          ] });
+        }
+        const name = JSON.parse(String(init?.body)).tool_choice.function.name;
+        if (name === 'record_assertions') {
+          decomposeCalls += 1;
+          return new Promise<Response>((_, reject) => {
+            const signal = init?.signal as AbortSignal;
+            signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+          });
+        }
+        const args = name === 'record_screening'
+          ? { judgements: [{ index: 0, relevant: true, leaning: 'supports' }] }
+          : { verdict: 'supported', confidence: .8, cited_urls: ['https://example.gov/notice'],
+              rationale: 'The notice states the date.' };
+        return response(name, JSON.stringify(args));
+      },
+    })) events.push(event);
+  } finally {
+    if (key === undefined) delete process.env.NEBIUS_API_KEY; else process.env.NEBIUS_API_KEY = key;
+    if (searchKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = searchKey;
+  }
+  const done = events.find(event => event.type === 'done');
+  assert.ok(done?.type === 'done');
+  assert.equal(done.result.overall, 'supported');
+  assert.equal(decomposeCalls, 2);
+  assert.equal(searchCalls, 1);
+  assert.equal(done.result.stats.modelCalls, 4);
+  assert.deepEqual(done.result.provenance?.modelCalls?.slice(0, 2).map(call => call.failureKind),
+    ['timeout', 'timeout']);
+  assert.match(done.result.provenance?.models.decomposer ?? '', /None \(original claim/);
+  assert.equal(done.result.provenance?.decompositionFallback, 'whole_claim');
+  assert.ok(events.some(event => event.type === 'stage' && event.stage === 'decompose' &&
+    event.status === 'done' && /original claim/.test(event.detail ?? '')));
+  const exported = liveReport(done.result, {});
+  assert.equal(JSON.parse(JSON.stringify(exported)).decompositionFallback, 'whole_claim');
+  assert.match(reportMarkdown(exported), /Decomposition model: None \(original claim/);
+  assert.match(reportMarkdown(exported), /Decomposition fallback: original claim checked/);
+});
+
+test('an explicit model comparison still fails after two transport timeouts', async () => {
+  const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
+  process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
+  const events: VerifyEvent[] = [];
+  let searchCalls = 0, modelCalls = 0;
+  try {
+    for await (const event of runVerification('The policy starts in 2026.', {
+      decomposeModel: MODEL_DECOMPOSER, decomposeTimeoutMs: 10,
+      fetch: async (url, init) => {
+        if (String(url).includes('tavily')) {
+          searchCalls += 1;
+          throw new Error('Search must not run');
+        }
+        modelCalls += 1;
+        return new Promise<Response>((_, reject) => {
+          const signal = init?.signal as AbortSignal;
+          signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+        });
+      },
+    })) events.push(event);
+  } finally {
+    if (key === undefined) delete process.env.NEBIUS_API_KEY; else process.env.NEBIUS_API_KEY = key;
+    if (searchKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = searchKey;
+  }
+  assert.equal(modelCalls, 2);
+  assert.equal(searchCalls, 0);
+  assert.ok(events.some(event => event.type === 'error' && event.stage === 'decompose'));
+  assert.ok(!events.some(event => event.type === 'done'));
+});
+
 test('invalid decomposition response is not retried', async () => {
   const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
   process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';

@@ -45,6 +45,7 @@ export interface VerificationReport {
   /** Null means no exact prompt evidence was saved in this older recording. */
   adjudicationEvidence: Record<string, EvidenceDoc[]> | null;
   models: { decomposer: string | null; screener: string | null; adjudicator: string | null };
+  decompositionFallback?: 'whole_claim';
   stats: RecordedVerification['stats'];
   tavilyRequestIds: string[] | null;
   sourceInspection?: NonNullable<VerificationResult['provenance']>['sourceInspection'];
@@ -79,13 +80,18 @@ export function liveReport(
     overall: result.overall, assertions: result.assertions, evidence,
     adjudicationEvidence: result.provenance?.adjudicationEvidence ?? null,
     models: result.provenance?.models ?? { decomposer: null, screener: null, adjudicator: null },
+    ...(result.provenance?.decompositionFallback ? { decompositionFallback: result.provenance.decompositionFallback } : {}),
     stats: result.stats, tavilyRequestIds: result.tavilyRequestIds,
     modelCalls: result.provenance?.modelCalls ?? null,
     ...(reviewPersistence ? { reviewPersistence } : {}),
     ...(result.provenance?.sourceInspection ? { sourceInspection: result.provenance.sourceInspection } : {}),
     ...(result.provenance?.issuerHtmlReads ? { issuerHtmlReads: result.provenance.issuerHtmlReads } : {}),
     ...(lead ? { leadContext: { kind: 'unverified_lead' as const, headline: lead.claim, sourceUrl: lead.sourceUrl, selectedAt: lead.selectedAt } } : {}),
-    notes: [...NOTES, ...(lead ? ['Lead context is client-supplied research metadata, not retrieved evidence, a verified citation or model input.'] : []), ...(!result.provenance ? ['Exact prompt evidence and server run time were not recorded by this version.'] : [])],
+    notes: [...NOTES,
+      ...(result.provenance?.decompositionFallback === 'whole_claim'
+        ? ['Model decomposition failed twice; the original claim was checked as one assertion, without atomic splitting.'] : []),
+      ...(lead ? ['Lead context is client-supplied research metadata, not retrieved evidence, a verified citation or model input.'] : []),
+      ...(!result.provenance ? ['Exact prompt evidence and server run time were not recorded by this version.'] : [])],
   };
 }
 
@@ -99,6 +105,7 @@ export function recordedReport(
     overall: recording.overall, assertions: recording.assertions, evidence: recording.docs,
     adjudicationEvidence: recording.provenance?.adjudicationEvidence ?? null,
     models: recording.provenance?.models ?? { decomposer: recording.decomposeModel, screener: null, adjudicator: null },
+    ...(recording.provenance?.decompositionFallback ? { decompositionFallback: recording.provenance.decompositionFallback } : {}),
     stats: recording.stats, tavilyRequestIds: recording.tavilyRequestIds ?? null,
     modelCalls: recording.provenance?.modelCalls ?? null,
     ...(recording.provenance?.sourceInspection ? { sourceInspection: recording.provenance.sourceInspection } : {}),
@@ -106,6 +113,8 @@ export function recordedReport(
     ...(recording.publicEvidenceScope ? { publicEvidenceScope: recording.publicEvidenceScope } : {}),
     ...(recording.sourceAttribution ? { sourceAttribution: recording.sourceAttribution } : {}),
     notes: [...NOTES, 'This is a historical run, not a live check or proof of the current policy state.',
+      ...(recording.provenance?.decompositionFallback === 'whole_claim'
+        ? ['Model decomposition failed twice; the original claim was checked as one assertion, without atomic splitting.'] : []),
       ...(recording.publicEvidenceScope === 'adjudication_only' ? ['This public recording contains the exact passages submitted to adjudication; earlier retrieval and screening passages are withheld.'] : []),
       ...(!recording.provenance ? ['Exact prompt evidence and some model names were not saved in this older recording.'] : [])],
   };
@@ -140,6 +149,8 @@ export function reportMarkdown(report: VerificationReport): string {
     `Overall: ${report.overall}`, '', '## Tool usage', '',
     `Retrieval: Tavily Search API${report.sourceInspection ? '; optional Tavily Extract source inspection requested' : ''}${report.issuerHtmlReads ? '; bounded direct source URL reads attempted' : ''}`,
     `Decomposition model: ${report.models.decomposer ?? 'Not recorded'}`,
+    ...(report.decompositionFallback === 'whole_claim'
+      ? ['Decomposition fallback: original claim checked as one assertion after two model transport failures'] : []),
     `Screening model: ${report.models.screener ?? 'Not recorded'}`,
     `Adjudication model: ${report.models.adjudicator ?? 'Not recorded'}`,
     `Inference provider: Nebius Token Factory`,

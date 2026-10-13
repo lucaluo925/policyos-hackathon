@@ -102,6 +102,8 @@ export interface VerificationResult {
     startedAt: string;
     completedAt: string;
     models: { decomposer: string; screener: string; adjudicator: string };
+    /** The original claim was kept whole after both decomposition transports failed. */
+    decompositionFallback?: 'whole_claim';
     /** Exact search excerpts submitted to adjudication, including failed calls. */
     adjudicationEvidence: Record<string, EvidenceDoc[]>;
     /** Absent means this optional mode was not used or an older run did not record it. */

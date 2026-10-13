@@ -301,3 +301,20 @@ and three model calls, and a saved review assertion. Raw third-party excerpts
 from these exports remain in the private evidence folder. This repeats a
 known-fact claim used on an older build; it is final-Preview smoke evidence,
 not a new holdout or a reliability estimate.
+
+## Whole-claim transport fallback, source-only check
+
+After the shared Preview build, the source gained a further recovery path for
+the ordinary visitor flow: if both the Super and Ultra decomposition calls
+fail with timeout or network errors, it sends the original claim unchanged to
+Tavily Search as one assertion. Screening and adjudication still require live
+Nemotron calls. The report labels the decomposer as absent, records the two
+failed attempts, and states that no atomic splitting occurred. Explicit
+model-comparison runs retain their fixed model and stop after two failures;
+malformed model responses do not trigger this fallback.
+
+Injected offline tests exercise timeouts and network errors through the
+pipeline and the actual API event stream, including Tavily search and a later
+verdict. They establish the control flow only. No live provider run, anonymous
+browser check, or reliability estimate exists for this new path. The currently
+shared Preview predates it.

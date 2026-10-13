@@ -51,7 +51,14 @@ Tavily Extract in the exported evidence. A decomposition transport timeout
 or network failure permits at most one further Nemotron call. The default
 Super attempt is bounded at 15 seconds; its fallback uses Ultra, which passed
 a separate forced-tool live check. Both attempts are counted and diagnosed.
-Invalid model output is not retried.
+If both default decomposition calls fail at the transport layer, the visitor
+flow checks the original claim as one assertion with Tavily and the later
+Nemotron stages. The result and exports identify this whole-claim fallback;
+it loses atomic-assertion detail and still requires the remaining providers to
+respond. Explicit model-comparison runs keep their selected model and fail
+after two transport errors rather than silently changing method. Invalid
+model output is not retried. The whole-claim path has only passed injected
+offline tests so far; the linked Preview runs an earlier source version.
 
 Open-web search is not restricted to issuing bodies. The interface identifies
 recognized official hosts but does not treat a domain badge as proof that a

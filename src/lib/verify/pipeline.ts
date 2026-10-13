@@ -314,6 +314,7 @@ export async function* runVerification(
   yield { type: 'stage', stage: 'decompose', status: 'start' };
   let assertions: Array<Assertion & { searchQuery: string }>;
   let decomposerUsed = opts.decomposeModel;
+  let wholeClaimFallback = false;
   try {
     const decompose = (model: string) => callTool<{
       assertions: Array<{ text: string; search_query: string }>;
@@ -336,7 +337,7 @@ export async function* runVerification(
       signal: opts.signal,
       fetch: opts.fetch,
     });
-    let out;
+    let out: Awaited<ReturnType<typeof decompose>> | undefined;
     try {
       modelCalls += 1;
       out = await decompose(opts.decomposeModel);
@@ -352,19 +353,40 @@ export async function* runVerification(
           (failed.failureKind !== 'timeout' && failed.failureKind !== 'network_error')) throw error;
       const retryModel = options.decomposeModel === undefined
         ? MODEL_ADJUDICATOR : opts.decomposeModel;
+      const diagnosticsBeforeRetry = modelCallRecords.length;
       modelCalls += 1;
-      out = await decompose(retryModel);
-      decomposerUsed = retryModel;
+      try {
+        out = await decompose(retryModel);
+        decomposerUsed = retryModel;
+      } catch (retryError) {
+        const retryFailure = modelCallRecords.at(-1);
+        // A second transport failure may still be temporary. For the normal
+        // visitor flow, retain the entire original claim as one assertion so
+        // retrieval and adjudication can continue if those calls recover.
+        // Explicit model comparisons must fail instead of changing methods.
+        if (options.decomposeModel !== undefined || opts.signal?.aborted ||
+            modelCallRecords.length !== diagnosticsBeforeRetry + 1 ||
+            retryFailure?.stage !== 'decompose' ||
+            (retryFailure.failureKind !== 'timeout' && retryFailure.failureKind !== 'network_error')) {
+          throw retryError;
+        }
+        wholeClaimFallback = true;
+        decomposerUsed = 'None (original claim used after model transport failures)';
+      }
     }
-    if (!Array.isArray(out.args.assertions) || out.args.assertions.some(a =>
-      !a || typeof a.text !== 'string' || !a.text.trim() ||
-      typeof a.search_query !== 'string' || !a.search_query.trim())) {
-      throw new Error('decomposition returned malformed assertions');
+    if (wholeClaimFallback) {
+      assertions = [{ id: 'a1', text: claim, searchQuery: claim }];
+    } else {
+      if (!out || !Array.isArray(out.args.assertions) || out.args.assertions.some(a =>
+        !a || typeof a.text !== 'string' || !a.text.trim() ||
+        typeof a.search_query !== 'string' || !a.search_query.trim())) {
+        throw new Error('decomposition returned malformed assertions');
+      }
+      assertions = preserveDatedContractEligibility(claim, preserveIndependentReferents(claim,
+        preserveClaimYears(claim, preserveScopeDateRelation(claim, out.args.assertions
+        .slice(0, opts.maxAssertions)
+        .map((a, i) => ({ id: `a${i + 1}`, text: a.text, searchQuery: a.search_query }))))));
     }
-    assertions = preserveDatedContractEligibility(claim, preserveIndependentReferents(claim,
-      preserveClaimYears(claim, preserveScopeDateRelation(claim, out.args.assertions
-      .slice(0, opts.maxAssertions)
-      .map((a, i) => ({ id: `a${i + 1}`, text: a.text, searchQuery: a.search_query }))))));
   } catch (e) {
     opts.signal?.throwIfAborted();
     yield { type: 'error', stage: 'decompose', message: (e as Error).message };
@@ -377,7 +399,9 @@ export async function* runVerification(
     return;
   }
   yield { type: 'assertions', assertions };
-  yield { type: 'stage', stage: 'decompose', status: 'done', detail: `${assertions.length} assertion(s)` };
+  yield { type: 'stage', stage: 'decompose', status: 'done', detail: wholeClaimFallback
+    ? 'model transport failed twice; checking the original claim as one assertion'
+    : `${assertions.length} assertion(s)` };
 
   const results: AssertionResult[] = [];
   // A screened official passage from either an open or scoped Search can
@@ -897,6 +921,7 @@ export async function* runVerification(
         startedAt: new Date(started).toISOString(),
         completedAt: new Date().toISOString(),
         models: { decomposer: decomposerUsed, screener: MODEL_SCREENER, adjudicator: MODEL_ADJUDICATOR },
+        ...(wholeClaimFallback ? { decompositionFallback: 'whole_claim' as const } : {}),
         adjudicationEvidence,
         modelCalls: modelCallRecords,
         ...(opts.inspectSources ? { sourceInspection } : {}),
