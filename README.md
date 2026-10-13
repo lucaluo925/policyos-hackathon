@@ -26,7 +26,7 @@ the headless verifier scripts:
 
 ```text
 claim
-  → decompose       Nemotron 3 Super 120B-A12B
+  → decompose       Nemotron 3 Super 120B-A12B; Ultra fallback on transport failure
   → retrieve        Tavily Search, bounded calls
   → inspect         optional Tavily Extract, scoped official search and issuer HTML read
   → screen          Nemotron 3 Super 120B-A12B
@@ -46,9 +46,10 @@ Press **Verify** to run the current pipeline. Tavily Search and Extract share
 a bounded call budget. Issuer HTML reads are separately bounded by host,
 response size and timeout, and their origin is identified separately from
 Tavily Extract in the exported evidence. A decomposition transport timeout
-or network failure permits at most
-one further Nemotron call, after a 25-second per-attempt timeout; both
-attempts are counted and diagnosed. Invalid model output is not retried.
+or network failure permits at most one further Nemotron call. The default
+Super attempt is bounded at 15 seconds; its fallback uses Ultra, which passed
+a separate forced-tool live check. Both attempts are counted and diagnosed.
+Invalid model output is not retried.
 
 Open-web search is not restricted to issuing bodies. The interface identifies
 recognized official hosts but does not treat a domain badge as proof that a

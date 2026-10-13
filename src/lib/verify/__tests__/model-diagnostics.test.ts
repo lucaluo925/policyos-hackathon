@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { callTool, MODEL_DECOMPOSER, type ModelCallDiagnostic } from '../nemotron';
+import { callTool, MODEL_ADJUDICATOR, MODEL_DECOMPOSER, type ModelCallDiagnostic } from '../nemotron';
 import { runVerification } from '../pipeline';
 import { liveReport, reportMarkdown } from '../report';
 import type { VerifyEvent } from '../types';
@@ -75,6 +75,7 @@ test('one decomposition timeout retries once and records both paid-call attempts
   process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
   const events: VerifyEvent[] = [];
   let decomposerCalls = 0;
+  const decomposeModels: string[] = [];
   try {
     for await (const event of runVerification('The policy starts in 2026.', {
       decomposeTimeoutMs: 10,
@@ -83,7 +84,9 @@ test('one decomposition timeout retries once and records both paid-call attempts
           { url: 'https://example.gov/notice', title: 'Notice', score: .9,
             content: 'The policy starts in 2026.' },
         ] });
-        const name = JSON.parse(String(init?.body)).tool_choice.function.name;
+        const body = JSON.parse(String(init?.body));
+        const name = body.tool_choice.function.name;
+        if (name === 'record_assertions') decomposeModels.push(body.model);
         if (name === 'record_assertions' && ++decomposerCalls === 1) {
           const signal = init?.signal as AbortSignal;
           return new Promise<Response>((_, reject) => {
@@ -106,9 +109,43 @@ test('one decomposition timeout retries once and records both paid-call attempts
   const done = events.find(event => event.type === 'done');
   assert.ok(done?.type === 'done');
   assert.equal(decomposerCalls, 2);
+  assert.deepEqual(decomposeModels, [MODEL_DECOMPOSER, MODEL_ADJUDICATOR]);
   assert.equal(done.result.stats.modelCalls, 4);
   assert.deepEqual(done.result.provenance?.modelCalls?.slice(0, 2).map(call =>
     [call.outcome, call.failureKind ?? null]), [['failed', 'timeout'], ['tool_returned', null]]);
+  assert.deepEqual(done.result.provenance?.modelCalls?.slice(0, 2).map(call => call.model),
+    [MODEL_DECOMPOSER, MODEL_ADJUDICATOR]);
+});
+
+test('an explicit decomposition model stays fixed across a transport retry', async () => {
+  const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
+  process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
+  const models: string[] = [];
+  try {
+    for await (const _ of runVerification('The policy starts in 2026.', {
+      decomposeModel: MODEL_DECOMPOSER,
+      decomposeTimeoutMs: 10,
+      fetch: async (url, init) => {
+        if (String(url).includes('tavily')) return Response.json({ request_id: 'offline', results: [] });
+        const body = JSON.parse(String(init?.body));
+        if (body.tool_choice.function.name === 'record_assertions') {
+          models.push(body.model);
+          if (models.length === 1) return new Promise<Response>((_, reject) => {
+            const signal = init?.signal as AbortSignal;
+            signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+          });
+          return response('record_assertions', JSON.stringify({ assertions: [
+            { text: 'The policy starts in 2026.', search_query: 'policy start 2026' },
+          ] }));
+        }
+        throw new Error('Unexpected model call');
+      },
+    })) { /* Consume the run so its provider calls are observed. */ }
+  } finally {
+    if (key === undefined) delete process.env.NEBIUS_API_KEY; else process.env.NEBIUS_API_KEY = key;
+    if (searchKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = searchKey;
+  }
+  assert.deepEqual(models, [MODEL_DECOMPOSER, MODEL_DECOMPOSER]);
 });
 
 test('invalid decomposition response is not retried', async () => {

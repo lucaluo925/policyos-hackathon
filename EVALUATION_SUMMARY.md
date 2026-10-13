@@ -167,7 +167,7 @@ definitive regime began on 1 January 2025.” The expected verdict was
 Nemotron decomposition call waited until its 90-second client timeout and
 the route emitted a sanitized decomposition error; no Tavily call followed.
 This is a reliability failure, not a refuted label or a false positive. The
-current source shortens each decomposition attempt to 25 seconds and permits
+then-current source shortened each decomposition attempt to 25 seconds and permitted
 one retry only for timeout or network failure, counting both attempts.
 Isolated transport tests cover this behavior. A later hosted run of the
 changed code is described below; it does not erase the failed CBAM probe.
@@ -201,3 +201,34 @@ were `26e8a948-de8e-4eba-b019-a5021e060c71`,
 `a222df55-e333-4c70-bb4e-abb7f9a8b31f`, and
 `ceebd2b2-4e66-489c-ab6c-d0a9fe70046d`. These observations do not
 establish overall classification accuracy or sustained provider capacity.
+
+## Anonymous-share browser check and fallback development, 13 October 2026 UTC
+
+A Vercel Shareable Link for the protected Preview was created after the
+account's External Access screen showed no existing external access. A fresh
+browser session opened the homepage, map and verifier without a Vercel login.
+On the map, selecting Qatar and Trade then pressing the government-site
+search returned three labelled government-domain research leads, Tavily ID
+`2c1c3f6f-4a22-4323-abec-fced0ed968f7`. The leads included a customs
+homepage and circulars index; this is working navigation and retrieval, not
+three verified policies.
+
+Before clicking Verify in that anonymous browser, a local plan fixed the known
+positive CBAM claim and required a completed `supported` result with an
+official citation. **This browser run failed** during decomposition: the page
+showed only a sanitized error (reference `db80246f`), no final verdict, and no
+evidence-search stage. The corresponding Vercel log contained an abort
+diagnostic. The same claim was not retried to rescue the result. This failure
+shows that a single same-model retry is insufficient for reliable public demo
+operation, despite the separate successful hosted AI Act retry above.
+
+A separate, single forced-tool call asked Nemotron Ultra to decompose a
+different simple AI Act claim. It returned HTTP 200 with one valid assertion
+in 3,515 ms. This is a capability and latency check, not a comparative
+reliability rate. The next source revision changes only the default
+decomposition transport fallback: Super has a 15-second bound, then Ultra gets
+one attempt on timeout or network failure. Explicit model overrides remain on
+the selected model so comparison probes do not silently switch candidates.
+The new revision still needs its own hosted and browser acceptance; the
+anonymous browser failure belongs to the previous 25-second same-model retry
+deployment.

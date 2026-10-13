@@ -60,7 +60,7 @@ export interface PipelineOptions {
    * the copy.
    */
   decomposeModel?: string;
-  /** Bounded first-stage timeout; injectable only for deterministic timeout tests. */
+  /** Bounded first-stage timeout; injectable for deterministic timeout tests. */
   decomposeTimeoutMs?: number;
   /** Hard cap on Tavily calls for this run. Pay-as-you-go is on; a loop costs money. */
   tavilyBudget?: number;
@@ -125,7 +125,7 @@ export function rollUpVerdict(results: readonly AssertionResult[]): OverallVerdi
 
 const DEFAULTS: Required<Omit<PipelineOptions, 'signal' | 'fetch'>> = {
   decomposeModel: MODEL_DECOMPOSER,
-  decomposeTimeoutMs: 25_000,
+  decomposeTimeoutMs: 15_000,
   tavilyBudget: 6,
   maxAssertions: 3,
   resultsPerAssertion: 5,
@@ -314,10 +314,10 @@ export async function* runVerification(
   yield { type: 'stage', stage: 'decompose', status: 'start' };
   let assertions: Array<Assertion & { searchQuery: string }>;
   try {
-    const decompose = () => callTool<{
+    const decompose = (model: string) => callTool<{
       assertions: Array<{ text: string; search_query: string }>;
     }>({
-      model: opts.decomposeModel,
+      model,
       user:
         `Break this claim into its atomic, independently checkable assertions ` +
         `(at most ${opts.maxAssertions}). For each, give a web search query that ` +
@@ -338,16 +338,20 @@ export async function* runVerification(
     let out;
     try {
       modelCalls += 1;
-      out = await decompose();
+      out = await decompose(opts.decomposeModel);
     } catch (error) {
       const failed = modelCallRecords.at(-1);
       // A transient transport hang can consume the whole live demo without a
       // verdict. Retry exactly once, only before search or adjudication costs
-      // begin. The failed call remains in diagnostics and the model-call count.
+      // begin. Switch the default Super decomposition to Ultra, which passed
+      // a forced-tool live check. Keep explicit model overrides on their
+      // selected model so comparative probes do not silently switch
+      // candidates. Both attempts remain in diagnostics.
       if (opts.signal?.aborted || failed?.stage !== 'decompose' ||
           (failed.failureKind !== 'timeout' && failed.failureKind !== 'network_error')) throw error;
       modelCalls += 1;
-      out = await decompose();
+      out = await decompose(options.decomposeModel === undefined
+        ? MODEL_ADJUDICATOR : opts.decomposeModel);
     }
     if (!Array.isArray(out.args.assertions) || out.args.assertions.some(a =>
       !a || typeof a.text !== 'string' || !a.text.trim() ||

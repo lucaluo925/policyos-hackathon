@@ -43,8 +43,8 @@ they must not be described as three new policies. The UI warns that an
 official-domain result can be a homepage or index and requires the visitor
 to inspect issuing text and dates.
 
-Still open before submission: browser interaction with the enlarged country
-map, a public URL without Vercel Authentication, provider capacity through
+At the initial acceptance, still open before submission: browser interaction
+with the enlarged country map, an anonymously usable URL, provider capacity through
 the judging window, a new filmed run on the final hosted build, and the final
 Devpost submission. This record does not assert broad policy-accuracy or
 country-monitoring coverage.
@@ -57,4 +57,12 @@ its own hosted acceptance: the independent AI Act date probe in the
 [evaluation summary](EVALUATION_SUMMARY.md) completed as `refuted` after one
 25-second decomposition timeout and one successful retry. It took 71 seconds
 and remains a single known-fact smoke probe, not a reliability-rate estimate.
-Vercel Authentication still prevents anonymous judging access to this Preview.
+
+A later Shareable Link gave anonymous access to this same protected Preview.
+The browser loaded the map, opened Qatar, changed to Trade, and retrieved
+three labelled government-domain research leads. The browser's predeclared
+CBAM live verification then failed at decomposition without a verdict; see
+the [evaluation summary](EVALUATION_SUMMARY.md). The next source revision
+replaces the same-model timeout retry with an Ultra fallback, but this record
+does not yet claim hosted acceptance for that revision. Provider capacity and
+a final filmed demo remain unverified.
