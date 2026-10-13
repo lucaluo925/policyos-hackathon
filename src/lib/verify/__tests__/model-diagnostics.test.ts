@@ -121,8 +121,9 @@ test('an explicit decomposition model stays fixed across a transport retry', asy
   const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
   process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
   const models: string[] = [];
+  const events: VerifyEvent[] = [];
   try {
-    for await (const _ of runVerification('The policy starts in 2026.', {
+    for await (const event of runVerification('The policy starts in 2026.', {
       decomposeModel: MODEL_DECOMPOSER,
       decomposeTimeoutMs: 10,
       fetch: async (url, init) => {
@@ -140,12 +141,13 @@ test('an explicit decomposition model stays fixed across a transport retry', asy
         }
         throw new Error('Unexpected model call');
       },
-    })) { /* Consume the run so its provider calls are observed. */ }
+    })) events.push(event);
   } finally {
     if (key === undefined) delete process.env.NEBIUS_API_KEY; else process.env.NEBIUS_API_KEY = key;
     if (searchKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = searchKey;
   }
   assert.deepEqual(models, [MODEL_DECOMPOSER, MODEL_DECOMPOSER]);
+  assert.ok(events.some(event => event.type === 'done'));
 });
 
 test('invalid decomposition response is not retried', async () => {
