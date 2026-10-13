@@ -169,5 +169,35 @@ the route emitted a sanitized decomposition error; no Tavily call followed.
 This is a reliability failure, not a refuted label or a false positive. The
 current source shortens each decomposition attempt to 25 seconds and permits
 one retry only for timeout or network failure, counting both attempts.
-Isolated transport tests cover this behavior; a new hosted run of the changed
-code has not yet established its effect.
+Isolated transport tests cover this behavior. A later hosted run of the
+changed code is described below; it does not erase the failed CBAM probe.
+
+## Bounded-retry Preview probe, 13 October 2026 UTC
+
+Before a new request, a separate local plan fixed the statement “The EU AI
+Act entered into force on 1 August 2025” and expected `refuted`. The
+[European Commission](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)
+states that entry into force was 1 August 2024; the later dates when specific
+obligations apply are distinct. This known-fact smoke probe was not a blinded
+holdout or a rerun of the failed CBAM case.
+
+The new source commit `6347beabe8c11d6a3814787758f23d0ec2fcea76`
+passed [GitHub CI](https://github.com/lucaluo925/policyos-hackathon/actions/runs/38339994391)
+and built as protected Vercel Preview deployment
+`dpl_Cn1EYaS6EZsrsqXeop6vPcwjsbpF`. Its `/verify`, `/explore`, and
+`/api/system-status` routes returned HTTP 200 through authenticated Preview
+access. The health endpoint reported 13 source rows and 11 pipeline countries.
+
+The live AI Act request completed with one `refuted` assertion, citing that
+Commission page. The cited page and both the actual and misstated years were
+present in the retained adjudication evidence. It took 71,434 ms, made three
+Tavily calls and four Nemotron attempts, and reported one saved review row.
+The first decomposition attempt timed out at 25,004 ms; the single retry
+returned a tool result after 19,616 ms. Screening and adjudication then
+completed. This is direct hosted evidence that the new timeout-and-retry path
+ran successfully once. It also exposes substantial latency and extra provider
+cost; a further timeout would still fail. The completed request's Tavily IDs
+were `26e8a948-de8e-4eba-b019-a5021e060c71`,
+`a222df55-e333-4c70-bb4e-abb7f9a8b31f`, and
+`ceebd2b2-4e66-489c-ab6c-d0a9fe70046d`. These observations do not
+establish overall classification accuracy or sustained provider capacity.

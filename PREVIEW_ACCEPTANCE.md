@@ -52,5 +52,9 @@ country-monitoring coverage.
 A later predeclared negative-date probe on a documentation-only Preview
 deployment ended with a decomposition timeout and no verdict. It is recorded
 in the [evaluation summary](EVALUATION_SUMMARY.md), rather than counted as a
-successful negative check. The subsequent bounded-timeout retry change still
-needs its own hosted acceptance.
+successful negative check. The subsequent bounded-timeout retry change passed
+its own hosted acceptance: the independent AI Act date probe in the
+[evaluation summary](EVALUATION_SUMMARY.md) completed as `refuted` after one
+25-second decomposition timeout and one successful retry. It took 71 seconds
+and remains a single known-fact smoke probe, not a reliability-rate estimate.
+Vercel Authentication still prevents anonymous judging access to this Preview.
