@@ -70,6 +70,66 @@ test('observer errors do not alter a usable response or trigger a retry', async 
   assert.equal(record.outcome, 'tool_returned');
 });
 
+test('one decomposition timeout retries once and records both paid-call attempts', async () => {
+  const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
+  process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
+  const events: VerifyEvent[] = [];
+  let decomposerCalls = 0;
+  try {
+    for await (const event of runVerification('The policy starts in 2026.', {
+      decomposeTimeoutMs: 10,
+      fetch: async (url, init) => {
+        if (String(url).includes('tavily')) return Response.json({ request_id: 'offline-search', results: [
+          { url: 'https://example.gov/notice', title: 'Notice', score: .9,
+            content: 'The policy starts in 2026.' },
+        ] });
+        const name = JSON.parse(String(init?.body)).tool_choice.function.name;
+        if (name === 'record_assertions' && ++decomposerCalls === 1) {
+          const signal = init?.signal as AbortSignal;
+          return new Promise<Response>((_, reject) => {
+            signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+          });
+        }
+        const args = name === 'record_assertions'
+          ? { assertions: [{ text: 'The policy starts in 2026.', search_query: 'policy start 2026' }] }
+          : name === 'record_screening'
+            ? { judgements: [{ index: 0, relevant: true, leaning: 'supports' }] }
+            : { verdict: 'supported', confidence: .8, cited_urls: ['https://example.gov/notice'],
+                rationale: 'The notice states the date.' };
+        return response(name, JSON.stringify(args));
+      },
+    })) events.push(event);
+  } finally {
+    if (key === undefined) delete process.env.NEBIUS_API_KEY; else process.env.NEBIUS_API_KEY = key;
+    if (searchKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = searchKey;
+  }
+  const done = events.find(event => event.type === 'done');
+  assert.ok(done?.type === 'done');
+  assert.equal(decomposerCalls, 2);
+  assert.equal(done.result.stats.modelCalls, 4);
+  assert.deepEqual(done.result.provenance?.modelCalls?.slice(0, 2).map(call =>
+    [call.outcome, call.failureKind ?? null]), [['failed', 'timeout'], ['tool_returned', null]]);
+});
+
+test('invalid decomposition response is not retried', async () => {
+  const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
+  process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
+  let calls = 0;
+  const events: VerifyEvent[] = [];
+  try {
+    for await (const event of runVerification('A claim.', { fetch: async () => {
+      calls += 1;
+      return new Response('{invalid json', { status: 200 });
+    } })) events.push(event);
+  } finally {
+    if (key === undefined) delete process.env.NEBIUS_API_KEY; else process.env.NEBIUS_API_KEY = key;
+    if (searchKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = searchKey;
+  }
+  assert.equal(calls, 1);
+  assert.ok(events.some(event => event.type === 'error' && event.stage === 'decompose'));
+  assert.ok(!events.some(event => event.type === 'done'));
+});
+
 test('pipeline preserves failed adjudication diagnostics in a downloadable unresolved result', async () => {
   const key = process.env.NEBIUS_API_KEY, searchKey = process.env.TAVILY_API_KEY;
   process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';

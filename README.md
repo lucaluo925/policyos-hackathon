@@ -45,7 +45,10 @@ to adjudication, while withholding earlier retrieval and screening passages.
 Press **Verify** to run the current pipeline. Tavily Search and Extract share
 a bounded call budget. Issuer HTML reads are separately bounded by host,
 response size and timeout, and their origin is identified separately from
-Tavily Extract in the exported evidence.
+Tavily Extract in the exported evidence. A decomposition transport timeout
+or network failure permits at most
+one further Nemotron call, after a 25-second per-attempt timeout; both
+attempts are counted and diagnosed. Invalid model output is not retried.
 
 Open-web search is not restricted to issuing bodies. The interface identifies
 recognized official hosts but does not treat a domain badge as proof that a

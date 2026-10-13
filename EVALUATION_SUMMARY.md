@@ -150,3 +150,24 @@ regression test; no fresh provider holdout measures its broader effect.
 Government-domain matching is not issuer or legal-status verification. The
 new suffixes are shared with the verifier's source ordering, for which no
 new holdout was run.
+
+## Protected Preview reliability probe, 13 October 2026 UTC
+
+The public-source v52 Preview completed one live positive EU CBAM start-date
+claim in 6.9 seconds with two Tavily and three Nemotron calls, two cited
+European Commission passages, and a confirmed low-confidence human-review
+write. [The narrow acceptance record](PREVIEW_ACCEPTANCE.md) preserves the
+request IDs and storage check. It is a known positive development claim, not
+an independent accuracy sample.
+
+A counterfactual minimal pair was fixed in a local pre-call plan (retained
+outside this public repository) before a second Preview request: “The EU CBAM
+definitive regime began on 1 January 2025.” The expected verdict was
+`refuted`. That request **did not produce a verdict**. The first
+Nemotron decomposition call waited until its 90-second client timeout and
+the route emitted a sanitized decomposition error; no Tavily call followed.
+This is a reliability failure, not a refuted label or a false positive. The
+current source shortens each decomposition attempt to 25 seconds and permits
+one retry only for timeout or network failure, counting both attempts.
+Isolated transport tests cover this behavior; a new hosted run of the changed
+code has not yet established its effect.

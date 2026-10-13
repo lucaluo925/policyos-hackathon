@@ -60,6 +60,8 @@ export interface PipelineOptions {
    * the copy.
    */
   decomposeModel?: string;
+  /** Bounded first-stage timeout; injectable only for deterministic timeout tests. */
+  decomposeTimeoutMs?: number;
   /** Hard cap on Tavily calls for this run. Pay-as-you-go is on; a loop costs money. */
   tavilyBudget?: number;
   /** Assertions to keep after decomposition. Bounds total cost per run. */
@@ -123,6 +125,7 @@ export function rollUpVerdict(results: readonly AssertionResult[]): OverallVerdi
 
 const DEFAULTS: Required<Omit<PipelineOptions, 'signal' | 'fetch'>> = {
   decomposeModel: MODEL_DECOMPOSER,
+  decomposeTimeoutMs: 25_000,
   tavilyBudget: 6,
   maxAssertions: 3,
   resultsPerAssertion: 5,
@@ -311,8 +314,7 @@ export async function* runVerification(
   yield { type: 'stage', stage: 'decompose', status: 'start' };
   let assertions: Array<Assertion & { searchQuery: string }>;
   try {
-    modelCalls += 1;
-    const out = await callTool<{
+    const decompose = () => callTool<{
       assertions: Array<{ text: string; search_query: string }>;
     }>({
       model: opts.decomposeModel,
@@ -328,10 +330,25 @@ export async function* runVerification(
       // Measured: the decompose output needs ~1400 completion tokens on the
       // most verbose tier. 1024 returned finish_reason=length and no tool call.
       maxTokens: 3072,
+      timeoutMs: opts.decomposeTimeoutMs,
       onDiagnostic: record => modelCallRecords.push({ ...record, stage: 'decompose' }),
       signal: opts.signal,
       fetch: opts.fetch,
     });
+    let out;
+    try {
+      modelCalls += 1;
+      out = await decompose();
+    } catch (error) {
+      const failed = modelCallRecords.at(-1);
+      // A transient transport hang can consume the whole live demo without a
+      // verdict. Retry exactly once, only before search or adjudication costs
+      // begin. The failed call remains in diagnostics and the model-call count.
+      if (opts.signal?.aborted || failed?.stage !== 'decompose' ||
+          (failed.failureKind !== 'timeout' && failed.failureKind !== 'network_error')) throw error;
+      modelCalls += 1;
+      out = await decompose();
+    }
     if (!Array.isArray(out.args.assertions) || out.args.assertions.some(a =>
       !a || typeof a.text !== 'string' || !a.text.trim() ||
       typeof a.search_query !== 'string' || !a.search_query.trim())) {

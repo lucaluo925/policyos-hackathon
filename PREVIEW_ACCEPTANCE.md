@@ -48,3 +48,9 @@ map, a public URL without Vercel Authentication, provider capacity through
 the judging window, a new filmed run on the final hosted build, and the final
 Devpost submission. This record does not assert broad policy-accuracy or
 country-monitoring coverage.
+
+A later predeclared negative-date probe on a documentation-only Preview
+deployment ended with a decomposition timeout and no verdict. It is recorded
+in the [evaluation summary](EVALUATION_SUMMARY.md), rather than counted as a
+successful negative check. The subsequent bounded-timeout retry change still
+needs its own hosted acceptance.
