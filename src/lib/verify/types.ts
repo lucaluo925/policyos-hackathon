@@ -56,6 +56,8 @@ export interface EvidenceDoc {
   extractionRequestId?: string;
   /** Direct, bounded HTML read of the Tavily-discovered issuer URL. */
   issuerHtmlRead?: boolean;
+  /** Direct source discovered through a current issuer index, not returned by Search. */
+  issuerDiscovery?: {seedUrl: string; indexUrl: string; seedRequestId?: string; readBytes: number};
 }
 
 export interface SourceInspectionRecord {
@@ -108,6 +110,18 @@ export interface VerificationResult {
     adjudicationEvidence: Record<string, EvidenceDoc[]>;
     /** Absent means this optional mode was not used or an older run did not record it. */
     sourceInspection?: Record<string, SourceInspectionRecord>;
+    /** Successful Search draws; absent in historical recordings. */
+    searches?: Array<{
+      assertionId: string;
+      kind: 'open' | 'recovery' | 'official';
+      requestId: string;
+      query: string;
+      depth: 'basic' | 'advanced';
+      includeDomains: string[];
+      returnedUrls: string[];
+      excludedNavigationUrls: string[];
+      elapsedMs: number;
+    }>;
     /** Direct issuer HTML reads are separate from Tavily Search/Extract IDs. */
     issuerHtmlReads?: Record<string, Array<{ url: string; status: 'used' | 'unavailable'; bytes?: number }>>;
     /** Metadata from actual model invocations; older recordings retain its absence. */

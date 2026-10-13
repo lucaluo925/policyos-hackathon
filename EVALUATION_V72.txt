@@ -1,0 +1,39 @@
+V72: LOCAL DEVELOPMENT REGRESSION — 13 OCTOBER 2026
+
+Status: candidate on codex/qualifier-evidence; not deployed. Public V66 is unchanged.
+Runtime source manifest SHA256: cd2bca21ca67c0c9fa8e48a595697f827751dbe5f5d682b600dfe4de421b3748
+
+What changed
+- Scoped official searches use advanced depth and document-collection filters for French invoicing and NZ immigration instructions. Navigation listings are excluded as policy evidence.
+- Reports retain successful search queries, scope, depth, request IDs, returned URLs and excluded navigation URLs. These are retrieval provenance, not a truth score.
+- Dated NZ manual hits can resolve through the official current contents page. The target section title comes from Search; the document URL comes from the issuer index. Two bounded same-host HTML reads are separately attributed, without invented Tavily IDs or relevance scores.
+- Official Search leads retain up to 2400 characters. Full-page selection can preserve multiple exact matched sentences across languages, in original page order, with explicit omission markers. Complete enclosing paragraphs are included when the existing 2400-character budget permits. Claimed dates and quantities are not ranking targets.
+
+Protocol
+The same AU, FR and NZ claims used in earlier development were fixed with expected labels and strict criteria before this packet. The runtime was hashed before calls. Execution order: FR, AU, NZ. Each ran once through the local production verifier with real Tavily and Nebius, under the existing shared model spend guard. No rescue retries or post-run code edits. This was not hosted route, anonymous-browser, admission, database evidence persistence, or sustained availability acceptance.
+
+Results (manual review of exact submitted evidence and citations)
+Case | Overall expected/actual | Whole-claim issuer grounding | Time | Tavily requests | Model calls
+AU | refuted/refuted | PASS | 16.203s | 3 | 3
+FR | supported/supported | PASS | 22.158s | 6 | 5
+NZ | refuted/refuted | PASS | 20.017s | 3 | 3
+
+3/3 label matches and 3/3 strict grounding passes; zero recorded stage errors.
+AU: the cited ASIC input connects the second reporting cohort to financial years commencing on or after 1 July 2026. Ordinal group wording was accepted in the frozen criterion.
+FR: BOTH assertions cite the actual impots.gouv.fr issuer document. Their retained input includes France/VAT scope, receipt from 1 September 2026, and small/micro issuance by 1 September 2027.
+NZ: the cited current indexed instruction explicitly distinguishes Traveller and Transit ETAs (2 years) from Crew ETAs (5 years), both starting on date of issue.
+
+Development history remains part of the record
+V65 hosted: 3/3 label matches, 1/3 strict grounding. V67 local: 3/3 labels, 1/3 strict. V71 local: 3/3 labels, 2/3 strict; French issuing passages still lost decisive dates. V72 fixed that exposed excerpt-selection failure. Separate failed search probes from V68-V70 remain archived. No result is overwritten by a later retry.
+
+Limits
+These three familiar developer-selected cases informed the implementation. The development assistant reviewed evidence; no independent expert review or unseen holdout was performed. The result is not a population accuracy estimate, proof of general multilingual support, causal estimate of Tavily Extract, or evidence that the public deployment now behaves this way. Collection routes are explicit and limited. The current-index resolver is specific to the NZ operational manual and skips claims containing an explicit year. Failed index reads fall back to prior evidence; only successful index lineage is currently recorded. Noncontiguous snippets may omit additional policy context. Advanced scoped Search costs more credits than basic Search; request counts do not equal credits.
+
+Validation
+523 offline tests passed. Type checking, lint and production build passed. A no-network replay of both V71 French issuer rows now retains scope and both deadlines in 1829 characters; the subsequent V72 real-model run supplied and cited that evidence. Synthetic Spanish/French tests cover distant passages, original ordering, adjacent exemption, full final sentence and refusal to insert unmatched Search text.
+
+Model spend
+V72 ledger increment: $0.033502. Shared ledger after all V72 runs: $0.159270 with zero unsettled reservations. Including earlier known local usage outside that ledger: $0.16743764. These are application-accounted amounts, not a provider invoice or account balance. The authorized $5 ceiling and October 20 expiry are unchanged. Tavily charges are separate.
+
+Before release/submission
+Validate fresh cases for regressions and hosted evidence export/persistence before releasing this candidate. Judging-period availability, access after the current model budget expiry, owner-recorded audio/subtitle alignment, video publication and final Devpost submission remain incomplete.

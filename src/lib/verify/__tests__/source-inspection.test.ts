@@ -12,6 +12,39 @@ const A = 'https://www.gov.uk/policy';
 const B = 'https://digital-strategy.ec.europa.eu/policy';
 const doc = (url: string, snippet = 'Search excerpt'): EvidenceDoc => ({ url, title: url, retrievalScore: .9, snippet });
 
+test('cross-language source selection keeps distant verbatim scope, deadline and adjacent exception', () => {
+  // Synthetic policy, deliberately unrelated to the development evaluation.
+  const scope = 'Las cooperativas registradas en el territorio deben comunicar sus operaciones.';
+  const deadline = 'El plazo para presentar la declaración termina el 14 de agosto de 2031.';
+  const exception = 'Las cooperativas sin actividad están exentas de esta obligación.';
+  const page = scope + '\n' + 'Información general sobre las oficinas administrativas. '.repeat(70) +
+    '\n' + deadline + ' ' + exception + '\n' + 'Información de contacto. '.repeat(100);
+  const lead = deadline + ' [...] ' + scope; // Search order need not be page order.
+  const selected = selectSourceExcerpt(page, 'All cooperatives must report by August 2030.', lead, 2400);
+  assert.ok(selected.includes(scope));
+  assert.ok(selected.includes(deadline));
+  assert.ok(selected.includes(exception), 'Do not drop the adjoining exemption');
+  assert.ok(selected.indexOf(scope) < selected.indexOf(deadline));
+  assert.match(selected, /\n\[\.\.\.\]\n/);
+  assert.ok(selected.length <= 2400);
+  for (const part of selected.split('\n[...]\n')) assert.ok(page.includes(part), 'Every passage is verbatim');
+  assert.doesNotMatch(selected, /2030/);
+  const unverified = 'Todas las cooperativas deben pagar una multa de novecientos euros.';
+  assert.doesNotMatch(selectSourceExcerpt(page, 'Cooperatives file reports.', lead + ' [...] ' + unverified, 2400), /novecientos/);
+});
+
+test('multiple nearby source anchors retain the end of the last sentence within the same window', () => {
+  const first = 'Les associations enregistrées doivent déclarer leurs activités annuelles.';
+  const last = 'Les associations de petite taille peuvent transmettre leur déclaration le 19 novembre 2032.';
+  const page = 'Navigation. '.repeat(100) + first + '\n' + 'Informations. '.repeat(145) + '\n' + last +
+    ' Contacts. '.repeat(200);
+  const selected = selectSourceExcerpt(page, 'Associations must file in 2030.', first + ' [...] ' + last, 2400);
+  assert.ok(selected.includes(first));
+  assert.ok(selected.includes(last));
+  assert.equal(selected.length, 2400);
+  assert.ok(page.includes(selected));
+});
+
 test('source inspection prioritizes real issuing domains, deduplicates and bounds retrieved URLs', () => {
   assert.deepEqual(sourceInspectionUrls([doc('https://evileuropa.eu/x'), doc(A), doc(A),
     doc('javascript:alert(1)'), doc(B), doc('https://example.com/other')]), [A, B, 'https://evileuropa.eu/x']);

@@ -5,6 +5,7 @@ import { needsOfficialSearch } from '../official-search';
 import { inspectSourceExcerpts } from '../source-inspection';
 import { runVerification } from '../pipeline';
 import type { VerifyEvent } from '../types';
+import {liveReport, reportMarkdown} from '../report';
 
 test('a broad official summary cannot suppress search for an omitted coordinated category', () => {
   const claim = 'Teachers and nurses receive permits valid for five years from the date of issue.';
@@ -61,6 +62,7 @@ test('the full pipeline retains an improved same-URL scope passage and exports a
       calls++;
       if (body.include_domains) scopedQuery = body.query;
       return Response.json({ request_id: body.include_domains ? 'scoped' : 'open', results: [
+        {url: 'https://www.gov.uk/search?q=permits', title: 'Search results', score: .99, content: 'Unrelated joined search snippets'},
         {url, title: 'Synthetic permit guidance', score: .9, content: body.include_domains ? exact : broad},
       ] });
     }
@@ -90,6 +92,13 @@ test('the full pipeline retains an improved same-URL scope passage and exports a
     assert.deepEqual(docs.map(doc => doc.searchRequestId), ['open', 'scoped']);
     assert.ok(docs.every(doc => doc.snippet === page && submitted.includes(doc.snippet)));
     assert.ok(docs.every(doc => doc.extractionRequestId === 'read'));
+    const searches = done.result.provenance!.searches!;
+    assert.deepEqual(searches.map(search => search.depth), ['basic', 'advanced']);
+    assert.ok(searches.every(search => search.excludedNavigationUrls.includes('https://www.gov.uk/search?q=permits')));
+    assert.doesNotMatch(submitted, /Unrelated joined search snippets/);
+    const report = liveReport(done.result, {a1:docs});
+    assert.deepEqual(report.searches, searches);
+    assert.match(reportMarkdown(report), /navigation page, excluded from evidence/);
     assert.equal(events.filter(event => event.type === 'error').length, 0);
   } finally {
     if (before.nebius === undefined) delete process.env.NEBIUS_API_KEY;

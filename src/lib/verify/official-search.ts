@@ -69,7 +69,22 @@ export function officialSearchDomains(claim: string): string[] {
       /\b(?:e[- ]?invoic\w*|electronic invoic\w*|facturation [ée]lectronique)\b/i.test(claim)) {
     return ['impots.gouv.fr'];
   }
+  if (matches[0].domains[0] === 'govt.nz' && /\b(?:NZeTAs?|electronic travel authorit\w*)\b/i.test(claim)) {
+    return ['immigration.govt.nz'];
+  }
   return matches[0].domains;
+}
+
+/** Route scoped discovery to document collections, not a known answer page.
+ * Tavily supports domain/path filters. Host validation remains separate so
+ * returned links still have to belong to the actual issuing authority. */
+export function officialSearchCollections(claim: string): string[] {
+  const domains = officialSearchDomains(claim);
+  if (domains[0] === 'impots.gouv.fr') {
+    return ['impots.gouv.fr/professionnel', 'impots.gouv.fr/internationalenbusiness'];
+  }
+  if (domains[0] === 'immigration.govt.nz') return ['immigration.govt.nz/opsmanual'];
+  return domains;
 }
 
 /** Use the issuing authority's vocabulary for this narrow bilingual topic.
@@ -78,6 +93,10 @@ export function officialSearchQuery(claim: string, searchQuery: string): string 
   if (officialSearchDomains(claim)[0] === 'impots.gouv.fr') {
     // Issuer-language discovery, without asserted dates or expected answers.
     return 'facturation électronique entreprises assujetties TVA réception émission calendrier PME micro-entreprises';
+  }
+  if (officialSearchDomains(claim)[0] === 'immigration.govt.nz') {
+    // The operational instructions use ETA as the legal term for NZeTA.
+    return searchQuery.replace(/\bNZeTAs?\b/gi, 'ETA');
   }
   if (officialSearchDomains(claim)[0] === 'boe.es') {
     const decree = claim.match(/\b(?:royal decree|real decreto)\s+(\d+\/\d{4})\b/i);

@@ -1,6 +1,8 @@
 # Dated verification evaluation summary
 
-Latest: [V65 funded hosted evaluation](EVALUATION_V65.txt), 13 October 2026,
+Latest local candidate: [V72 known-case development regression](EVALUATION_V72.txt), 13 October 2026: **3/3 label matches and 3/3 strict issuer-grounding passes**, after V71 passed 2/3. These familiar cases informed the changes; this is not unseen accuracy or hosted acceptance. The candidate has not been deployed.
+
+Latest hosted evaluation: [V65 funded hosted evaluation](EVALUATION_V65.txt), 13 October 2026,
 executed the frozen V59 packet on source `10ee555`: **3/3 completed and label
 matches; 1/3 strict whole-claim issuer-grounding passes**. Each case ran once.
 French tax-authority scope/citation and New Zealand Transit coverage were
