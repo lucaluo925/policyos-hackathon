@@ -20,11 +20,14 @@ Vercel Preview. Its owner-approved shareable link gives anonymous visitors
 access while the link remains active. A stable final demo URL and public video
 still need to be supplied with the Devpost submission.
 
-For a separate contest demo Vercel project, deploy with
-`vercel deploy --prod --local-config vercel.demo.json` from a checkout linked to
-that **separate** project. This config keeps the shared database quota guards
-but schedules no ingestion jobs; the main `vercel.json` retains the existing
-site's scheduled jobs. Configure provider keys as sensitive server-side
+For a separate contest demo Vercel project, make an isolated source copy,
+link it to that **separate** project, replace its `vercel.json` with
+`vercel.demo.json`, then run `vercel deploy --prod` from the copy. Check
+`vercel crons list` for zero jobs. Merely passing `--local-config` while the
+original `vercel.json` remains in the upload still registers its scheduled
+jobs on Vercel. The demo config keeps the shared database quota guards but
+schedules no ingestion jobs; the main source tree retains the existing site's
+scheduled jobs. Configure provider keys as sensitive server-side
 variables, a reviewed database, and verified provider capacity before enabling
 public live calls. A deployment without those services is only a static/demo
 shell, not a working live-verification submission. For that read-only mode,
