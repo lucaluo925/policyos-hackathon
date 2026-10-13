@@ -9,11 +9,14 @@ also has a global country directory, a directly readable official-announcement
 view, and a human-review boundary before any inferred policy update can affect
 scores.
 
-This is an **unpublished public-source candidate** for the
+This is the **public source snapshot** prepared for the
 [Nebius × NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/rules).
 The [release scope](PUBLIC_RELEASE_SCOPE.md) explains which private research
 records are deliberately excluded. The MIT license applies to original PolicyOS
 code and documentation, not external websites or source data.
+An [acceptance record](PREVIEW_ACCEPTANCE.md) documents one funded Tavily/Nemotron
+run and one country search on a Vercel Preview. That Preview is login-protected;
+the unrestricted public demo required for judging is still pending.
 
 ## What changed for the hackathon
 
@@ -174,9 +177,10 @@ npm run build
 ```
 
 Offline tests and local builds do not prove provider availability, live
-accuracy, a working public deployment, or competition acceptance. A live
-judging demo still needs funded Tavily and Nebius accounts, verified quotas,
-and an end-to-end run on the deployed application.
+accuracy, unrestricted public access, or competition acceptance. The protected
+Preview acceptance record proves one narrow live run with funded Tavily and
+Nebius calls; judging still needs an unrestricted URL, verified provider
+capacity for the judging period, and a video of the same deployed build.
 
 ## Evaluation and reproducibility
 
