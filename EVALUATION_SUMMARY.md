@@ -309,8 +309,10 @@ the ordinary visitor flow: if both the Super and Ultra decomposition calls
 fail with timeout or network errors, it sends the original claim unchanged to
 Tavily Search as one assertion. Screening and adjudication still require live
 Nemotron calls. The report labels the decomposer as absent, records the two
-failed attempts, and states that no atomic splitting occurred. Explicit
-model-comparison runs retain their fixed model and stop after two failures;
+failed attempts, and states that no atomic splitting occurred. The page also
+shows that limitation beside the verdict rather than marking decomposition
+as successful. Explicit model-comparison runs retain their fixed model and
+stop after two failures;
 malformed model responses do not trigger this fallback.
 
 Injected offline tests exercise timeouts and network errors through the

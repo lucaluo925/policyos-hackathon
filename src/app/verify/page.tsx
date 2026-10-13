@@ -463,6 +463,14 @@ export default function VerifyPage() {
                   `${verdicts.length} 条断言中，${supportedCount} 条被来源证实、${refutedCount} 条被推翻、${unresolvedCount} 条无法判定。`,
                 )}
               </p>
+              {finishedResult?.provenance?.decompositionFallback === 'whole_claim' && (
+                <p role="status" data-testid="whole-claim-fallback" className="mt-2 text-sm text-muted">
+                  {t(
+                    'Both decomposition model calls failed. We checked the original claim as one assertion; its parts were not verified separately.',
+                    '两次模型拆解调用均失败。本次将原声明作为一条断言核验；其中各部分没有分别核验。',
+                  )}
+                </p>
+              )}
               {citedUrls.length > 0 && (
                 <p className="mt-1 text-sm text-muted">
                   {officialCited === 0
@@ -680,6 +688,9 @@ const STAGE_LABEL: Record<string, string> = {
 };
 
 function labelFor(stage: string, detail?: string): string {
+  if (stage === 'decompose' && detail?.startsWith('model transport failed twice')) {
+    return `decomposition unavailable · original claim retained — ${detail}`;
+  }
   const label = STAGE_LABEL[stage] ?? stage;
   return detail ? `${label} — ${detail}` : label;
 }

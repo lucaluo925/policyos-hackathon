@@ -53,7 +53,7 @@ Super attempt is bounded at 15 seconds; its fallback uses Ultra, which passed
 a separate forced-tool live check. Both attempts are counted and diagnosed.
 If both default decomposition calls fail at the transport layer, the visitor
 flow checks the original claim as one assertion with Tavily and the later
-Nemotron stages. The result and exports identify this whole-claim fallback;
+Nemotron stages. The page, result and exports identify this whole-claim fallback;
 it loses atomic-assertion detail and still requires the remaining providers to
 respond. Explicit model-comparison runs keep their selected model and fail
 after two transport errors rather than silently changing method. Invalid
