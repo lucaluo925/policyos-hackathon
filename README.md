@@ -198,7 +198,16 @@ database: a Serializable audit-log reservation is made before the first paid
 call, with a configurable rolling 24-hour `VERIFY_DAILY_RUN_CAP` (default 12).
 Failed and disconnected runs keep their reservation; an unavailable database
 returns 503 before metered calls. Local development without a database keeps
-the prior key-only path. `VERIFY_DAILY_ASSERTION_CAP` remains a secondary
+the prior key-only path. Public hosts also require `VERIFY_MODEL_BUDGET_ID`,
+`VERIFY_MODEL_BUDGET_USD` and an ISO timestamp in
+`VERIFY_MODEL_BUDGET_EXPIRES_AT`. The campaign is cumulative across deploys;
+reuse its ID and do not delete its audit rows to reset spending. A Serializable
+transaction reserves $1.50 before each model request, then reconciles valid
+reported usage with 25% headroom. Failed calls keep the full reservation;
+missing usage or a ledger failure stops the run. Model rates were checked on
+2026-10-13; operators must recheck pricing before extending the expiry. The
+remaining balance must cover the full reservation, so admission can stop early.
+`VERIFY_DAILY_ASSERTION_CAP` remains a secondary
 completed-assertion check. These application limits are not provider billing
 ceilings or proof that credits will last through judging. Review the migration
 and seed behavior before using a database with data that must be retained.
@@ -217,8 +226,9 @@ npm run build
 CI also runs `tests/integration/quota-postgres.test.ts` against a fresh
 PostgreSQL 16 service after applying the repository migrations. Eight separate
 Node processes compete for verifier slots, then eight compete for the last
-country-research slot. The test checks committed reservations, rolling-window
-expiry, and denial without a new reservation. It makes no provider calls and
+country-research slot and eight for the cumulative model budget. The test checks
+committed reservations, rolling-window expiry, settlement, duplicate-refund
+rejection, and denial without a new reservation. It makes no provider calls and
 requires an explicitly disposable local database named `policyos_ci`; it
 refuses an existing audit history. Serialization conflicts may deny attempts
 early, so the assertion is no overspending, not guaranteed concurrent throughput.

@@ -6,13 +6,14 @@ import { getPrisma } from '../../src/lib/db/client';
 import { reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '../../src/lib/verify/admission';
 import { reserveSharedCountryResearch, CountryResearchQuotaExceeded } from '../../src/lib/research/quota';
 import { requireDisposableDatabase } from './disposable-database';
+import { sharedModelBudgetStore, ModelBudgetStopped, MODEL_BUDGET_ENTITY } from '../../src/lib/verify/spend';
 
 // This test writes reservations. Only an explicitly disposable, empty local
 // CI database is accepted; it never deletes existing rows or calls providers.
 requireDisposableDatabase();
 
 const exec = promisify(execFile);
-async function burst(mode: 'verify' | 'research', time: string) {
+async function burst(mode: 'verify' | 'research' | 'budget', time: string) {
   // Independent processes have independent Prisma pools, as separate hosted
   // instances do. A shared in-memory counter cannot make this test pass.
   return Promise.all(Array.from({ length: 8 }, async () => {
@@ -54,7 +55,21 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
     assert.equal(research.filter(outcome => outcome === 'admitted').length, 1, 'only one remaining research slot can be consumed');
     await assert.rejects(reserveSharedCountryResearch(day, 'must not reserve'), CountryResearchQuotaExceeded);
     assert.equal(await db.auditLog.count({ where: researchWhere }), 60);
-    t.diagnostic(JSON.stringify({ verifier, research, paidProviderCalls: 0 }));
+    const modelBudget = { id: 'ci-shared-budget', capMicroUsd: 4_980_000, expiresAt: Date.now() + 60_000 };
+    const modelBurst = await burst('budget', day);
+    const budgetWhere = { entityType: MODEL_BUDGET_ENTITY, entityId: modelBudget.id };
+    const reservations = await db.auditLog.findMany({ where: budgetWhere });
+    assert.ok(reservations.length >= 1 && reservations.length <= 3);
+    for (let i = reservations.length; i < 3; i++) await sharedModelBudgetStore.reserve(modelBudget);
+    await assert.rejects(sharedModelBudgetStore.reserve(modelBudget), ModelBudgetStopped);
+    await sharedModelBudgetStore.settle(reservations[0].id, 5867);
+    await assert.rejects(sharedModelBudgetStore.settle(reservations[0].id, 0), ModelBudgetStopped, 'cannot refund a settled call twice');
+    await sharedModelBudgetStore.reserve(modelBudget);
+    await assert.rejects(sharedModelBudgetStore.reserve(modelBudget), ModelBudgetStopped);
+    const ledger = await db.auditLog.findMany({ where: budgetWhere });
+    assert.equal(ledger.reduce((sum, row) => sum + (row.newValue as { microUsd: number }).microUsd, 0), 4_505_867);
+    await assert.rejects(sharedModelBudgetStore.reserve({ ...modelBudget, capMicroUsd: 50_000_000 }), ModelBudgetStopped, 'changing the cap cannot silently reset an existing campaign');
+    t.diagnostic(JSON.stringify({ verifier, research, modelBurst, paidProviderCalls: 0 }));
   } finally {
     await db.$disconnect();
   }

@@ -29,6 +29,7 @@ import type { ReviewPersistence, Stage, VerificationResult, VerifyEvent } from '
 import { CLAIM_MAX_LENGTH } from '@/lib/verify/claim-text';
 import { isDatabaseConfigured } from '@/lib/db';
 import { reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '@/lib/verify/admission';
+import { budgetedModelFetch, configuredModelBudget, ModelBudgetStopped, type ModelBudget } from '@/lib/verify/spend';
 import {
   DAILY_ASSERTION_CAP,
   countRecentVerifiedAssertions,
@@ -126,6 +127,15 @@ export async function POST(request: Request) {
   if (requiresSharedQuota && !isDatabaseConfigured()) {
     return Response.json({ error: 'Shared live verification limit is unavailable.' }, { status: 503 });
   }
+  let modelBudget: ModelBudget | undefined;
+  if (requiresSharedQuota || process.env.VERIFY_MODEL_BUDGET_ID) {
+    try {
+      if (!isDatabaseConfigured()) throw new Error('Missing shared budget database');
+      modelBudget = configuredModelBudget();
+    } catch {
+      return Response.json({ error: 'Live verification budget needs operator review.' }, { status: 503 });
+    }
+  }
   if (isDatabaseConfigured()) {
     try {
       await reserveSharedVerificationRun();
@@ -145,6 +155,7 @@ export async function POST(request: Request) {
   // Bound the entire run below the platform ceiling, not just each HTTP call.
   const deadline = setTimeout(() => abort.abort(new Error('Verification run timed out')), RUN_TIMEOUT_MS);
   const options: PipelineOptions = { signal: abort.signal, inspectSources };
+  if (modelBudget) options.fetch = budgetedModelFetch(modelBudget, abort);
   let cancelled = false;
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -204,7 +215,9 @@ export async function POST(request: Request) {
           sse({
             type: 'error',
             stage: 'adjudicate',
-            message: abort.signal.aborted
+            message: abort.signal.reason instanceof ModelBudgetStopped
+              ? `Live verification stopped at its budget limit or accounting check. Please try the recorded example. (ref ${ref})`
+              : abort.signal.aborted
               ? `Verification timed out. Please retry later. (ref ${ref})`
               : `Verification stopped unexpectedly. (ref ${ref})`,
           }),
