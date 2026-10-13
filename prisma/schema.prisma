@@ -1,0 +1,543 @@
+// PolicyOS V3 schema — persistent, relational, auditable.
+//
+// Design principles:
+//  - Every policy is a first-class entity with lifecycle + verification + versions.
+//  - Nothing is overwritten silently; changes create new policy_versions and
+//    score_change_logs, and everything goes through audit_logs.
+//  - Scores are decomposable into submetrics and traceable back to policies.
+//  - The pipeline framework writes source_snapshots and pipeline_runs on every
+//    run, whether or not a material change was detected.
+//
+// Provider: PostgreSQL (Neon/Supabase/any PG). When DATABASE_URL is not set,
+// application code falls back to the legacy blob/memory store (see
+// src/lib/db/index.ts). Production should always have DATABASE_URL.
+
+generator client {
+  provider      = "prisma-client-js"
+  // Next.js 16 turbopack needs binaryTargets for linux-musl (Vercel runtime).
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ─────────────────────────────────────────────────────────────────
+
+enum Domain {
+  climate
+  trade
+  immigration
+}
+
+enum LifecycleStatus {
+  active
+  pending
+  amended
+  suspended
+  expired
+  repealed
+  superseded
+  unknown
+}
+
+enum VerificationConfidence {
+  high
+  medium
+  low
+  unverified
+}
+
+enum VerificationMethod {
+  official_source
+  trusted_secondary
+  ai_inferred
+  user_submitted
+  seeded_data
+}
+
+enum SourceType {
+  government
+  legislature
+  ministry
+  court
+  multilateral
+  media
+  think_tank
+  community_submission
+}
+
+enum ChangeClassification {
+  new_policy
+  amendment
+  repeal
+  suspension
+  expiry
+  proposal_only
+  guidance_update
+  no_material_change
+  uncertain
+}
+
+enum PipelineRunStatus {
+  success
+  partial
+  partial_success
+  failed
+  skipped
+}
+
+enum ReviewStatus {
+  pending
+  approved
+  rejected
+  merged
+  proposal_only
+  // V9: auto-resolution outcomes
+  auto_approved
+  escalated
+  expired
+  conflict
+}
+
+enum ContributionStatus {
+  submitted
+  under_review
+  accepted
+  rejected
+  merged
+}
+
+enum ImpactDirection {
+  positive
+  negative
+  mixed
+  neutral
+}
+
+// ─── Reference data ────────────────────────────────────────────────────────
+
+model Country {
+  id             Int      @id @default(autoincrement())
+  iso2           String   @unique @db.VarChar(2)
+  iso3           String   @unique @db.VarChar(3)
+  name           String
+  region         String?
+  population     BigInt?
+  gdpMillionsUsd BigInt?  @map("gdp_millions_usd")
+  governmentType String?  @map("government_type")
+  headOfState    String?  @map("head_of_state")
+  flagEmoji      String?  @map("flag_emoji")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  policies        Policy[]
+  domainScores    DomainScore[]
+  submetrics      ScoreSubmetric[]
+  sources         MonitoredSource[]
+  scoreChangeLogs ScoreChangeLog[]
+  contributions   Contribution[]
+
+  @@index([region])
+  @@map("countries")
+}
+
+// ─── Policies ──────────────────────────────────────────────────────────────
+
+model Policy {
+  id                     String                 @id @default(cuid())
+  countryId              Int                    @map("country_id")
+  domain                 Domain
+  title                  String
+  slug                   String
+  summary                String?                @db.Text
+  status                 LifecycleStatus        @default(unknown)
+  announcedDate          DateTime?              @map("announced_date") @db.Date
+  effectiveDate          DateTime?              @map("effective_date") @db.Date
+  expiryDate             DateTime?              @map("expiry_date") @db.Date
+  lastVerifiedAt         DateTime?              @map("last_verified_at")
+  nextReviewAt           DateTime?              @map("next_review_at")
+  verificationConfidence VerificationConfidence @default(unverified) @map("verification_confidence")
+  verificationMethod     VerificationMethod     @default(seeded_data) @map("verification_method")
+  sourceType             SourceType             @default(government) @map("source_type")
+  officialSourceUrl      String?                @map("official_source_url") @db.Text
+  sourceName             String?                @map("source_name")
+  sourceAvailable        Boolean                @default(true) @map("source_available")
+  tags                   String[]               @default([])
+  // Lineage
+  supersededByPolicyId   String?                @map("superseded_by_policy_id")
+  replacesPolicyId       String?                @map("replaces_policy_id")
+  currentVersionId       String?                @unique @map("current_version_id")
+  createdAt              DateTime               @default(now()) @map("created_at")
+  updatedAt              DateTime               @updatedAt @map("updated_at")
+
+  country         Country          @relation(fields: [countryId], references: [id])
+  versions        PolicyVersion[]  @relation("PolicyVersions")
+  currentVersion  PolicyVersion?   @relation("PolicyCurrentVersion", fields: [currentVersionId], references: [id])
+  supersededBy    Policy?          @relation("PolicySupersession", fields: [supersededByPolicyId], references: [id])
+  supersedes      Policy[]         @relation("PolicySupersession")
+  scoreChangeLogs ScoreChangeLog[]
+
+  @@unique([countryId, slug])
+  @@index([countryId, domain, status])
+  @@index([domain, status])
+  @@index([nextReviewAt])
+  @@map("policies")
+}
+
+model PolicyVersion {
+  id                     String                  @id @default(cuid())
+  policyId               String                  @map("policy_id")
+  versionNumber          Int                     @map("version_number")
+  changeType             ChangeClassification    @map("change_type")
+  summary                String?                 @db.Text
+  extractedText          String?                 @map("extracted_text") @db.Text
+  sourceUrl              String?                 @map("source_url") @db.Text
+  sourceHash             String?                 @map("source_hash") @db.VarChar(64)
+  confidence             VerificationConfidence  @default(unverified)
+  approvedState          LifecycleStatus?        @map("approved_state")
+  // V4 extraction provenance
+  extractionMethod       String?                 @map("extraction_method") // deterministic | heuristic | ai_assisted | mixed
+  extractionConfidence   VerificationConfidence? @map("extraction_confidence")
+  guidanceType           String?                 @map("guidance_type") // operational_guidance | legal_announcement | proposal | news
+  // V5: structured extraction fields
+  policyType             String?                 @map("policy_type") // law | regulation | guidance | proposal
+  numericValues          Json?                   @map("numeric_values") // { tariff_rate: 15, quota: 150000, carbon_tax_sgd: 45 }
+  mappingRules           String[]                @default([]) @map("mapping_rules") // names of keyword rules that fired
+  // V7: evidence tier
+  evidenceType           String?                 @map("evidence_type") // strong | medium | weak
+  // Impact on scores when this version became effective
+  impactDirection        ImpactDirection         @default(neutral) @map("impact_direction")
+  impactMagnitude        Int                     @default(0) @map("impact_magnitude")
+  affectedSubmetrics     String[]                @default([]) @map("affected_submetrics")
+  scoreExplanation       String?                 @map("score_explanation") @db.Text
+  createdAt              DateTime                @default(now()) @map("created_at")
+
+  policy           Policy  @relation("PolicyVersions", fields: [policyId], references: [id], onDelete: Cascade)
+  currentForPolicy Policy? @relation("PolicyCurrentVersion")
+
+  @@unique([policyId, versionNumber])
+  @@index([policyId, createdAt])
+  @@map("policy_versions")
+}
+
+// ─── Monitored sources & snapshots ─────────────────────────────────────────
+
+model MonitoredSource {
+  id                  String     @id @default(cuid())
+  countryId           Int        @map("country_id")
+  domain              Domain
+  sourceName          String     @map("source_name")
+  sourceUrl           String     @map("source_url") @db.Text
+  sourceType          SourceType @map("source_type")
+  trustPriority       Int        @default(3) @map("trust_priority")
+  scrapeMethod        String     @default("fetch_html") @map("scrape_method")
+  parserKey           String?    @map("parser_key")
+  pipelineKey         String?    @map("pipeline_key")
+  checkFrequencyHours Int        @default(24) @map("check_frequency_hours")
+  active              Boolean    @default(true)
+  lastCheckedAt       DateTime?  @map("last_checked_at")
+  lastSuccessAt       DateTime?  @map("last_success_at")
+  lastHash            String?    @map("last_hash") @db.VarChar(64)
+  // V7 stability tracking
+  failureRate         Float      @default(0) @map("failure_rate") // rolling fraction of failed runs
+  isStable            Boolean    @default(true) @map("is_stable") // set false by auto-disable heuristic
+  fallbackUrls        String[]   @default([]) @map("fallback_urls") // ordered alternate sources
+  // V11 self-healing + auto-switch
+  baseFrequencyHours  Int        @default(24) @map("base_frequency_hours") // original schedule; currentFrequencyHours = checkFrequencyHours
+  consecutiveFails    Int        @default(0) @map("consecutive_fails")
+  consecutiveSuccesses Int       @default(0) @map("consecutive_successes")
+  originalPrimaryUrl  String?    @map("original_primary_url") // snapshot of primary URL when auto-switched
+  switchedToFallback  Boolean    @default(false) @map("switched_to_fallback")
+  pdfsProcessed       Int        @default(0) @map("pdfs_processed")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  country      Country          @relation(fields: [countryId], references: [id])
+  snapshots    SourceSnapshot[]
+  pipelineRuns PipelineRun[]
+
+  @@index([countryId, domain, active])
+  @@index([active, lastCheckedAt])
+  @@map("monitored_sources")
+}
+
+model SourceSnapshot {
+  id                String   @id @default(cuid())
+  monitoredSourceId String   @map("monitored_source_id")
+  contentHash       String   @map("content_hash") @db.VarChar(64)
+  snapshotText      String?  @map("snapshot_text") @db.Text
+  fetchedAt         DateTime @default(now()) @map("fetched_at")
+  fetchStatus       Int      @map("fetch_status")
+  byteSize          Int?     @map("byte_size")
+  metadata          Json     @default("{}")
+
+  monitoredSource MonitoredSource @relation(fields: [monitoredSourceId], references: [id], onDelete: Cascade)
+
+  @@index([monitoredSourceId, fetchedAt])
+  @@map("source_snapshots")
+}
+
+// ─── Scores ────────────────────────────────────────────────────────────────
+
+model DomainScore {
+  id                 String   @id @default(cuid())
+  countryId          Int      @map("country_id")
+  domain             Domain
+  score              Float
+  methodologyVersion String   @default("1.0") @map("methodology_version")
+  lastComputedAt     DateTime @default(now()) @map("last_computed_at")
+  explanation        String?  @db.Text
+
+  country Country @relation(fields: [countryId], references: [id])
+
+  @@unique([countryId, domain])
+  @@map("domain_scores")
+}
+
+model ScoreSubmetric {
+  id                      String    @id @default(cuid())
+  countryId               Int       @map("country_id")
+  domain                  Domain
+  key                     String
+  score                   Float
+  weight                  Float
+  explanation             String?   @db.Text
+  lastComputedAt          DateTime  @default(now()) @map("last_computed_at")
+  // V4 evidence tracking: null means "seeded baseline", non-null means
+  // this submetric was last updated by a real PolicyVersion.
+  evidenceBackedAt        DateTime? @map("evidence_backed_at")
+  evidencePolicyVersionId String?   @map("evidence_policy_version_id")
+  // V7 continuous evidence tracking
+  evidenceCount           Int       @default(0) @map("evidence_count")
+  lastEvidenceAt          DateTime? @map("last_evidence_at")
+
+  country Country @relation(fields: [countryId], references: [id])
+
+  @@unique([countryId, domain, key])
+  @@index([countryId, domain])
+  @@map("score_submetrics")
+}
+
+model ScoreChangeLog {
+  id                  String   @id @default(cuid())
+  countryId           Int      @map("country_id")
+  domain              Domain
+  previousScore       Float    @map("previous_score")
+  newScore            Float    @map("new_score")
+  delta               Float
+  triggeringPolicyId  String?  @map("triggering_policy_id")
+  triggeringVersionId String?  @map("triggering_version_id")
+  explanation         String?  @db.Text
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  country          Country @relation(fields: [countryId], references: [id])
+  triggeringPolicy Policy? @relation(fields: [triggeringPolicyId], references: [id])
+
+  @@index([countryId, domain, createdAt])
+  @@map("score_change_logs")
+}
+
+// ─── Contributions & review ────────────────────────────────────────────────
+
+model Contribution {
+  id               String             @id @default(cuid())
+  contributionType String             @map("contribution_type") // policy_update | new_policy | correction | source_addition | translation | local_insight
+  countryId        Int?               @map("country_id")
+  domain           Domain?
+  title            String
+  body             String             @db.Text
+  sourceUrl        String?            @map("source_url") @db.Text
+  submitterName    String?            @map("submitter_name")
+  submitterEmail   String?            @map("submitter_email")
+  status           ContributionStatus @default(submitted)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  country     Country?          @relation(fields: [countryId], references: [id])
+  reviewItems ReviewQueueItem[]
+
+  @@index([status, createdAt])
+  @@map("contributions")
+}
+
+model ReviewQueueItem {
+  id                String                 @id @default(cuid())
+  targetType        String                 @map("target_type") // 'contribution' | 'source_change' | 'policy_proposal' | 'score_change'
+  targetId          String                 @map("target_id")
+  contributionId    String?                @map("contribution_id")
+  priority          Int                    @default(3)
+  confidence        VerificationConfidence @default(unverified)
+  recommendedAction String?                @map("recommended_action")
+  status            ReviewStatus           @default(pending)
+  summary           String?                @db.Text
+  // V9: auto-resolution trace
+  autoResolution    String?                @map("auto_resolution") // repeated_signal | multi_source | time_confirmed | conflict_detected | expired | low_confidence_aged_out
+  resolvedAt        DateTime?              @map("resolved_at")
+  groupKey          String?                @map("group_key") // hash used for duplicate collapsing
+  occurrenceCount   Int                    @default(1) @map("occurrence_count")
+  mergedIntoId      String?                @map("merged_into_id") // when this is a duplicate that was folded into another item
+  // V10: explicit blocking/decision trace so no item is ever unexplained
+  finalDecisionReason String?              @map("final_decision_reason") // canonical reason the item is in its current state
+  nextActionAt        DateTime?            @map("next_action_at") // when the resolver will try again (null = resolved)
+  blockingFactors     String[]             @default([]) @map("blocking_factors") // e.g. ["daily_cap_reached", "missing_policy_link"]
+  // V11 explainability + prioritisation
+  resolutionTrace     Json?                @map("resolution_trace") // array of {step, reason, at}
+  priorityScore       Float                @default(0) @map("priority_score")
+  multiSourceConfidence Float?             @map("multi_source_confidence")
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+
+  contribution Contribution?  @relation(fields: [contributionId], references: [id])
+  actions      ReviewAction[]
+
+  @@index([status, priority, createdAt])
+  @@index([targetType, targetId])
+  @@index([groupKey])
+  @@index([status, resolvedAt])
+  @@map("review_queue")
+}
+
+model ReviewAction {
+  id            String   @id @default(cuid())
+  reviewQueueId String   @map("review_queue_id")
+  action        String // approve | reject | merge | mark_proposal_only | request_changes
+  reviewer      String?
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  reviewItem ReviewQueueItem @relation(fields: [reviewQueueId], references: [id], onDelete: Cascade)
+
+  @@index([reviewQueueId, createdAt])
+  @@map("review_actions")
+}
+
+// ─── Audit & runs ──────────────────────────────────────────────────────────
+
+model AuditLog {
+  id            String                 @id @default(cuid())
+  entityType    String                 @map("entity_type")
+  entityId      String                 @map("entity_id")
+  actionType    String                 @map("action_type")
+  previousValue Json?                  @map("previous_value_json")
+  newValue      Json?                  @map("new_value_json")
+  sourceUrl     String?                @map("source_url") @db.Text
+  actorType     String?                @map("actor_type") // system | pipeline | admin | user
+  actorId       String?                @map("actor_id")
+  confidence    VerificationConfidence @default(unverified)
+  summary       String?                @db.Text
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorType, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model PipelineRun {
+  id                String                @id @default(cuid())
+  pipelineKey       String                @map("pipeline_key")
+  monitoredSourceId String?               @map("monitored_source_id")
+  status            PipelineRunStatus
+  changeDetected    Boolean               @default(false) @map("change_detected")
+  changeType        ChangeClassification? @map("change_type")
+  summary           String?               @db.Text
+  errorMessage      String?               @map("error_message") @db.Text
+  // V6: classified failure type for reliability analytics
+  failureType       String?               @map("failure_type") // timeout | tls_error | http_error | parse_error | aborted | network_error
+  retryCount        Int                   @default(0) @map("retry_count")
+  itemsProcessed    Int                   @default(0) @map("items_processed")
+  itemsChanged      Int                   @default(0) @map("items_changed")
+  itemsFlagged      Int                   @default(0) @map("items_flagged")
+  // V6: how many deep items were fetched + how many produced versions
+  deepItemsFetched  Int                   @default(0) @map("deep_items_fetched")
+  deepItemsApplied  Int                   @default(0) @map("deep_items_applied")
+  startedAt         DateTime              @default(now()) @map("started_at")
+  completedAt       DateTime?             @map("completed_at")
+  metadata          Json                  @default("{}")
+
+  monitoredSource MonitoredSource? @relation(fields: [monitoredSourceId], references: [id])
+
+  @@index([pipelineKey, startedAt])
+  @@index([status, startedAt])
+  @@map("pipeline_runs")
+}
+
+// ─── News ──────────────────────────────────────────────────────────────────
+
+model NewsArticle {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?  @db.Text
+  source        String
+  url           String?  @db.Text
+  publishedAt   DateTime @map("published_at")
+  domain        Domain
+  ingestionType String   @default("curated") @map("ingestion_type") // curated | scraped | rss_feed | seeded
+  // V4: honest provenance label shown in UI.
+  provenance    String?  // official_feed | curated | seeded | third_party_feed
+  feedKey       String?  @map("feed_key") // maps to ingestion registry entry
+  feedGuid      String?  @map("feed_guid") // feed-provided unique id, for dedup
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  policyLinks PolicyNewsLink[]
+
+  @@unique([feedKey, feedGuid])
+  @@index([publishedAt])
+  @@index([domain, publishedAt])
+  @@index([ingestionType, publishedAt])
+  @@map("news_articles")
+}
+
+model PolicyNewsLink {
+  id            String   @id @default(cuid())
+  newsArticleId String   @map("news_article_id")
+  policyId      String?  @map("policy_id")
+  countryIso    String?  @map("country_iso") @db.VarChar(3)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  newsArticle NewsArticle @relation(fields: [newsArticleId], references: [id], onDelete: Cascade)
+
+  @@index([policyId])
+  @@index([countryIso])
+  @@map("policy_news_links")
+}
+
+// ─── V12: market-linkable policy events ────────────────────────────────────
+// One row per dated official document (e.g. a Federal Register rule). Kept
+// separate from Policy/PolicyVersion: those track the *state* of a policy,
+// this tracks *when the market could first know* about a discrete action, so
+// it can be joined to daily prices in the research layer.
+model PolicyEvent {
+  id                 String       @id @default(cuid())
+  source             String       // federal_register | mofcom | ...
+  externalId         String       @map("external_id") // e.g. FR document_number
+  agency             String
+  docType            String       @map("doc_type") // Rule | Proposed Rule | Notice
+  title              String       @db.Text
+  action             String?      @db.Text
+  abstract           String?      @db.Text
+  htmlUrl            String       @map("html_url") @db.Text
+  publicationDate    DateTime     @map("publication_date") @db.Date
+  publicInspectionAt DateTime?    @map("public_inspection_at")
+  // Earliest public-availability instant we can document, and how we got it.
+  eventInstant       DateTime     @map("event_instant")
+  eventTimeSource    String       @map("event_time_source") // public_inspection | publication_0600_et
+  eventType          String       @map("event_type") // entity_list | advanced_computing_semis | section_301 | export_control_other | other
+  chinaRelated       Boolean      @map("china_related")
+  semisRelated       Boolean      @map("semis_related")
+  direction          String       // tightening | easing | unclear
+  relevant           Boolean
+  taggerVersion      String       @map("tagger_version")
+  reviewStatus       ReviewStatus @default(pending) @map("review_status")
+  reviewNote         String?      @map("review_note") @db.Text
+  raw                Json?
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  @@unique([source, externalId])
+  @@index([relevant, eventInstant])
+  @@index([eventType, eventInstant])
+  @@map("policy_events")
+}

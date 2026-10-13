@@ -1,0 +1,1943 @@
+{
+  "version": "v1",
+  "hypothesesVersion": "v1",
+  "registeredAt": "2026-09-21",
+  "primaryWindow": [
+    0,
+    1
+  ],
+  "estimationWindow": [
+    -250,
+    -30
+  ],
+  "baskets": {
+    "US_SEMI_EQUIP": {
+      "benchmark": "SPY",
+      "tickers": [
+        "AMAT",
+        "LRCX",
+        "KLAC"
+      ]
+    },
+    "US_SEMI_BROAD": {
+      "benchmark": "SPY",
+      "tickers": [
+        "SOXX"
+      ]
+    },
+    "CN_SEMI_EQUIP_SUBSTITUTE": {
+      "benchmark": "000300",
+      "tickers": [
+        "002371",
+        "688012",
+        "688082",
+        "688072",
+        "688120",
+        "300604"
+      ]
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "primary": true,
+      "basket": "US_SEMI_EQUIP",
+      "expected_sign": "negative",
+      "rationale": "Lost China revenue for US equipment vendors."
+    },
+    {
+      "id": "H2",
+      "primary": true,
+      "basket": "CN_SEMI_EQUIP_SUBSTITUTE",
+      "expected_sign": "positive",
+      "rationale": "Domestic-substitution demand for Chinese equipment makers."
+    },
+    {
+      "id": "H3",
+      "primary": false,
+      "basket": "US_SEMI_BROAD",
+      "expected_sign": "negative",
+      "rationale": "Sector-wide China exposure; weaker than H1."
+    }
+  ],
+  "summary": {
+    "US_SEMI_EQUIP": {
+      "expectedSign": "negative",
+      "hypothesis": "H1",
+      "windows": {
+        "[-1,1]": {
+          "n": 16,
+          "mean_car": 0.0005413211449806958,
+          "median_car": -0.004965579484878036,
+          "sd": 0.025862136031830903,
+          "t": 0.08372411997438142,
+          "p_t_one_sided": 0.5328085387773254,
+          "n_expected_sign": 9,
+          "p_sign_one_sided": 0.4018096923828125
+        },
+        "[0,1]": {
+          "n": 16,
+          "mean_car": -0.0034328412815023347,
+          "median_car": 0.002707666933988871,
+          "sd": 0.02894031262397847,
+          "t": -0.4744719003011816,
+          "p_t_one_sided": 0.3209985019232434,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.7727508544921875
+        },
+        "[0,5]": {
+          "n": 16,
+          "mean_car": -0.015713750268508707,
+          "median_car": -0.014340972618589763,
+          "sd": 0.055826689888059416,
+          "t": -1.125895180245653,
+          "p_t_one_sided": 0.13895092020110694,
+          "n_expected_sign": 9,
+          "p_sign_one_sided": 0.4018096923828125
+        }
+      },
+      "placebo": {
+        "placebo_pool": 1750,
+        "placebo_draws": 1000,
+        "placebo_mean": 0.00010907159410820591,
+        "placebo_sd": 0.006914808632737236,
+        "p_placebo": 0.2937062937062937
+      }
+    },
+    "US_SEMI_BROAD": {
+      "expectedSign": "negative",
+      "hypothesis": "H3",
+      "windows": {
+        "[-1,1]": {
+          "n": 16,
+          "mean_car": -0.006245596484789192,
+          "median_car": -0.008151127248883052,
+          "sd": 0.017362993480278463,
+          "t": -1.4388294257860947,
+          "p_t_one_sided": 0.0853690612575741,
+          "n_expected_sign": 11,
+          "p_sign_one_sided": 0.1050567626953125
+        },
+        "[0,1]": {
+          "n": 16,
+          "mean_car": -0.006559369896469718,
+          "median_car": -0.0038623397531913142,
+          "sd": 0.01711269184796529,
+          "t": -1.5332175568274795,
+          "p_t_one_sided": 0.07302028338091748,
+          "n_expected_sign": 11,
+          "p_sign_one_sided": 0.1050567626953125
+        },
+        "[0,5]": {
+          "n": 16,
+          "mean_car": -0.011654918410543804,
+          "median_car": -0.01568836208991206,
+          "sd": 0.03394350411999755,
+          "t": -1.3734490545632734,
+          "p_t_one_sided": 0.09489703050728271,
+          "n_expected_sign": 11,
+          "p_sign_one_sided": 0.1050567626953125
+        }
+      },
+      "placebo": {
+        "placebo_pool": 1750,
+        "placebo_draws": 1000,
+        "placebo_mean": 0.0007499699966747404,
+        "placebo_sd": 0.004756705811428491,
+        "p_placebo": 0.060939060939060936
+      }
+    },
+    "CN_SEMI_EQUIP_SUBSTITUTE": {
+      "expectedSign": "positive",
+      "hypothesis": "H2",
+      "windows": {
+        "[-1,1]": {
+          "n": 16,
+          "mean_car": -0.0010222037033324836,
+          "median_car": 0.0035052635461342426,
+          "sd": 0.09147103008664399,
+          "t": -0.044700653414057885,
+          "p_t_one_sided": 0.5175322148704632,
+          "n_expected_sign": 8,
+          "p_sign_one_sided": 0.5981903076171875
+        },
+        "[0,1]": {
+          "n": 16,
+          "mean_car": -0.00819506637419361,
+          "median_car": -0.0036817375022893716,
+          "sd": 0.07623219873109364,
+          "t": -0.4300055100392113,
+          "p_t_one_sided": 0.6633473696536807,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.7727508544921875
+        },
+        "[0,5]": {
+          "n": 16,
+          "mean_car": -0.0024529110757712195,
+          "median_car": 0.0053444443302892814,
+          "sd": 0.08077651034582323,
+          "t": -0.12146655334674551,
+          "p_t_one_sided": 0.5475331133445427,
+          "n_expected_sign": 9,
+          "p_sign_one_sided": 0.4018096923828125
+        }
+      },
+      "placebo": {
+        "placebo_pool": 1676,
+        "placebo_draws": 1000,
+        "placebo_mean": -0.000986471293598347,
+        "placebo_sd": 0.010396428891276746,
+        "p_placebo": 0.7582417582417582
+      }
+    },
+    "CN_SEMI_INDEX_ROBUST": {
+      "expectedSign": "positive",
+      "hypothesis": null,
+      "windows": {
+        "[-1,1]": {
+          "n": 16,
+          "mean_car": 0.004489174831378466,
+          "median_car": 0.00698386759400844,
+          "sd": 0.030520435805911076,
+          "t": 0.5883500301144482,
+          "p_t_one_sided": 0.28252589257800353,
+          "n_expected_sign": 9,
+          "p_sign_one_sided": 0.4018096923828125
+        },
+        "[0,1]": {
+          "n": 16,
+          "mean_car": -0.0026760462884680685,
+          "median_car": -0.0056692149476173185,
+          "sd": 0.021960732041453948,
+          "t": -0.4874238770213411,
+          "p_t_one_sided": 0.6834976679463046,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.7727508544921875
+        },
+        "[0,5]": {
+          "n": 16,
+          "mean_car": -0.0017521722899529937,
+          "median_car": -0.00032523770276889183,
+          "sd": 0.045139926804828666,
+          "t": -0.15526585123000794,
+          "p_t_one_sided": 0.5606590910965186,
+          "n_expected_sign": 8,
+          "p_sign_one_sided": 0.5981903076171875
+        }
+      },
+      "placebo": {
+        "placebo_pool": 1676,
+        "placebo_draws": 1000,
+        "placebo_mean": -0.0001119111563975312,
+        "placebo_sd": 0.0067542699668815855,
+        "p_placebo": 0.6283716283716284
+      }
+    }
+  },
+  "events": [
+    {
+      "id": "E01",
+      "cluster": "2018-10 Jinhua",
+      "instant": "2018-10-29T12:45:00.000Z",
+      "scope": "entity",
+      "title": "Addition of an Entity to the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2018/10/30/2018-23693/addition-of-an-entity-to-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2018-10-29",
+          "n": 3.0,
+          "carM1P1": 0.0213611639261152,
+          "car01": 0.0066136127589296,
+          "car05": 0.0214067885527519,
+          "t01": 0.2846152152169051
+        },
+        "US_SEMI_BROAD": {
+          "day": "2018-10-29",
+          "n": 1.0,
+          "carM1P1": 0.0265854482711685,
+          "car01": 0.0189591781209356,
+          "car05": 0.0268024092751035,
+          "t01": 1.4368642366897375
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2018-10-30",
+          "n": 2.0,
+          "carM1P1": -0.023538881169485,
+          "car01": -0.0572156911011159,
+          "car05": 0.0094208407175875,
+          "t01": -1.0727417440019584
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2018-10-30",
+          "n": 1.0,
+          "carM1P1": 0.013334968215885,
+          "car01": -0.0121536108150535,
+          "car05": 0.0455807817638685,
+          "t01": -0.4471606779374401
+        }
+      }
+    },
+    {
+      "id": "E02",
+      "cluster": "2019-05 Huawei",
+      "instant": "2019-05-15T21:30:00.000Z",
+      "scope": "entity",
+      "title": "Addition of Entities to the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2019/05/21/2019-10616/addition-of-entities-to-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2019-05-16",
+          "n": 3.0,
+          "carM1P1": 0.0108503312890217,
+          "car01": -0.001019751598058,
+          "car05": -0.0268169972188201,
+          "t01": -0.0429309434888493
+        },
+        "US_SEMI_BROAD": {
+          "day": "2019-05-16",
+          "n": 1.0,
+          "carM1P1": -0.0398668002609841,
+          "car01": -0.0392307799659168,
+          "car05": -0.0770065003519522,
+          "t01": -2.634333663601013
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2019-05-16",
+          "n": 2.0,
+          "carM1P1": -0.0112824407247645,
+          "car01": -0.0046612495155268,
+          "car05": 0.0360442058472556,
+          "t01": -0.1071771276335307
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2019-05-16",
+          "n": 1.0,
+          "carM1P1": 0.0229237067165465,
+          "car01": 0.0124851163016206,
+          "car05": 0.0673305559841828,
+          "t01": 0.584835968445934
+        }
+      }
+    },
+    {
+      "id": "E03",
+      "cluster": "2019-06 Sugon",
+      "instant": "2019-06-21T12:45:00.000Z",
+      "scope": "entity",
+      "title": "Addition of Entities to the Entity List and Revision of an Entry on the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2019/06/24/2019-13245/addition-of-entities-to-the-entity-list-and-revision-of-an-entry-on-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2019-06-21",
+          "n": 3.0,
+          "carM1P1": -0.0088047623099154,
+          "car01": -0.0089926478877617,
+          "car05": 0.0417791320530921,
+          "t01": -0.3936113950586478
+        },
+        "US_SEMI_BROAD": {
+          "day": "2019-06-21",
+          "n": 1.0,
+          "carM1P1": -0.0062794293250572,
+          "car01": -0.0009709540852953,
+          "car05": 0.0360584522561667,
+          "t01": -0.0633682593552561
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2019-06-24",
+          "n": 2.0,
+          "carM1P1": 0.0365345141491874,
+          "car01": -0.003777625973107,
+          "car05": 0.0235335827479407,
+          "t01": -0.0859505751399737
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2019-06-24",
+          "n": 1.0,
+          "carM1P1": 0.0006327669721318,
+          "car01": -0.012784572735552,
+          "car05": 0.010407905046584,
+          "t01": -0.5941887622588158
+        }
+      }
+    },
+    {
+      "id": "E04",
+      "cluster": "2019-08 Huawei affiliates",
+      "instant": "2019-08-19T12:45:00.000Z",
+      "scope": "entity",
+      "title": "Addition of Certain Entities to the Entity List and Revision of Entries on the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2019/08/21/2019-17921/addition-of-certain-entities-to-the-entity-list-and-revision-of-entries-on-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2019-08-19",
+          "n": 3.0,
+          "carM1P1": 0.0011688461506898,
+          "car01": 0.0070382216281285,
+          "car05": 0.0051237689661227,
+          "t01": 0.3135106548462703
+        },
+        "US_SEMI_BROAD": {
+          "day": "2019-08-19",
+          "n": 1.0,
+          "carM1P1": 0.0129642527149374,
+          "car01": 0.0079370180323984,
+          "car05": -0.0097297835916447,
+          "t01": 0.4772090447981877
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2019-08-20",
+          "n": 2.0,
+          "carM1P1": -0.0242997492816093,
+          "car01": -0.0260985975681954,
+          "car05": 0.0374466208606817,
+          "t01": -0.6480983994703313
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2019-08-20",
+          "n": 1.0,
+          "carM1P1": 0.0550700377702504,
+          "car01": 0.0181413823690866,
+          "car05": 0.0196877878727401,
+          "t01": 0.8279495291364957
+        }
+      }
+    },
+    {
+      "id": "E05",
+      "cluster": "2020-05 FDPR",
+      "instant": "2020-05-15T18:15:00.000Z",
+      "scope": "entity",
+      "title": "Export Administration Regulations: Amendments to General Prohibition Three (Foreign-Produced Direct Product Rule) and the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2020/05/19/2020-10856/export-administration-regulations-amendments-to-general-prohibition-three-foreign-produced-direct",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2020-05-15",
+          "n": 3.0,
+          "carM1P1": -0.0229122395884411,
+          "car01": -0.0759903791044413,
+          "car05": -0.0763740132086849,
+          "t01": -3.0894475858058703
+        },
+        "US_SEMI_BROAD": {
+          "day": "2020-05-15",
+          "n": 1.0,
+          "carM1P1": -0.010522656345983,
+          "car01": -0.0211165291970864,
+          "car05": -0.0145168767411244,
+          "t01": -1.3068122252678398
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2020-05-18",
+          "n": 3.0,
+          "carM1P1": 0.1384732857827525,
+          "car01": 0.1002561405299936,
+          "car05": -0.0219508520905385,
+          "t01": 2.127632140212656
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2020-05-18",
+          "n": 1.0,
+          "carM1P1": 0.0284902989278626,
+          "car01": -0.0113659654313265,
+          "car05": -0.079480766221909,
+          "t01": -0.357480567681672
+        }
+      }
+    },
+    {
+      "id": "E06",
+      "cluster": "2020-08 Huawei FDPR",
+      "instant": "2020-08-17T18:30:00.000Z",
+      "scope": "entity",
+      "title": "Addition of Huawei Non-U.S. Affiliates to the Entity List, the Removal of Temporary General License, and Amendments to General Prohibition Three (Foreign-Produced Direct Product Rule)",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2020/08/20/2020-18213/addition-of-huawei-non-us-affiliates-to-the-entity-list-the-removal-of-temporary-general-license-and",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2020-08-17",
+          "n": 3.0,
+          "carM1P1": -0.0032334312933905,
+          "car01": -0.0156386127628112,
+          "car05": -0.0799510061973803,
+          "t01": -0.5634654650159868
+        },
+        "US_SEMI_BROAD": {
+          "day": "2020-08-17",
+          "n": 1.0,
+          "carM1P1": -0.0043938193281412,
+          "car01": -0.0027415590779559,
+          "car05": -0.0199978518225753,
+          "t01": -0.1633461226839639
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2020-08-18",
+          "n": 3.0,
+          "carM1P1": -0.0454189626689932,
+          "car01": -0.0232325342955372,
+          "car05": -0.0672294477856366,
+          "t01": -0.4918204412009759
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2020-08-18",
+          "n": 1.0,
+          "carM1P1": -0.0421451286803513,
+          "car01": -0.0268851811650699,
+          "car05": -0.0655560358439429,
+          "t01": -0.7963974260477089
+        }
+      }
+    },
+    {
+      "id": "E07",
+      "cluster": "2020-12 SMIC",
+      "instant": "2020-12-18T16:15:00.000Z",
+      "scope": "entity",
+      "title": "Addition of Entities to the Entity List, Revision of Entry on the Entity List, and Removal of Entities From the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2020/12/22/2020-28031/addition-of-entities-to-the-entity-list-revision-of-entry-on-the-entity-list-and-removal-of-entities",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2020-12-18",
+          "n": 3.0,
+          "carM1P1": -0.0140543280505032,
+          "car01": 0.0050251812680271,
+          "car05": -0.0304516371935682,
+          "t01": 0.1777255122206284
+        },
+        "US_SEMI_BROAD": {
+          "day": "2020-12-18",
+          "n": 1.0,
+          "carM1P1": -0.0089857767102803,
+          "car01": -0.0029445817196959,
+          "car05": -0.0224030602623699,
+          "t01": -0.1707843032673436
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2020-12-21",
+          "n": 3.0,
+          "carM1P1": 0.0412174620532084,
+          "car01": 0.0308227925922621,
+          "car05": -0.0251483411132984,
+          "t01": 0.6609004274910593
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2020-12-21",
+          "n": 1.0,
+          "carM1P1": -0.0075598499920854,
+          "car01": -0.0041627080993722,
+          "car05": -0.0283062536288442,
+          "t01": -0.1286391186813547
+        }
+      }
+    },
+    {
+      "id": "E08",
+      "cluster": "2021-04 Phytium",
+      "instant": "2021-04-08T12:45:00.000Z",
+      "scope": "entity",
+      "title": "Addition of Entities to the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2021/04/09/2021-07400/addition-of-entities-to-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2021-04-08",
+          "n": 3.0,
+          "carM1P1": -0.015242327453015,
+          "car01": -0.0156378801801694,
+          "car05": -0.0685997105586876,
+          "t01": -0.541778282484056
+        },
+        "US_SEMI_BROAD": {
+          "day": "2021-04-08",
+          "n": 1.0,
+          "carM1P1": -0.0122252710132806,
+          "car01": -0.009088357698656,
+          "car05": -0.0332861325949044,
+          "t01": -0.5307522991332216
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2021-04-09",
+          "n": 3.0,
+          "carM1P1": 0.0317895405767423,
+          "car01": 0.0248840119138763,
+          "car05": 0.024476632160868,
+          "t01": 0.628929478732237
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2021-04-09",
+          "n": 1.0,
+          "carM1P1": 0.0151815942113241,
+          "car01": 0.0192032536070445,
+          "car05": 0.0032170289773051,
+          "t01": 0.7425539037856806
+        }
+      }
+    },
+    {
+      "id": "E09",
+      "cluster": "2022-10 AC rule",
+      "instant": "2022-10-07T12:45:00.000Z",
+      "scope": "supply_chain",
+      "title": "Implementation of Additional Export Controls: Certain Advanced Computing and Semiconductor Manufacturing Items; Supercomputer and Semiconductor End Use; Entity List Modification",
+      "nDocs": 2,
+      "url": "https://www.federalregister.gov/documents/2022/10/13/2022-21658/implementation-of-additional-export-controls-certain-advanced-computing-and-semiconductor",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2022-10-07",
+          "n": 3.0,
+          "carM1P1": -0.0314495186455554,
+          "car01": -0.041868229194697,
+          "car05": -0.124883457316765,
+          "t01": -1.6834390509596735
+        },
+        "US_SEMI_BROAD": {
+          "day": "2022-10-07",
+          "n": 1.0,
+          "carM1P1": -0.0235793301930384,
+          "car01": -0.0363104098466914,
+          "car05": -0.0774767800597215,
+          "t01": -2.0369995578501987
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2022-10-10",
+          "n": 4.0,
+          "carM1P1": -0.281486823041403,
+          "car01": -0.2391400510571375,
+          "car05": -0.1835349150169999,
+          "t01": -6.285781528544718
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2022-10-10",
+          "n": 1.0,
+          "carM1P1": -0.0624777496081185,
+          "car01": -0.050833816521973,
+          "car05": -0.0139066832560245,
+          "t01": -2.3187049320275857
+        }
+      }
+    },
+    {
+      "id": "E10",
+      "cluster": "2022-12 YMTC",
+      "instant": "2022-12-15T13:45:00.000Z",
+      "scope": "entity",
+      "title": "Revisions to the Unverified List and the Entity List",
+      "nDocs": 2,
+      "url": "https://www.federalregister.gov/documents/2022/12/16/2022-27149/revisions-to-the-unverified-list-and-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2022-12-15",
+          "n": 3.0,
+          "carM1P1": 0.0084742140202127,
+          "car01": 0.0120006818983786,
+          "car05": -0.0346996481031565,
+          "t01": 0.4747893177024903
+        },
+        "US_SEMI_BROAD": {
+          "day": "2022-12-15",
+          "n": 1.0,
+          "carM1P1": 0.0028345952169688,
+          "car01": 0.007391574323019,
+          "car05": -0.0168598474386997,
+          "t01": 0.4138456335280259
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2022-12-16",
+          "n": 5.0,
+          "carM1P1": -0.02948932957231,
+          "car01": -0.0450763030197632,
+          "car05": -0.1143870373804801,
+          "t01": -1.0128059502438085
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2022-12-16",
+          "n": 1.0,
+          "carM1P1": -0.0103637519179226,
+          "car01": -0.0259270753932082,
+          "car05": -0.0548006411810033,
+          "t01": -1.151210116105971
+        }
+      }
+    },
+    {
+      "id": "E11",
+      "cluster": "2023-03 Inspur",
+      "instant": "2023-03-02T21:15:00.000Z",
+      "scope": "entity",
+      "title": "Additions and Revisions of Entities to the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2023/03/06/2023-04558/additions-and-revisions-of-entities-to-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2023-03-03",
+          "n": 3.0,
+          "carM1P1": -0.0423698152213771,
+          "car01": -0.0313002270889098,
+          "car05": 0.0175726713637557,
+          "t01": -1.3171291479042886
+        },
+        "US_SEMI_BROAD": {
+          "day": "2023-03-03",
+          "n": 1.0,
+          "carM1P1": -0.0261955389417195,
+          "car01": -0.0221452235919516,
+          "car05": 0.0272375015409609,
+          "t01": -1.2857111529674128
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2023-03-03",
+          "n": 6.0,
+          "carM1P1": 0.1265227988787407,
+          "car01": 0.1073496807191794,
+          "car05": 0.1441483590360859,
+          "t01": 2.512054902714203
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2023-03-03",
+          "n": 1.0,
+          "carM1P1": 0.0250633880576839,
+          "car01": 0.0313499986979828,
+          "car05": 0.0508688671287282,
+          "t01": 1.3762847002677348
+        }
+      }
+    },
+    {
+      "id": "E12",
+      "cluster": "2023-10 AC update",
+      "instant": "2023-10-17T12:45:00.000Z",
+      "scope": "supply_chain",
+      "title": "Entity List Additions",
+      "nDocs": 3,
+      "url": "https://www.federalregister.gov/documents/2023/10/19/2023-23048/entity-list-additions",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2023-10-17",
+          "n": 3.0,
+          "carM1P1": -0.0066977276763654,
+          "car01": 0.0075237604984377,
+          "car05": -0.0156432273477334,
+          "t01": 0.3109188750151119
+        },
+        "US_SEMI_BROAD": {
+          "day": "2023-10-17",
+          "n": 1.0,
+          "carM1P1": -0.0090648782397165,
+          "car01": -0.0047800977866867,
+          "car05": -0.0048203125080723,
+          "t01": -0.2719641701760381
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2023-10-18",
+          "n": 6.0,
+          "carM1P1": 0.0277851238118945,
+          "car01": 0.0092345257233897,
+          "car05": 0.0388048607025059,
+          "t01": 0.2237035903902589
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2023-10-18",
+          "n": 1.0,
+          "carM1P1": 0.0306507814159079,
+          "car01": 0.0232078213991106,
+          "car05": 0.0083833061251489,
+          "t01": 1.076378999318366
+        }
+      }
+    },
+    {
+      "id": "E13",
+      "cluster": "2024-12 HBM/FDPR",
+      "instant": "2024-12-02T13:45:00.000Z",
+      "scope": "supply_chain",
+      "title": "Additions and Modifications to the Entity List; Removals From the Validated End-User (VEU) Program",
+      "nDocs": 2,
+      "url": "https://www.federalregister.gov/documents/2024/12/05/2024-28267/additions-and-modifications-to-the-entity-list-removals-from-the-validated-end-user-veu-program",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2024-12-02",
+          "n": 3.0,
+          "carM1P1": 0.0557131636292615,
+          "car01": 0.0440970915895865,
+          "car05": 0.0176637120091301,
+          "t01": 1.639756808047125
+        },
+        "US_SEMI_BROAD": {
+          "day": "2024-12-02",
+          "n": 1.0,
+          "carM1P1": 0.0177483832813865,
+          "car01": 0.0177248561644831,
+          "car05": 0.0149756336893205,
+          "t01": 0.9573810219558662
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2024-12-03",
+          "n": 6.0,
+          "carM1P1": -0.0343399140852554,
+          "car01": -0.0290947013321042,
+          "car05": -0.0617930227779093,
+          "t01": -0.9868925270831465
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2024-12-03",
+          "n": 1.0,
+          "carM1P1": -0.0126823232622966,
+          "car01": -0.0071757217958624,
+          "car05": -0.0348624519271396,
+          "t01": -0.2942483136599695
+        }
+      }
+    },
+    {
+      "id": "E14",
+      "cluster": "2025-01 Sophgo",
+      "instant": "2025-01-15T13:45:00.000Z",
+      "scope": "entity",
+      "title": "Additions to the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2025/01/16/2025-00480/additions-to-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2025-01-15",
+          "n": 3.0,
+          "carM1P1": 0.0408701781783572,
+          "car01": 0.0290547191919912,
+          "car05": -0.013038717889446,
+          "t01": 1.0467865818573263
+        },
+        "US_SEMI_BROAD": {
+          "day": "2025-01-15",
+          "n": 1.0,
+          "carM1P1": -0.0073164777874857,
+          "car01": -0.0125052960159945,
+          "car05": -0.022050333285416,
+          "t01": -0.6621695331108982
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2025-01-16",
+          "n": 6.0,
+          "carM1P1": 0.015645916106336,
+          "car01": 0.0160100240420398,
+          "car05": 0.001268047942991,
+          "t01": 0.5196720398897728
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2025-01-16",
+          "n": 1.0,
+          "carM1P1": -0.0065906729789276,
+          "car01": -0.0136701950367752,
+          "car05": -0.0203995239609284,
+          "t01": -0.5362932693704622
+        }
+      }
+    },
+    {
+      "id": "E15",
+      "cluster": "2025-03 Inspur/Sugon",
+      "instant": "2025-03-25T20:30:00.000Z",
+      "scope": "entity",
+      "title": "Additions and Modifications to the Entity List",
+      "nDocs": 2,
+      "url": "https://www.federalregister.gov/documents/2025/03/28/2025-05426/additions-and-modifications-to-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2025-03-26",
+          "n": 3.0,
+          "carM1P1": -0.0102778796715841,
+          "car01": 0.0003901525999505,
+          "car05": 0.0058433445269546,
+          "t01": 0.0138602031774065
+        },
+        "US_SEMI_BROAD": {
+          "day": "2025-03-26",
+          "n": 1.0,
+          "carM1P1": -0.0218434417758404,
+          "car01": -0.0126610569388561,
+          "car05": -0.0232336485615143,
+          "t01": -0.6659820447255366
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2025-03-26",
+          "n": 6.0,
+          "carM1P1": -0.0086353890140675,
+          "car01": -0.0035858490314716,
+          "car05": -0.0048228833610369,
+          "t01": -0.1228653118996142
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2025-03-26",
+          "n": 1.0,
+          "carM1P1": -0.017586625634787,
+          "car01": 0.0004880266996003,
+          "car05": -0.0038675043828429,
+          "t01": 0.0189032994351801
+        }
+      }
+    },
+    {
+      "id": "E16",
+      "cluster": "2025-09 SMIC-related",
+      "instant": "2025-09-12T20:15:00.000Z",
+      "scope": "entity",
+      "title": "Additions and Revisions to the Entity List",
+      "nDocs": 1,
+      "url": "https://www.federalregister.gov/documents/2025/09/16/2025-17893/additions-and-revisions-to-the-entity-list",
+      "baskets": {
+        "US_SEMI_EQUIP": {
+          "day": "2025-09-15",
+          "n": 3.0,
+          "carM1P1": 0.0252652710361803,
+          "car01": 0.0237788458793814,
+          "car05": 0.1096489932662957,
+          "t01": 0.9100374715607888
+        },
+        "US_SEMI_BROAD": {
+          "day": "2025-09-15",
+          "n": 1.0,
+          "carM1P1": 0.0102111966804389,
+          "car01": 0.0075323009404351,
+          "car05": 0.0298284358877426,
+          "t01": 0.4252045838169684
+        },
+        "CN_SEMI_EQUIP_SUBSTITUTE": {
+          "day": "2025-09-15",
+          "n": 6.0,
+          "carM1P1": 0.0241675889457065,
+          "car01": 0.0122043653861202,
+          "car05": 0.124476772297644,
+          "t01": 0.4374497108374586
+        },
+        "CN_SEMI_INDEX_ROBUST": {
+          "day": "2025-09-15",
+          "n": 1.0,
+          "carM1P1": 0.0398853570889522,
+          "car01": 0.0172665073042585,
+          "car05": 0.0676688708648292,
+          "t01": 0.6733864199230857
+        }
+      }
+    }
+  ],
+  "inSampleSplit": [
+    {
+      "basket": "CN_SEMI_EQUIP_SUBSTITUTE",
+      "rule_scope": "entity",
+      "n": 13,
+      "mean_car": 0.009836858821442637,
+      "median_car": -0.0035858490314716,
+      "n_negative": 7
+    },
+    {
+      "basket": "CN_SEMI_EQUIP_SUBSTITUTE",
+      "rule_scope": "supply_chain",
+      "n": 3,
+      "mean_car": -0.08633340888861733,
+      "median_car": -0.0290947013321042,
+      "n_negative": 2
+    },
+    {
+      "basket": "CN_SEMI_INDEX_ROBUST",
+      "rule_scope": "entity",
+      "n": 13,
+      "mean_car": -0.0006165402843664768,
+      "median_car": -0.0041627080993722,
+      "n_negative": 7
+    },
+    {
+      "basket": "CN_SEMI_INDEX_ROBUST",
+      "rule_scope": "supply_chain",
+      "n": 3,
+      "mean_car": -0.0116005723062416,
+      "median_car": -0.0071757217958624,
+      "n_negative": 2
+    },
+    {
+      "basket": "US_SEMI_BROAD",
+      "rule_scope": "entity",
+      "n": 13,
+      "mean_car": -0.006275712836509261,
+      "median_car": -0.0029445817196959,
+      "n_negative": 9
+    },
+    {
+      "basket": "US_SEMI_BROAD",
+      "rule_scope": "supply_chain",
+      "n": 3,
+      "mean_car": -0.007788550489631666,
+      "median_car": -0.0047800977866867,
+      "n_negative": 2
+    },
+    {
+      "basket": "US_SEMI_EQUIP",
+      "rule_scope": "entity",
+      "n": 13,
+      "mean_car": -0.004975237184412654,
+      "median_car": 0.0003901525999505,
+      "n_negative": 6
+    },
+    {
+      "basket": "US_SEMI_EQUIP",
+      "rule_scope": "supply_chain",
+      "n": 3,
+      "mean_car": 0.0032508742977757333,
+      "median_car": 0.0075237604984377,
+      "n_negative": 1
+    }
+  ],
+  "periodSplit": [
+    {
+      "basket": "CN_SEMI_EQUIP_SUBSTITUTE",
+      "period": "2018-2021",
+      "n": 8,
+      "mean_car": 0.005122155822831209,
+      "median_car": -0.0042194377443169,
+      "n_negative": 5
+    },
+    {
+      "basket": "CN_SEMI_EQUIP_SUBSTITUTE",
+      "period": "2022-2025",
+      "n": 8,
+      "mean_car": -0.021512288571218424,
+      "median_car": 0.0028243383459590496,
+      "n_negative": 4
+    },
+    {
+      "basket": "CN_SEMI_INDEX_ROBUST",
+      "period": "2018-2021",
+      "n": 8,
+      "mean_car": -0.0021902857460777995,
+      "median_car": -0.00776433676534935,
+      "n_negative": 5
+    },
+    {
+      "basket": "CN_SEMI_INDEX_ROBUST",
+      "period": "2022-2025",
+      "n": 8,
+      "mean_car": -0.0031618068308583262,
+      "median_car": -0.0033438475481310497,
+      "n_negative": 4
+    },
+    {
+      "basket": "US_SEMI_BROAD",
+      "period": "2018-2021",
+      "n": 8,
+      "mean_car": -0.0061495706989090375,
+      "median_car": -0.0028430703988259,
+      "n_negative": 6
+    },
+    {
+      "basket": "US_SEMI_BROAD",
+      "period": "2022-2025",
+      "n": 8,
+      "mean_car": -0.0069691690940303875,
+      "median_car": -0.0086426969013406,
+      "n_negative": 5
+    },
+    {
+      "basket": "US_SEMI_EQUIP",
+      "period": "2018-2021",
+      "n": 8,
+      "mean_car": -0.01232528198476955,
+      "median_car": -0.00500619974290985,
+      "n_negative": 5
+    },
+    {
+      "basket": "US_SEMI_EQUIP",
+      "period": "2022-2025",
+      "n": 8,
+      "mean_car": 0.005459599421764888,
+      "median_car": 0.009762221198408149,
+      "n_negative": 2
+    }
+  ],
+  "cn": {
+    "registeredAt": "2026-09-22",
+    "question": "Do China's item-based export controls on critical minerals (MOFCOM announcements, 2023-07 → 2025-10) move Chinese strategic-materials producers up and the main non-China US rare-earth producer up?",
+    "baskets": {
+      "CN_STRATEGIC_MATERIALS": {
+        "benchmark": "000300",
+        "tickers": [
+          "600111",
+          "000831",
+          "600392",
+          "002428",
+          "600549",
+          "002378"
+        ],
+        "names": "北方稀土, 中国稀土, 盛和资源, 云南锗业, 厦门钨业, 章源钨业"
+      },
+      "US_RARE_EARTH": {
+        "benchmark": "SPY",
+        "tickers": [
+          "MP"
+        ],
+        "names": "MP Materials"
+      },
+      "US_STRATEGIC_METALS_ETF": {
+        "benchmark": "SPY",
+        "tickers": [
+          "REMX"
+        ],
+        "names": "VanEck Rare Earth & Strategic Metals ETF"
+      }
+    },
+    "hypotheses": [
+      {
+        "id": "H6",
+        "primary": true,
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "expected_sign": "positive",
+        "rationale": "Export licensing restricts supply outside China, raising scarcity rents and pricing power for domestic producers."
+      },
+      {
+        "id": "H7",
+        "primary": true,
+        "basket": "US_RARE_EARTH",
+        "expected_sign": "positive",
+        "rationale": "Non-China supply becomes more valuable; substitution demand and policy support for US producers."
+      },
+      {
+        "id": "H8",
+        "primary": false,
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "expected_sign": "positive",
+        "rationale": "Broad strategic-metals exposure; weaker, mixed prior."
+      }
+    ],
+    "robustnessExclude": [
+      "C05",
+      "C06",
+      "C07",
+      "C08"
+    ],
+    "events": [
+      {
+        "id": "C01",
+        "cluster": "2023-07 gallium/germanium",
+        "instant": "2023-07-03T10:00:00.000Z",
+        "docs": "MOFCOM/GAC 2023 No.23",
+        "url": "https://aqygzj.mofcom.gov.cn/qdml/art/2023/art_c2ae3d2061e14e97ba608de1ed565f78.html"
+      },
+      {
+        "id": "C02",
+        "cluster": "2023-10 graphite",
+        "instant": "2023-10-20T02:00:00.000Z",
+        "docs": "MOFCOM/GAC 2023 No.39",
+        "url": "https://www.mofcom.gov.cn/zcfb/blgg/art/2023/art_f6b1bc49e2c8482f8eb749012bc66dec.html"
+      },
+      {
+        "id": "C03",
+        "cluster": "2023-12 rare-earth technology catalogue",
+        "instant": "2023-12-21T10:00:00.000Z",
+        "docs": "MOFCOM/MOST 2023 No.57",
+        "url": "https://www.most.gov.cn/tztg/202312/t20231221_189244.html"
+      },
+      {
+        "id": "C04",
+        "cluster": "2024-08 antimony",
+        "instant": "2024-08-15T08:00:00.000Z",
+        "docs": "MOFCOM/GAC 2024 No.33",
+        "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2024/art_a4711acb06364199a3c5a06d7f2be6d8.html"
+      },
+      {
+        "id": "C05",
+        "cluster": "2024-12 Ga/Ge/Sb ban to US",
+        "instant": "2024-12-03T08:00:00.000Z",
+        "docs": "MOFCOM 2024 No.46",
+        "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2024/art_3d5e990b43424e60828030f58a547b60.html"
+      },
+      {
+        "id": "C06",
+        "cluster": "2025-02 tungsten/tellurium/bismuth/molybdenum/indium",
+        "instant": "2025-02-04T05:02:00.000Z",
+        "docs": "MOFCOM/GAC 2025 No.10",
+        "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2025/art_e623090907fc4e1092f0a4db72f57b95.html"
+      },
+      {
+        "id": "C07",
+        "cluster": "2025-04 seven medium/heavy rare earths",
+        "instant": "2025-04-04T10:00:00.000Z",
+        "docs": "MOFCOM/GAC 2025 No.18",
+        "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2025/art_9c2108ccaf754f22a34abab2fedaa944.html"
+      },
+      {
+        "id": "C08",
+        "cluster": "2025-10 extraterritorial rare-earth controls",
+        "instant": "2025-10-09T01:00:00.000Z",
+        "docs": "MOFCOM 2025 No.61|No.62|MOFCOM/GAC No.55-58",
+        "url": "https://www.mofcom.gov.cn/zwgk/zcfb/art/2025/art_7fc9bff0fb4546ecb02f66ee77d0e5f6.html"
+      }
+    ],
+    "summary": {
+      "CN_STRATEGIC_MATERIALS": {
+        "expectedSign": "positive",
+        "hypothesis": "H6",
+        "windows": {
+          "[-1,1]": {
+            "n": 8,
+            "mean_car": 0.034229220482277035,
+            "median_car": 0.03180436030631542,
+            "sd": 0.03447219889253617,
+            "t": 2.8084908645602042,
+            "p_t_one_sided": 0.013101327860551792,
+            "n_expected_sign": 6,
+            "p_sign_one_sided": 0.14453125
+          },
+          "[0,1]": {
+            "n": 8,
+            "mean_car": 0.03230008672080345,
+            "median_car": 0.027337311448022143,
+            "sd": 0.04029625248077193,
+            "t": 2.2671696693474908,
+            "p_t_one_sided": 0.02885893900916381,
+            "n_expected_sign": 6,
+            "p_sign_one_sided": 0.14453125
+          },
+          "[0,5]": {
+            "n": 8,
+            "mean_car": 0.021120198529613714,
+            "median_car": 0.01859457852882234,
+            "sd": 0.035963256708162215,
+            "t": 1.6610548617980458,
+            "p_t_one_sided": 0.07032949274769035,
+            "n_expected_sign": 6,
+            "p_sign_one_sided": 0.14453125
+          }
+        },
+        "placebo": {
+          "placebo_pool": 1844,
+          "placebo_draws": 1000,
+          "placebo_mean": 0.00017435040453532896,
+          "placebo_sd": 0.010794090700661592,
+          "p_placebo": 0.004995004995004995
+        },
+        "excluding": {
+          "excluded": [
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "n": 4,
+          "mean_car": 0.025767433409131298,
+          "median_car": 0.008198733607429537,
+          "sd": 0.05762801969062847,
+          "t": 0.8942675298391913,
+          "p_t_one_sided": 0.21853538901421637,
+          "n_expected_sign": 2,
+          "p_sign_one_sided": 0.6875
+        }
+      },
+      "US_RARE_EARTH": {
+        "expectedSign": "positive",
+        "hypothesis": "H7",
+        "windows": {
+          "[-1,1]": {
+            "n": 8,
+            "mean_car": 0.04957594765994502,
+            "median_car": 0.0626811058932115,
+            "sd": 0.05383990689151249,
+            "t": 2.604424175155678,
+            "p_t_one_sided": 0.017598884637686663,
+            "n_expected_sign": 7,
+            "p_sign_one_sided": 0.03515625
+          },
+          "[0,1]": {
+            "n": 8,
+            "mean_car": 0.04823109446927422,
+            "median_car": 0.052216532104102716,
+            "sd": 0.04926602316545456,
+            "t": 2.769010508417652,
+            "p_t_one_sided": 0.01386679927560347,
+            "n_expected_sign": 6,
+            "p_sign_one_sided": 0.14453125
+          },
+          "[0,5]": {
+            "n": 8,
+            "mean_car": 0.05355702877325939,
+            "median_car": 0.07337441008060043,
+            "sd": 0.08773833923139261,
+            "t": 1.7265217717831955,
+            "p_t_one_sided": 0.06394822983123921,
+            "n_expected_sign": 6,
+            "p_sign_one_sided": 0.14453125
+          }
+        },
+        "placebo": {
+          "placebo_pool": 1250,
+          "placebo_draws": 1000,
+          "placebo_mean": -0.002368627859374218,
+          "placebo_sd": 0.02046410501009047,
+          "p_placebo": 0.016983016983016984
+        },
+        "excluding": {
+          "excluded": [
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "n": 4,
+          "mean_car": 0.035789861459796915,
+          "median_car": 0.03776402562911072,
+          "sd": 0.056803915387364456,
+          "t": 1.260119525766284,
+          "p_t_one_sided": 0.14836551302810297,
+          "n_expected_sign": 2,
+          "p_sign_one_sided": 0.6875
+        }
+      },
+      "US_STRATEGIC_METALS_ETF": {
+        "expectedSign": "positive",
+        "hypothesis": "H8",
+        "windows": {
+          "[-1,1]": {
+            "n": 8,
+            "mean_car": -0.007866259609637471,
+            "median_car": -0.013440900283062777,
+            "sd": 0.025786267915470857,
+            "t": -0.8628290888440392,
+            "p_t_one_sided": 0.7915948529121387,
+            "n_expected_sign": 3,
+            "p_sign_one_sided": 0.85546875
+          },
+          "[0,1]": {
+            "n": 8,
+            "mean_car": -0.0038294901215623987,
+            "median_car": 0.001761438518305786,
+            "sd": 0.02921236349499568,
+            "t": -0.37078251938191126,
+            "p_t_one_sided": 0.6391171265457248,
+            "n_expected_sign": 4,
+            "p_sign_one_sided": 0.63671875
+          },
+          "[0,5]": {
+            "n": 8,
+            "mean_car": 0.02266193801138753,
+            "median_car": 0.025924062659422074,
+            "sd": 0.03182732584269959,
+            "t": 2.0139184953054317,
+            "p_t_one_sided": 0.04193975633663416,
+            "n_expected_sign": 6,
+            "p_sign_one_sided": 0.14453125
+          }
+        },
+        "placebo": {
+          "placebo_pool": 1918,
+          "placebo_draws": 1000,
+          "placebo_mean": 4.083872875563399e-05,
+          "placebo_sd": 0.010208720630860311,
+          "p_placebo": 0.6483516483516484
+        },
+        "excluding": {
+          "excluded": [
+            "C05",
+            "C06",
+            "C07",
+            "C08"
+          ],
+          "n": 4,
+          "mean_car": 0.01600090431726793,
+          "median_car": 0.020036641053130078,
+          "sd": 0.018353133635367034,
+          "t": 1.743670005914817,
+          "p_t_one_sided": 0.08978452060472769,
+          "n_expected_sign": 3,
+          "p_sign_one_sided": 0.3125
+        }
+      }
+    },
+    "perEvent": [
+      {
+        "id": "C01",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2023-07-04",
+        "car01": 0.1081418681190564
+      },
+      {
+        "id": "C02",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2023-10-20",
+        "car01": -0.0214696016973903
+      },
+      {
+        "id": "C03",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2023-12-22",
+        "car01": 0.0210198598354814
+      },
+      {
+        "id": "C04",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2024-08-16",
+        "car01": -0.0046223926206223
+      },
+      {
+        "id": "C05",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2024-12-04",
+        "car01": 0.0189317073623981
+      },
+      {
+        "id": "C06",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2025-02-05",
+        "car01": 0.0641159571084566
+      },
+      {
+        "id": "C07",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2025-04-07",
+        "car01": 0.0336547630605628
+      },
+      {
+        "id": "C08",
+        "basket": "CN_STRATEGIC_MATERIALS",
+        "day": "2025-10-09",
+        "car01": 0.0386285325984847
+      },
+      {
+        "id": "C01",
+        "basket": "US_RARE_EARTH",
+        "day": "2023-07-03",
+        "car01": 0.0767260633194644
+      },
+      {
+        "id": "C02",
+        "basket": "US_RARE_EARTH",
+        "day": "2023-10-20",
+        "car01": -0.0237533236815895
+      },
+      {
+        "id": "C03",
+        "basket": "US_RARE_EARTH",
+        "day": "2023-12-21",
+        "car01": 0.0913847182625557
+      },
+      {
+        "id": "C04",
+        "basket": "US_RARE_EARTH",
+        "day": "2024-08-15",
+        "car01": -0.0011980120612429
+      },
+      {
+        "id": "C05",
+        "basket": "US_RARE_EARTH",
+        "day": "2024-12-03",
+        "car01": 0.0155775173330633
+      },
+      {
+        "id": "C06",
+        "basket": "US_RARE_EARTH",
+        "day": "2025-02-04",
+        "car01": 0.0472004567189503
+      },
+      {
+        "id": "C07",
+        "basket": "US_RARE_EARTH",
+        "day": "2025-04-04",
+        "car01": 0.0572326074892551
+      },
+      {
+        "id": "C08",
+        "basket": "US_RARE_EARTH",
+        "day": "2025-10-09",
+        "car01": 0.1226787283737373
+      },
+      {
+        "id": "C01",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2023-07-03",
+        "car01": 0.0266243431260104
+      },
+      {
+        "id": "C02",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2023-10-20",
+        "car01": -0.0087540049588539
+      },
+      {
+        "id": "C03",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2023-12-21",
+        "car01": 0.0326843401216655
+      },
+      {
+        "id": "C04",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2024-08-15",
+        "car01": 0.0134489389802497
+      },
+      {
+        "id": "C05",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2024-12-03",
+        "car01": -0.0300636268829339
+      },
+      {
+        "id": "C06",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2025-02-04",
+        "car01": 0.0122768819954655
+      },
+      {
+        "id": "C07",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2025-04-04",
+        "car01": -0.0335015865878182
+      },
+      {
+        "id": "C08",
+        "basket": "US_STRATEGIC_METALS_ETF",
+        "day": "2025-10-09",
+        "car01": -0.0433512067662842
+      }
+    ]
+  },
+  "fut": {
+    "registeredAt": "2026-10-10",
+    "question": "Do US Section 301 tariff actions against China move CBOT agricultural futures through the expected-retaliation channel, and specifically soybeans relative to corn?",
+    "baskets": {
+      "SPREAD_SOY_CORN": {
+        "benchmark": "ZC=F",
+        "tickers": [
+          "ZS=F"
+        ],
+        "names": "CBOT soybeans, with CBOT corn as the benchmark"
+      },
+      "AG_SOYBEANS": {
+        "benchmark": "DBC",
+        "tickers": [
+          "ZS=F"
+        ],
+        "names": "CBOT soybeans, front-month continuous"
+      },
+      "AG_CORN": {
+        "benchmark": "DBC",
+        "tickers": [
+          "ZC=F"
+        ],
+        "names": "CBOT corn, front-month continuous"
+      }
+    },
+    "hypotheses": [
+      {
+        "id": "HF1",
+        "primary": true,
+        "basket": "SPREAD_SOY_CORN",
+        "expected_sign": "negative",
+        "rationale": "A Section 301 action raises the probability of Chinese retaliatory tariffs on US agricultural exports. Soybeans were the largest US agricultural export to China by value and corn was not, so expected export demand falls for soybeans specifically and the spread should narrow. Measured as soybeans benchmarked on corn, so the test is whether soybeans fall by more than their usual co-movement with corn explains."
+      },
+      {
+        "id": "HF2",
+        "primary": true,
+        "basket": "AG_SOYBEANS",
+        "expected_sign": "negative",
+        "rationale": "The same channel in levels rather than as a spread; weaker identification because it does not difference out common agricultural shocks."
+      },
+      {
+        "id": "HF3",
+        "primary": false,
+        "basket": "SPREAD_SOY_CORN",
+        "arm": "control",
+        "expected_sign": "null",
+        "rationale": "Exclusions grant relief and should not move the spread. If the control arm shows a significant negative effect of comparable size, the design is picking up something other than tariff actions and the result is discarded rather than reported."
+      }
+    ],
+    "robustnessExclude": [],
+    "events": [
+      {
+        "id": "F01",
+        "cluster": "301 action 2018-06",
+        "instant": "2018-06-20T10:00:00.000Z",
+        "docs": "2018-13248",
+        "url": "https://www.federalregister.gov/documents/2018/06/20/2018-13248/notice-of-action-and-request-for-public-comment-concerning-proposed-determination-of-action-pursuant"
+      },
+      {
+        "id": "F02",
+        "cluster": "301 action 2018-08",
+        "instant": "2018-08-16T10:00:00.000Z",
+        "docs": "2018-17709",
+        "url": "https://www.federalregister.gov/documents/2018/08/16/2018-17709/notice-of-action-pursuant-to-section-301-chinas-acts-policies-and-practices-related-to-technology"
+      },
+      {
+        "id": "F03",
+        "cluster": "301 action 2018-09",
+        "instant": "2018-09-21T10:00:00.000Z",
+        "docs": "2018-20610",
+        "url": "https://www.federalregister.gov/documents/2018/09/21/2018-20610/notice-of-modification-of-section-301-action-chinas-acts-policies-and-practices-related-to"
+      },
+      {
+        "id": "F04",
+        "cluster": "301 action 2018-12",
+        "instant": "2018-12-19T11:00:00.000Z",
+        "docs": "2018-27458",
+        "url": "https://www.federalregister.gov/documents/2018/12/19/2018-27458/notice-of-modification-of-section-301-action-chinas-acts-policies-and-practices-related-to"
+      },
+      {
+        "id": "F05",
+        "cluster": "301 action 2019-03",
+        "instant": "2019-03-05T11:00:00.000Z",
+        "docs": "2019-03935",
+        "url": "https://www.federalregister.gov/documents/2019/03/05/2019-03935/notice-of-modification-of-section-301-action-chinas-acts-policies-and-practices-related-to"
+      },
+      {
+        "id": "F06",
+        "cluster": "301 action 2019-05",
+        "instant": "2019-05-09T10:00:00.000Z",
+        "docs": "2019-09681",
+        "url": "https://www.federalregister.gov/documents/2019/05/09/2019-09681/notice-of-modification-of-section-301-action-chinas-acts-policies-and-practices-related-to"
+      },
+      {
+        "id": "F07",
+        "cluster": "301 action 2019-08",
+        "instant": "2019-08-20T10:00:00.000Z",
+        "docs": "2019-17865",
+        "url": "https://www.federalregister.gov/documents/2019/08/20/2019-17865/notice-of-modification-of-section-301-action-chinas-acts-policies-and-practices-related-to"
+      },
+      {
+        "id": "F08",
+        "cluster": "301 action 2019-08",
+        "instant": "2019-08-30T10:00:00.000Z",
+        "docs": "2019-18838",
+        "url": "https://www.federalregister.gov/documents/2019/08/30/2019-18838/notice-of-modification-of-section-301-action-chinas-acts-policies-and-practices-related-to"
+      },
+      {
+        "id": "F09",
+        "cluster": "301 action 2019-10",
+        "instant": "2019-10-09T10:00:00.000Z",
+        "docs": "2019-22056",
+        "url": "https://www.federalregister.gov/documents/2019/10/09/2019-22056/notice-of-determination-and-action-pursuant-to-section-301-enforcement-of-us-wto-rights-in-large"
+      },
+      {
+        "id": "F10",
+        "cluster": "301 action 2019-12",
+        "instant": "2019-12-18T11:00:00.000Z",
+        "docs": "2019-27306",
+        "url": "https://www.federalregister.gov/documents/2019/12/18/2019-27306/notice-of-modification-of-section-301-action-chinas-acts-policies-and-practices-related-to"
+      }
+    ],
+    "summary": {
+      "SPREAD_SOY_CORN": {
+        "expectedSign": "negative",
+        "hypothesis": "HF1",
+        "windows": {
+          "[-1,1]": {
+            "n": 10,
+            "mean_car": 0.0009519810705556735,
+            "median_car": 0.0020065177564904113,
+            "sd": 0.01574915493561643,
+            "t": 0.19114857175691088,
+            "p_t_one_sided": 0.5736740925830787,
+            "n_expected_sign": 4,
+            "p_sign_one_sided": 0.828125
+          },
+          "[0,1]": {
+            "n": 10,
+            "mean_car": 0.0014313354755468735,
+            "median_car": -0.0006821244059349461,
+            "sd": 0.015256907080611977,
+            "t": 0.2966708897559076,
+            "p_t_one_sided": 0.613274861276799,
+            "n_expected_sign": 5,
+            "p_sign_one_sided": 0.623046875
+          },
+          "[0,5]": {
+            "n": 10,
+            "mean_car": -0.002850159100698993,
+            "median_car": 7.203976261481579e-05,
+            "sd": 0.013919047226207662,
+            "t": -0.6475295546878947,
+            "p_t_one_sided": 0.2667282047944012,
+            "n_expected_sign": 5,
+            "p_sign_one_sided": 0.623046875
+          }
+        },
+        "placebo": {
+          "placebo_pool": 326,
+          "placebo_draws": 1000,
+          "placebo_mean": 0.00028172354371810396,
+          "placebo_sd": 0.003780563162475367,
+          "p_placebo": 0.6303696303696303
+        },
+        "excluding": null
+      },
+      "AG_SOYBEANS": {
+        "expectedSign": "negative",
+        "hypothesis": "HF2",
+        "windows": {
+          "[-1,1]": {
+            "n": 10,
+            "mean_car": -0.0016595408628991206,
+            "median_car": 0.0017225859357133375,
+            "sd": 0.015575536062769827,
+            "t": -0.33693408533312436,
+            "p_t_one_sided": 0.37194529497903583,
+            "n_expected_sign": 5,
+            "p_sign_one_sided": 0.623046875
+          },
+          "[0,1]": {
+            "n": 10,
+            "mean_car": -0.0031462271241624504,
+            "median_car": -0.005978970452228944,
+            "sd": 0.01303576182074163,
+            "t": -0.7632268742992951,
+            "p_t_one_sided": 0.23243153015154144,
+            "n_expected_sign": 6,
+            "p_sign_one_sided": 0.376953125
+          },
+          "[0,5]": {
+            "n": 10,
+            "mean_car": -0.00955198372926682,
+            "median_car": -0.01466187808839906,
+            "sd": 0.018396788721598622,
+            "t": -1.6419183377308202,
+            "p_t_one_sided": 0.06751179059772622,
+            "n_expected_sign": 7,
+            "p_sign_one_sided": 0.171875
+          }
+        },
+        "placebo": {
+          "placebo_pool": 326,
+          "placebo_draws": 1000,
+          "placebo_mean": 0.0007337044655586984,
+          "placebo_sd": 0.004428275246892217,
+          "p_placebo": 0.1848151848151848
+        },
+        "excluding": null
+      },
+      "AG_CORN": {
+        "expectedSign": "positive",
+        "hypothesis": null,
+        "windows": {
+          "[-1,1]": {
+            "n": 9,
+            "mean_car": -0.008946295592069085,
+            "median_car": -0.008029223573287158,
+            "sd": 0.025395725060881842,
+            "t": -1.0568269546101041,
+            "p_t_one_sided": 0.8392717157021332,
+            "n_expected_sign": 3,
+            "p_sign_one_sided": 0.91015625
+          },
+          "[0,1]": {
+            "n": 9,
+            "mean_car": -0.010647190906618857,
+            "median_car": -0.010532724543026386,
+            "sd": 0.02046080098187096,
+            "t": -1.561110571778593,
+            "p_t_one_sided": 0.9214396463518668,
+            "n_expected_sign": 3,
+            "p_sign_one_sided": 0.91015625
+          },
+          "[0,5]": {
+            "n": 9,
+            "mean_car": -0.014869184796985117,
+            "median_car": -0.015447977364125141,
+            "sd": 0.03632578680434447,
+            "t": -1.2279859107035338,
+            "p_t_one_sided": 0.8728232084447167,
+            "n_expected_sign": 2,
+            "p_sign_one_sided": 0.98046875
+          }
+        },
+        "placebo": {
+          "placebo_pool": 344,
+          "placebo_draws": 1000,
+          "placebo_mean": -0.0003184630308691879,
+          "placebo_sd": 0.005532599329017303,
+          "p_placebo": 0.977022977022977
+        },
+        "excluding": null
+      }
+    },
+    "perEvent": [
+      {
+        "id": "F01",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2018-06-20",
+        "car01": -0.0154024856050941
+      },
+      {
+        "id": "F02",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2018-08-16",
+        "car01": 0.0254478333741325
+      },
+      {
+        "id": "F03",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2018-09-21",
+        "car01": -0.0223162140872803
+      },
+      {
+        "id": "F04",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2018-12-19",
+        "car01": -0.0043834835404768
+      },
+      {
+        "id": "F05",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2019-03-05",
+        "car01": -0.0095335873936821
+      },
+      {
+        "id": "F06",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2019-05-09",
+        "car01": 0.0002052882923622
+      },
+      {
+        "id": "F07",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2019-08-20",
+        "car01": 0.011188033552564
+      },
+      {
+        "id": "F08",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2019-08-30",
+        "car01": 0.0118554139568474
+      },
+      {
+        "id": "F09",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2019-10-09",
+        "car01": 0.0188220933103281
+      },
+      {
+        "id": "F10",
+        "basket": "SPREAD_SOY_CORN",
+        "day": "2019-12-18",
+        "car01": -0.001569537104232
+      },
+      {
+        "id": "F01",
+        "basket": "AG_SOYBEANS",
+        "day": "2018-06-20",
+        "car01": -0.0065361677422987
+      },
+      {
+        "id": "F02",
+        "basket": "AG_SOYBEANS",
+        "day": "2018-08-16",
+        "car01": 0.025524828501658
+      },
+      {
+        "id": "F03",
+        "basket": "AG_SOYBEANS",
+        "day": "2018-09-21",
+        "car01": -0.0149673535956858
+      },
+      {
+        "id": "F04",
+        "basket": "AG_SOYBEANS",
+        "day": "2018-12-19",
+        "car01": -0.0054217731621591
+      },
+      {
+        "id": "F05",
+        "basket": "AG_SOYBEANS",
+        "day": "2019-03-05",
+        "car01": -0.013819320705681
+      },
+      {
+        "id": "F06",
+        "basket": "AG_SOYBEANS",
+        "day": "2019-05-09",
+        "car01": -0.0198313502079475
+      },
+      {
+        "id": "F07",
+        "basket": "AG_SOYBEANS",
+        "day": "2019-08-20",
+        "car01": 0.0062003965558501
+      },
+      {
+        "id": "F08",
+        "basket": "AG_SOYBEANS",
+        "day": "2019-08-30",
+        "car01": 0.0038834956647837
+      },
+      {
+        "id": "F09",
+        "basket": "AG_SOYBEANS",
+        "day": "2019-10-09",
+        "car01": 5.675320244796648e-05
+      },
+      {
+        "id": "F10",
+        "basket": "AG_SOYBEANS",
+        "day": "2019-12-18",
+        "car01": -0.006551779752592
+      },
+      {
+        "id": "F01",
+        "basket": "AG_CORN",
+        "day": "2018-06-20",
+        "car01": 0.013360556370789
+      },
+      {
+        "id": "F02",
+        "basket": "AG_CORN",
+        "day": "2018-08-16",
+        "car01": 0.0036360749610627
+      },
+      {
+        "id": "F03",
+        "basket": "AG_CORN",
+        "day": "2018-09-21",
+        "car01": 0.0168482681575497
+      },
+      {
+        "id": "F04",
+        "basket": "AG_CORN",
+        "day": "2018-12-19",
+        "car01": null
+      },
+      {
+        "id": "F05",
+        "basket": "AG_CORN",
+        "day": "2019-03-05",
+        "car01": -0.0069844474100551
+      },
+      {
+        "id": "F06",
+        "basket": "AG_CORN",
+        "day": "2019-05-09",
+        "car01": -0.0351382630306207
+      },
+      {
+        "id": "F07",
+        "basket": "AG_CORN",
+        "day": "2019-08-20",
+        "car01": -0.0105327245430263
+      },
+      {
+        "id": "F08",
+        "basket": "AG_CORN",
+        "day": "2019-08-30",
+        "car01": -0.0226685414364569
+      },
+      {
+        "id": "F09",
+        "basket": "AG_CORN",
+        "day": "2019-10-09",
+        "car01": -0.0431231181497751
+      },
+      {
+        "id": "F10",
+        "basket": "AG_CORN",
+        "day": "2019-12-18",
+        "car01": -0.0112225230790368
+      }
+    ]
+  }
+}

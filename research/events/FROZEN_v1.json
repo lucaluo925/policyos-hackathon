@@ -1,0 +1,18 @@
+{
+  "frozen_at": "2026-09-21",
+  "tagger_version": "fr-tagger-v2",
+  "source_csv": "research/events/fr_events.csv",
+  "source_csv_sha256": "9f6a5736c0f6cfb2b199e23923f6e286a1e4faaf525844399e1f8135935df3fa",
+  "review_csv_sha256": "3d5794bae88535081359a55e5054b5fe186b7edf5dfdd3ec53295b5de67ccd3c",
+  "n_events": 17,
+  "n_tightening": 16,
+  "check_rows_dropped": [
+    282,
+    352,
+    429,
+    443,
+    508,
+    627
+  ],
+  "rule": "Do not edit frozen_events_v1.csv or the tagger after M2 price data is pulled; changes go to v2 with a note."
+}

@@ -1,0 +1,8 @@
+{
+  "frozen_at": "2026-09-22",
+  "events_csv": "research/events/cn_countermeasures_v1.csv",
+  "events_sha256": "b9ebd9856b020630d0a6ddffcceeabbd5899dcb214af8c8d7012bf612acbfa28",
+  "hypotheses_sha256": "4f809a61a772651d06ec08daf7fb7ed0a8042ecea17615f45fa30f5dd44e09ba",
+  "n_events": 8,
+  "price_data_pulled_before_freeze": false
+}

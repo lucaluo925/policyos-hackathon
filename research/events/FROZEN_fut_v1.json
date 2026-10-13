@@ -1,0 +1,16 @@
+{
+  "file": "research/events/frozen_events_fut_v1.csv",
+  "sha256": "48b593284dac5f46551b00d2ed76639ef1ba9499159b9aa1d373bbf9b5d0ba38",
+  "n_action": 10,
+  "n_control": 25,
+  "frozen_at": "2026-10-10",
+  "derived_from": "research/events/fr_events.csv",
+  "rule_action": "Notice of (Action|Modification)|Determination and Action",
+  "rule_procedural_exclude": "Exclusion|Hearing|Correction|Comment Period",
+  "window": [
+    "2018-01-01",
+    "2019-12-31"
+  ],
+  "direction_encoding": "action arm written as tightening, control arm as easing, so the existing runner can select an arm with event_filter.direction",
+  "note": "Rebuilt once before any price data was pulled, to match the column schema frozen_events_v1.csv uses. Membership is unchanged: the same rule selects the same 10 action and 25 control events."
+}

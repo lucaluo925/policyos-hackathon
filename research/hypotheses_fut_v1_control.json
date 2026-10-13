@@ -1,0 +1,113 @@
+{
+  "version": "fut_v1_control",
+  "registered_at": "2026-10-10",
+  "note": "Control arm of fut_v1. Same baskets, windows and thresholds; selects the 25 exclusion events instead of the 10 action events. Registered at the same time, before any price data.",
+  "question": "Do US Section 301 tariff actions against China move CBOT agricultural futures through the expected-retaliation channel, and specifically soybeans relative to corn?",
+  "why_futures_here_and_not_elsewhere": "The other two studies in this folder cover export controls on semiconductor equipment and on critical minerals. Neither has a liquid futures contract on the restricted good — there is no tradeable gallium, germanium, antimony, graphite or rare-earth contract — so a futures test there would measure instruments the policy does not target. Section 301 tariff actions are different: the retaliation they provoked fell on US agricultural exports, where the targeted good is itself the deliverable of a liquid contract.",
+  "event_filter": {
+    "source": "research/events/frozen_events_fut_v1.csv (frozen, sha256 in events/FROZEN_fut_v1.json), derived from fr_events.csv tagged by fr-tagger-v2",
+    "window": [
+      "2018-01-01",
+      "2019-12-31"
+    ],
+    "window_rationale": "The period in which Chinese retaliatory tariffs on US agriculture were actively imposed and escalated. The Phase One agreement of January 2020 replaces the retaliation channel with a purchase-commitment channel of the opposite sign, so later events are a different mechanism and are out of scope.",
+    "action_arm": {
+      "eventType": "section_301_action",
+      "title_must_match": "Notice of (Action|Modification)|Determination and Action",
+      "title_must_not_match": "Exclusion|Hearing|Correction|Comment Period",
+      "n": 10,
+      "rule_note": "An earlier draft of this rule also excluded 'Request for Comment', which would have been wrong: the 20 June 2018 action notice carries a comment request alongside the action itself. It was kept by accident under that draft; the rule above keeps it by intent."
+    },
+    "control_arm": {
+      "eventType": "section_301_exclusion",
+      "n": 25,
+      "role": "no-op control from the same corpus and window: product exclusions and exclusion procedures grant relief rather than imposing tariffs, so they should not move the soybean-corn spread."
+    },
+    "direction": "easing",
+    "merge_within_us_trading_days": 5
+  },
+  "event_day_rule": {
+    "futures": "first CBOT session whose settlement (14:20 America/Chicago) falls after eventInstant",
+    "note": "eventInstant is the public-inspection filing time where available, which is the earliest moment a market participant could have read the document."
+  },
+  "method": {
+    "model": "market_model",
+    "estimation_window": [
+      -250,
+      -30
+    ],
+    "min_estimation_obs": 120,
+    "event_windows": [
+      [
+        -1,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        5
+      ]
+    ],
+    "primary_window": [
+      0,
+      1
+    ]
+  },
+  "baskets": {
+    "SPREAD_SOY_CORN": {
+      "benchmark": "ZC=F",
+      "tickers": [
+        "ZS=F"
+      ],
+      "names": "CBOT soybeans, with CBOT corn as the benchmark",
+      "caveat": "A market model of soybeans on corn: the abnormal return is the soybean move net of its beta-adjusted corn move, so common weather, dollar and energy shocks are differenced out while the hedge ratio is estimated rather than assumed. This is the better-identified test and is therefore primary."
+    },
+    "AG_SOYBEANS": {
+      "benchmark": "DBC",
+      "tickers": [
+        "ZS=F"
+      ],
+      "names": "CBOT soybeans, front-month continuous",
+      "caveat": "DBC is energy-weighted, so R-squared against soybeans will be low and the market-model abnormal return will sit close to the raw return. That is stated in advance rather than discovered afterwards. DBA was rejected as benchmark because it holds soybeans, which would regress the asset partly on itself."
+    },
+    "AG_CORN": {
+      "benchmark": "DBC",
+      "tickers": [
+        "ZC=F"
+      ],
+      "names": "CBOT corn, front-month continuous",
+      "caveat": "Shares weather, dollar and energy shocks with soybeans but had far smaller direct exposure to Chinese retaliation."
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "HF1",
+      "primary": true,
+      "basket": "SPREAD_SOY_CORN",
+      "expected_sign": "null",
+      "rationale": "A Section 301 action raises the probability of Chinese retaliatory tariffs on US agricultural exports. Soybeans were the largest US agricultural export to China by value and corn was not, so expected export demand falls for soybeans specifically and the spread should narrow. Measured as soybeans benchmarked on corn, so the test is whether soybeans fall by more than their usual co-movement with corn explains."
+    }
+  ],
+  "inference": {
+    "test": "one-sided cross-sectional t on mean CAR across events, plus sign test",
+    "alpha": 0.05,
+    "multiple_testing": "Bonferroni across the two primary hypotheses (alpha/2)",
+    "placebo": "same pipeline on 1,000 random non-event dates"
+  },
+  "decision_rule": {
+    "supported": "HF1 passes one-sided t at alpha/2 AND placebo p < 0.05 AND the control arm (HF3) is not significant at 0.05 in the same direction",
+    "not_supported": "anything else, reported as a null in the same form as event_study_v1_conclusion.md",
+    "one_round": "This design is run once. Thresholds, windows, tickers and the event set are fixed by this file and by the frozen CSV hash; no seeds added and no thresholds moved after seeing results."
+  },
+  "power_note": "n = 10 action events. With event-level CAR standard deviation of a few percent, only large average effects are detectable. A null here is weak evidence of no effect and must be reported as such, not as evidence of absence.",
+  "known_confounds": [
+    "Several action dates sit inside broader US-China escalation episodes; the spread design removes common agricultural shocks but not China-specific risk repricing that hits soybeans through other channels.",
+    "Front-month continuous futures series roll between contracts; the roll convention of the price source is not controlled here and is a known source of return noise.",
+    "Tariff actions were widely trailed in advance, so part of the move may precede the filing instant. The [-1,1] window is reported alongside the primary [0,1] for that reason, but the primary is fixed."
+  ],
+  "revision_note": "Revised 2026-10-10, BEFORE any price data was pulled and before any result existed. The first draft expressed the soybean-corn contrast as a raw difference with benchmark null, which the existing runner cannot execute (it requires a benchmark everywhere). Expressing the same contrast as a market model of soybeans ON corn needs no runner change and is better: it estimates the hedge ratio rather than assuming one-for-one. Nothing about the direction, window, event set or thresholds changed.",
+  "robustness_exclude_events": []
+}

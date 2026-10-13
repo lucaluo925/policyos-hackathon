@@ -1,0 +1,208 @@
+@import "tailwindcss";
+
+/*
+ * Apple-style design tokens.
+ * Light is the default (white / #f5f5f7 surfaces, #1d1d1f text, #0071e3 accent);
+ * dark follows the OS setting. Components use the semantic names below, so
+ * switching theme is a pure token change.
+ */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-climate: var(--climate);
+  --color-trade: var(--trade);
+  --color-immigration: var(--immigration);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --radius-lg: 0.875rem;  /* 14px */
+  --radius-xl: 1.125rem;  /* 18px — Apple card radius */
+  --radius-2xl: 1.5rem;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f5f5f7;
+  --fg: #1d1d1f;
+  --surface: #ffffff;
+  --surface-2: #f5f5f7;
+  --border: rgba(0, 0, 0, 0.08);
+  --muted: #6e6e73;
+  --accent: #0071e3;
+  --climate: #28a745;
+  --trade: #0071e3;
+  --immigration: #8e44d6;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #000000;
+    --fg: #f5f5f7;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --border: rgba(255, 255, 255, 0.12);
+    --muted: #98989d;
+    --accent: #2997ff;
+    --climate: #30d158;
+    --trade: #0a84ff;
+    --immigration: #bf5af2;
+    --card-shadow: none;
+  }
+}
+
+@media not (prefers-color-scheme: dark) {
+  :root {
+  /* Status colours were authored as Tailwind *-400 shades for a dark UI.
+       On white they are too light to read, so light mode remaps them to
+       Apple's accessible system-colour variants. Tinted backgrounds (-500/15)
+       keep working as-is. */
+    --color-green-400: #248a3d;
+    --color-emerald-400: #248a3d;
+    --color-red-400: #d70015;
+    --color-orange-400: #c93400;
+    --color-yellow-400: #a05a00;
+    --color-amber-400: #a05a00;
+    --color-blue-400: #0066cc;
+    --color-teal-400: #0c7c8c;
+    --color-purple-400: #8944ab;
+    --color-gray-300: #3a3a3c;
+    --color-gray-400: #6e6e73;
+    --color-yellow-200: #7a4a00;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* Tighten only large Latin headlines; CJK text must keep default spacing. */
+html[lang="en"] h1,
+html[lang="en"] h2 {
+  letter-spacing: -0.02em;
+}
+html[lang="zh-CN"] body {
+  line-height: 1.6;
+}
+
+/* Cards: Apple uses soft elevation instead of heavy outlines in light mode. */
+.bg-surface.rounded-lg,
+.bg-surface.rounded-xl,
+.bg-surface.rounded-2xl {
+  box-shadow: var(--card-shadow);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--muted) 40%, transparent); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Map container */
+.maplibregl-map { font-family: var(--font-sans) !important; }
+.maplibregl-popup-content {
+  background: var(--color-surface) !important;
+  color: var(--color-foreground) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 14px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.18) !important;
+}
+.maplibregl-popup-tip { border-top-color: var(--color-surface) !important; }
+.maplibregl-ctrl-group { border-radius: 12px !important; overflow: hidden; }
+
+/*
+ * Homepage hero decoration. These live here rather than as inline `style`
+ * attributes because they are static; inline styles are reserved for values
+ * that actually vary at runtime.
+ */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, #fff 1px, transparent 1px),
+    linear-gradient(to bottom, #fff 1px, transparent 1px);
+  background-size: 96px 96px;
+}
+
+.hero-globe-glow {
+  background: radial-gradient(circle, rgba(26, 104, 224, 0.30), transparent 62%);
+}
+
+/*
+ * Scroll reveal. Matches the reference site's motion, which was measured
+ * rather than guessed: opacity 0 -> 1 with a 16px rise over 700ms on
+ * cubic-bezier(0, 0, 0.2, 1). No animation library involved, there or here.
+ *
+ * The reduced-motion override lives in CSS rather than in the component so it
+ * applies before hydration and cannot leave a reader looking at an element
+ * stuck at opacity 0 if JavaScript never arrives.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 700ms cubic-bezier(0, 0, 0.2, 1),
+    transform 700ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.reveal-shown {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/*
+ * Word-by-word scroll reveal. The two colours and the transition are what the
+ * reference implementation uses, read off the live page.
+ *
+ * .word-lit is also the pre-hydration and no-JavaScript state, so text is
+ * never left sitting at the dim colour for a reader whose script failed.
+ */
+.word-lit,
+.word-dim {
+  transition: color 300ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.word-lit {
+  color: var(--fg);
+}
+
+.word-dim {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-lit,
+  .word-dim {
+    color: var(--fg);
+    transition: none;
+  }
+}

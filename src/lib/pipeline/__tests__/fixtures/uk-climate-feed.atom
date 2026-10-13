@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>https://www.gov.uk/search/news-and-communications</id>
+  <title>News and communications</title>
+  <updated>2026-10-08T00:01:02+01:00</updated>
+  <link rel="self" type="application/atom+xml" href="https://www.gov.uk/search/news-and-communications.atom"/>
+  <link rel="alternate" type="text/html" href="https://www.gov.uk/search/news-and-communications"/>
+  <entry>
+    <id>tag:www.gov.uk,2005:/government/news/drivers-set-to-save-as-petrol-prices-launch-on-google-maps</id>
+    <published>2026-10-08T00:01:02+01:00</published>
+    <updated>2026-10-08T00:01:02+01:00</updated>
+    <link rel="alternate" type="text/html" href="https://www.gov.uk/government/news/drivers-set-to-save-as-petrol-prices-launch-on-google-maps"/>
+    <title>Drivers set to save as petrol prices launch on Google Maps</title>
+    <summary>Drivers to save at the pump as near real-time petrol and diesel prices go live, saving motorists up to &#163;4 on a tank of fuel.</summary>
+  </entry>
+  <entry>
+    <id>tag:www.gov.uk,2005:/government/news/uks-decommissioning-mission-continues-to-expand</id>
+    <published>2026-10-01T10:21:10+01:00</published>
+    <updated>2026-10-01T10:21:10+01:00</updated>
+    <link rel="alternate" type="text/html" href="https://www.gov.uk/government/news/uks-decommissioning-mission-continues-to-expand"/>
+    <title>UK&#8217;s decommissioning mission continues to expand</title>
+    <summary>Hinkley Point B nuclear power station in Somerset transferred to the Nuclear Decommissioning Authority.</summary>
+  </entry>
+  <entry>
+    <id>tag:www.gov.uk,2005:/government/news/great-british-grid-to-speed-up-connections-and-cut-bills</id>
+    <published>2026-09-29T14:45:20+01:00</published>
+    <updated>2026-09-29T14:45:20+01:00</updated>
+    <link rel="alternate" type="text/html" href="https://www.gov.uk/government/news/great-british-grid-to-speed-up-connections-and-cut-bills"/>
+    <title>Great British Grid to speed up connections and cut bills</title>
+    <summary>Families and businesses across the country will benefit from &#163;64m of investment in grid connections.</summary>
+  </entry>
+</feed>

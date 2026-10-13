@@ -1,0 +1,114 @@
+{
+  "version": "cn_v1",
+  "registered_at": "2026-09-22",
+  "note": "Pre-registered before any price data for these baskets was pulled (none of these tickers is in the local cache). Do not edit after results exist; add cn_v2 instead.",
+  "question": "Do China's item-based export controls on critical minerals (MOFCOM announcements, 2023-07 → 2025-10) move Chinese strategic-materials producers up and the main non-China US rare-earth producer up?",
+  "event_filter": {
+    "source": "MOFCOM/MOST item-based export-control announcements on critical minerals and rare-earth technology",
+    "direction": "tightening",
+    "merge_within_us_trading_days": 5,
+    "scope_rules": [
+      "Include: new or expanded item-based export controls (global scope, or US-targeted item bans).",
+      "Exclude: entity-list actions naming specific foreign firms (Unreliable Entity List, export-control control list), Japan-targeted measures (Jan 2026), suspensions/easing (2025-11-07), enforcement/reporting mechanisms (Announcement 2026 No.26).",
+      "Event list assembled from official MOFCOM/MOST pages on 2026-09-22; web timestamps used as event instants."
+    ]
+  },
+  "event_day_rule": {
+    "US": "first NYSE session whose close (16:00 America/New_York) is after eventInstant",
+    "CN": "first SSE/SZSE session whose close (15:00 Asia/Shanghai) is after eventInstant"
+  },
+  "method": {
+    "model": "market_model",
+    "estimation_window": [
+      -250,
+      -30
+    ],
+    "min_estimation_obs": 120,
+    "event_windows": [
+      [
+        -1,
+        1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        5
+      ]
+    ],
+    "primary_window": [
+      0,
+      1
+    ]
+  },
+  "baskets": {
+    "CN_STRATEGIC_MATERIALS": {
+      "benchmark": "000300",
+      "tickers": [
+        "600111",
+        "000831",
+        "600392",
+        "002428",
+        "600549",
+        "002378"
+      ],
+      "names": "北方稀土, 中国稀土, 盛和资源, 云南锗业, 厦门钨业, 章源钨业",
+      "caveat": "Chosen in 2026 (survivors); point-in-time eligibility (>=120 pre-event sessions) applies."
+    },
+    "US_RARE_EARTH": {
+      "benchmark": "SPY",
+      "tickers": [
+        "MP"
+      ],
+      "names": "MP Materials",
+      "caveat": "Single name; China named MP Materials on its export-control list in June 2026 — an entity action outside this event set."
+    },
+    "US_STRATEGIC_METALS_ETF": {
+      "benchmark": "SPY",
+      "tickers": [
+        "REMX"
+      ],
+      "names": "VanEck Rare Earth & Strategic Metals ETF",
+      "caveat": "Holds Chinese producers as well as non-China names; direction ambiguous, hence secondary."
+    }
+  },
+  "hypotheses": [
+    {
+      "id": "H6",
+      "primary": true,
+      "basket": "CN_STRATEGIC_MATERIALS",
+      "expected_sign": "positive",
+      "rationale": "Export licensing restricts supply outside China, raising scarcity rents and pricing power for domestic producers."
+    },
+    {
+      "id": "H7",
+      "primary": true,
+      "basket": "US_RARE_EARTH",
+      "expected_sign": "positive",
+      "rationale": "Non-China supply becomes more valuable; substitution demand and policy support for US producers."
+    },
+    {
+      "id": "H8",
+      "primary": false,
+      "basket": "US_STRATEGIC_METALS_ETF",
+      "expected_sign": "positive",
+      "rationale": "Broad strategic-metals exposure; weaker, mixed prior."
+    }
+  ],
+  "robustness_exclude_events": [
+    "C05",
+    "C06",
+    "C07",
+    "C08"
+  ],
+  "robustness_exclude_reason": "Each coincides, within its [0,1] window, with a separate major US–China escalation: C05 follows the US Dec-2024 chip rule by one day; C06 is the Feb-2025 tariff-retaliation package; C07 falls in the Apr-2025 tariff crash; C08's US day+1 is the Oct-10-2025 100% tariff threat.",
+  "inference": {
+    "test": "one-sided cross-sectional t on mean CAR across events, plus sign test",
+    "alpha": 0.05,
+    "multiple_testing": "Bonferroni across primary hypotheses (alpha/2)",
+    "placebo": "same pipeline on 1,000 random non-event dates"
+  },
+  "power_note": "n = 8 events. With event-level CAR s.d. of a few percent, only large average effects (roughly 3%+) are detectable; a null is weak evidence of no effect."
+}

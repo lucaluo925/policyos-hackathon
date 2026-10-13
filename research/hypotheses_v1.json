@@ -1,0 +1,45 @@
+{
+  "version": "v1",
+  "registered_at": "2026-09-21",
+  "note": "Pre-registered before any price data was pulled. Do not edit after M2 results exist; add v2 instead.",
+  "event_filter": {
+    "source": "federal_register",
+    "event_type_in": ["entity_list", "advanced_computing_semis"],
+    "direction": "tightening",
+    "relevant": true,
+    "review_status_in": ["approved", "auto_approved"],
+    "merge_within_us_trading_days": 5
+  },
+  "event_day_rule": {
+    "US": "first NYSE session whose close (16:00 America/New_York) is after eventInstant",
+    "CN": "first SSE/SZSE session whose close (15:00 Asia/Shanghai) is after eventInstant"
+  },
+  "method": {
+    "model": "market_model",
+    "estimation_window": [-250, -30],
+    "min_estimation_obs": 120,
+    "event_windows": [[-1, 1], [0, 1], [0, 5]],
+    "primary_window": [0, 1]
+  },
+  "baskets": {
+    "US_SEMI_EQUIP": { "benchmark": "SPY", "tickers": ["AMAT", "LRCX", "KLAC"] },
+    "US_SEMI_BROAD": { "benchmark": "SPY", "tickers": ["SOXX"] },
+    "CN_SEMI_EQUIP_SUBSTITUTE": {
+      "benchmark": "000300",
+      "tickers": ["002371", "688012", "688082", "688072", "688120", "300604"],
+      "caveat": "Basket chosen with 2026 hindsight (survivors); use only names listed >=250 trading days before each event, and report the index robustness check alongside.",
+      "robustness_index": "980017"
+    }
+  },
+  "hypotheses": [
+    { "id": "H1", "primary": true,  "basket": "US_SEMI_EQUIP", "expected_sign": "negative", "rationale": "Lost China revenue for US equipment vendors." },
+    { "id": "H2", "primary": true,  "basket": "CN_SEMI_EQUIP_SUBSTITUTE", "expected_sign": "positive", "rationale": "Domestic-substitution demand for Chinese equipment makers." },
+    { "id": "H3", "primary": false, "basket": "US_SEMI_BROAD", "expected_sign": "negative", "rationale": "Sector-wide China exposure; weaker than H1." }
+  ],
+  "inference": {
+    "test": "one-sided cross-sectional t on mean CAR across events, plus sign test",
+    "alpha": 0.05,
+    "multiple_testing": "Bonferroni across primary hypotheses (alpha/2)",
+    "placebo": "same pipeline on 1,000 random non-event dates"
+  }
+}

@@ -1,0 +1,184 @@
+{
+  "hypotheses_version": "cn_v1",
+  "n_events_input": 8,
+  "merged_away": [],
+  "baskets": {
+    "CN_STRATEGIC_MATERIALS": {
+      "expected_sign": "positive",
+      "primary_hypothesis": "H6",
+      "windows": {
+        "[-1,1]": {
+          "n": 8,
+          "mean_car": 0.034229220482277035,
+          "median_car": 0.03180436030631542,
+          "sd": 0.03447219889253617,
+          "t": 2.8084908645602042,
+          "p_t_one_sided": 0.013101327860551792,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.14453125
+        },
+        "[0,1]": {
+          "n": 8,
+          "mean_car": 0.03230008672080345,
+          "median_car": 0.027337311448022143,
+          "sd": 0.04029625248077193,
+          "t": 2.2671696693474908,
+          "p_t_one_sided": 0.02885893900916381,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.14453125
+        },
+        "[0,5]": {
+          "n": 8,
+          "mean_car": 0.021120198529613714,
+          "median_car": 0.01859457852882234,
+          "sd": 0.035963256708162215,
+          "t": 1.6610548617980458,
+          "p_t_one_sided": 0.07032949274769035,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.14453125
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 1844,
+        "placebo_draws": 1000,
+        "placebo_mean": 0.00017435040453532896,
+        "placebo_sd": 0.010794090700661592,
+        "p_placebo": 0.004995004995004995
+      },
+      "primary_excluding": {
+        "excluded": [
+          "C05",
+          "C06",
+          "C07",
+          "C08"
+        ],
+        "n": 4,
+        "mean_car": 0.025767433409131298,
+        "median_car": 0.008198733607429537,
+        "sd": 0.05762801969062847,
+        "t": 0.8942675298391913,
+        "p_t_one_sided": 0.21853538901421637,
+        "n_expected_sign": 2,
+        "p_sign_one_sided": 0.6875
+      }
+    },
+    "US_RARE_EARTH": {
+      "expected_sign": "positive",
+      "primary_hypothesis": "H7",
+      "windows": {
+        "[-1,1]": {
+          "n": 8,
+          "mean_car": 0.04957594765994502,
+          "median_car": 0.0626811058932115,
+          "sd": 0.05383990689151249,
+          "t": 2.604424175155678,
+          "p_t_one_sided": 0.017598884637686663,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.03515625
+        },
+        "[0,1]": {
+          "n": 8,
+          "mean_car": 0.04823109446927422,
+          "median_car": 0.052216532104102716,
+          "sd": 0.04926602316545456,
+          "t": 2.769010508417652,
+          "p_t_one_sided": 0.01386679927560347,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.14453125
+        },
+        "[0,5]": {
+          "n": 8,
+          "mean_car": 0.05355702877325939,
+          "median_car": 0.07337441008060043,
+          "sd": 0.08773833923139261,
+          "t": 1.7265217717831955,
+          "p_t_one_sided": 0.06394822983123921,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.14453125
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 1250,
+        "placebo_draws": 1000,
+        "placebo_mean": -0.002368627859374218,
+        "placebo_sd": 0.02046410501009047,
+        "p_placebo": 0.016983016983016984
+      },
+      "primary_excluding": {
+        "excluded": [
+          "C05",
+          "C06",
+          "C07",
+          "C08"
+        ],
+        "n": 4,
+        "mean_car": 0.035789861459796915,
+        "median_car": 0.03776402562911072,
+        "sd": 0.056803915387364456,
+        "t": 1.260119525766284,
+        "p_t_one_sided": 0.14836551302810297,
+        "n_expected_sign": 2,
+        "p_sign_one_sided": 0.6875
+      }
+    },
+    "US_STRATEGIC_METALS_ETF": {
+      "expected_sign": "positive",
+      "primary_hypothesis": "H8",
+      "windows": {
+        "[-1,1]": {
+          "n": 8,
+          "mean_car": -0.007866259609637471,
+          "median_car": -0.013440900283062777,
+          "sd": 0.025786267915470857,
+          "t": -0.8628290888440392,
+          "p_t_one_sided": 0.7915948529121387,
+          "n_expected_sign": 3,
+          "p_sign_one_sided": 0.85546875
+        },
+        "[0,1]": {
+          "n": 8,
+          "mean_car": -0.0038294901215623987,
+          "median_car": 0.001761438518305786,
+          "sd": 0.02921236349499568,
+          "t": -0.37078251938191126,
+          "p_t_one_sided": 0.6391171265457248,
+          "n_expected_sign": 4,
+          "p_sign_one_sided": 0.63671875
+        },
+        "[0,5]": {
+          "n": 8,
+          "mean_car": 0.02266193801138753,
+          "median_car": 0.025924062659422074,
+          "sd": 0.03182732584269959,
+          "t": 2.0139184953054317,
+          "p_t_one_sided": 0.04193975633663416,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.14453125
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 1918,
+        "placebo_draws": 1000,
+        "placebo_mean": 4.083872875563399e-05,
+        "placebo_sd": 0.010208720630860311,
+        "p_placebo": 0.6483516483516484
+      },
+      "primary_excluding": {
+        "excluded": [
+          "C05",
+          "C06",
+          "C07",
+          "C08"
+        ],
+        "n": 4,
+        "mean_car": 0.01600090431726793,
+        "median_car": 0.020036641053130078,
+        "sd": 0.018353133635367034,
+        "t": 1.743670005914817,
+        "p_t_one_sided": 0.08978452060472769,
+        "n_expected_sign": 3,
+        "p_sign_one_sided": 0.3125
+      }
+    }
+  }
+}

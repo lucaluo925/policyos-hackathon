@@ -1,0 +1,309 @@
+[
+  {
+    "pairId": "cbam",
+    "side": "true",
+    "repeat": 0,
+    "claim": "The EU carbon border adjustment mechanism began charging importers in 2026.",
+    "expectedYear": "2026",
+    "ranAt": "2026-10-08T23:08:33.641Z",
+    "overall": "supported",
+    "assertions": [
+      "The EU Carbon Border Adjustment Mechanism (CBAM) started charging importers in 2026."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 8866,
+    "errors": []
+  },
+  {
+    "pairId": "cbam",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "The EU carbon border adjustment mechanism began charging importers in 1994.",
+    "expectedYear": "1994",
+    "ranAt": "2026-10-08T23:08:46.337Z",
+    "overall": "refuted",
+    "assertions": [
+      "The European Union has a Carbon Border Adjustment Mechanism (CBAM) policy.",
+      "The EU Carbon Border Adjustment Mechanism began charging importers in 1994."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 12688,
+    "errors": []
+  },
+  {
+    "pairId": "entity-list",
+    "side": "true",
+    "repeat": 0,
+    "claim": "The US Bureau of Industry and Security added new Chinese semiconductor firms to the Entity List in 2026.",
+    "expectedYear": "2026",
+    "ranAt": "2026-10-08T23:08:56.268Z",
+    "overall": "insufficient_evidence",
+    "assertions": [
+      "The US Bureau of Industry and Security added new Chinese semiconductor firms to the Entity List in 2026."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 9930,
+    "errors": []
+  },
+  {
+    "pairId": "entity-list",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "The US Bureau of Industry and Security added new Chinese semiconductor firms to the Entity List in 1985.",
+    "expectedYear": "1985",
+    "ranAt": "2026-10-08T23:09:12.985Z",
+    "overall": "partially_supported",
+    "assertions": [
+      "The US Bureau of Industry and Security added new Chinese semiconductor firms to the Entity List.",
+      "The addition occurred in 1985."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 16717,
+    "errors": []
+  },
+  {
+    "pairId": "express-entry",
+    "side": "true",
+    "repeat": 0,
+    "claim": "Canada raised its Express Entry CRS cutoff above 500 in 2026.",
+    "expectedYear": "2026",
+    "ranAt": "2026-10-08T23:09:21.599Z",
+    "overall": "insufficient_evidence",
+    "assertions": [
+      "Canada raised its Express Entry CRS cutoff score above 500 points in 2026."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 8614,
+    "errors": []
+  },
+  {
+    "pairId": "express-entry",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "Canada raised its Express Entry CRS cutoff above 500 in 1992.",
+    "expectedYear": "1992",
+    "ranAt": "2026-10-08T23:09:41.631Z",
+    "overall": "partially_supported",
+    "assertions": [
+      "Canada operates an Express Entry immigration system.",
+      "The Comprehensive Ranking System (CRS) cutoff scores are used in Express Entry draws.",
+      "In 1992, Canada's Express Entry CRS cutoff was above 500."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 20032,
+    "errors": []
+  },
+  {
+    "pairId": "japan-visa",
+    "side": "true",
+    "repeat": 0,
+    "claim": "Japan abolished its visa requirement for Chinese tourists in 2026.",
+    "expectedYear": "2026",
+    "ranAt": "2026-10-08T23:09:55.150Z",
+    "overall": "refuted",
+    "assertions": [
+      "Japan abolished its visa requirement for Chinese tourists.",
+      "The abolition of Japan's visa requirement for Chinese tourists occurred in 2026."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 13516,
+    "errors": []
+  },
+  {
+    "pairId": "japan-visa",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "Japan abolished its visa requirement for Chinese tourists in 1960.",
+    "expectedYear": "1960",
+    "ranAt": "2026-10-08T23:10:03.036Z",
+    "overall": "insufficient_evidence",
+    "assertions": [
+      "Japan abolished its visa requirement for Chinese tourists in 1960."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 7885,
+    "errors": []
+  },
+  {
+    "pairId": "german-coal",
+    "side": "true",
+    "repeat": 0,
+    "claim": "Germany committed to phasing out coal power by 2038.",
+    "expectedYear": "2038",
+    "ranAt": "2026-10-08T23:10:16.431Z",
+    "overall": "supported",
+    "assertions": [
+      "Germany has officially committed to phase out coal-fired power generation by 2038.",
+      "The German government passed legislation setting 2038 as the deadline for ending coal power."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 13395,
+    "errors": []
+  },
+  {
+    "pairId": "german-coal",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "Germany committed to phasing out coal power by 1975.",
+    "expectedYear": "1975",
+    "ranAt": "2026-10-08T23:10:30.972Z",
+    "overall": "partially_supported",
+    "assertions": [
+      "Germany committed to phasing out coal power.",
+      "The commitment was to phase out coal power by 1975."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 14541,
+    "errors": []
+  },
+  {
+    "pairId": "brexit",
+    "side": "true",
+    "repeat": 0,
+    "claim": "The United Kingdom left the European Union in 2020.",
+    "expectedYear": "2020",
+    "ranAt": "2026-10-08T23:10:45.590Z",
+    "overall": "supported",
+    "assertions": [
+      "The United Kingdom officially exited the European Union on January 31, 2020.",
+      "The United Kingdom completed its withdrawal process from the European Union by December 31, 2020."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 14617,
+    "errors": []
+  },
+  {
+    "pairId": "brexit",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "The United Kingdom left the European Union in 1994.",
+    "expectedYear": "1994",
+    "ranAt": "2026-10-08T23:10:59.462Z",
+    "overall": "refuted",
+    "assertions": [
+      "The United Kingdom formally withdrew from the European Union.",
+      "The United Kingdom's withdrawal from the European Union occurred in 1994."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 13872,
+    "errors": []
+  },
+  {
+    "pairId": "rare-earth",
+    "side": "true",
+    "repeat": 0,
+    "claim": "India imposed export restrictions on rare earth magnets in 2026.",
+    "expectedYear": "2026",
+    "ranAt": "2026-10-08T23:11:16.251Z",
+    "overall": "insufficient_evidence",
+    "assertions": [
+      "India imposed export restrictions on rare earth magnets.",
+      "The export restrictions on rare earth magnets by India were imposed in 2026."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 16789,
+    "errors": []
+  },
+  {
+    "pairId": "rare-earth",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "India imposed export restrictions on rare earth magnets in 1970.",
+    "expectedYear": "1970",
+    "ranAt": "2026-10-08T23:11:32.508Z",
+    "overall": "insufficient_evidence",
+    "assertions": [
+      "India imposed export restrictions on rare earth magnets.",
+      "The export restrictions on rare earth magnets by India were imposed in 1970."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 16256,
+    "errors": []
+  },
+  {
+    "pairId": "wto-ab",
+    "side": "true",
+    "repeat": 0,
+    "claim": "The WTO appellate body remained non-functional through 2026.",
+    "expectedYear": "2026",
+    "ranAt": "2026-10-08T23:11:59.572Z",
+    "overall": "partially_supported",
+    "assertions": [
+      "The WTO Appellate Body was non-operational throughout the year 2024.",
+      "The WTO Appellate Body remained non-operational throughout the year 2025.",
+      "The WTO Appellate Body remained non-operational throughout the year 2026."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 27064,
+    "errors": [
+      "adjudicate: no tool_call returned (finish_reason=length; if 'length', raise max_tokens)"
+    ]
+  },
+  {
+    "pairId": "wto-ab",
+    "side": "absurd",
+    "repeat": 0,
+    "claim": "The WTO appellate body remained non-functional through 1948.",
+    "expectedYear": "1948",
+    "ranAt": "2026-10-08T23:12:19.784Z",
+    "overall": "refuted",
+    "assertions": [
+      "The World Trade Organization (WTO) Appellate Body was established before or during 1948.",
+      "The WTO Appellate Body was functional (hearing cases) at any time between its establishment and 1948."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 20202,
+    "errors": [
+      "adjudicate: no tool_call returned (finish_reason=length; if 'length', raise max_tokens)"
+    ]
+  },
+  {
+    "pairId": "cbam",
+    "side": "absurd",
+    "repeat": 1,
+    "claim": "The EU carbon border adjustment mechanism began charging importers in 1994.",
+    "expectedYear": "1994",
+    "ranAt": "2026-10-08T23:12:31.855Z",
+    "overall": "refuted",
+    "assertions": [
+      "The European Union has a Carbon Border Adjustment Mechanism (CBAM) policy.",
+      "The EU Carbon Border Adjustment Mechanism began charging importers in 1994."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 12071,
+    "errors": []
+  },
+  {
+    "pairId": "express-entry",
+    "side": "absurd",
+    "repeat": 1,
+    "claim": "Canada raised its Express Entry CRS cutoff above 500 in 1992.",
+    "expectedYear": "1992",
+    "ranAt": "2026-10-08T23:12:51.111Z",
+    "overall": "partially_supported",
+    "assertions": [
+      "Canada operates an Express Entry immigration system.",
+      "The Comprehensive Ranking System (CRS) cutoff scores are used in Express Entry draws.",
+      "In 1992, Canada's Express Entry CRS cutoff was above 500."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 19256,
+    "errors": []
+  },
+  {
+    "pairId": "wto-ab",
+    "side": "absurd",
+    "repeat": 1,
+    "claim": "The WTO appellate body remained non-functional through 1948.",
+    "expectedYear": "1948",
+    "ranAt": "2026-10-08T23:13:09.191Z",
+    "overall": "refuted",
+    "assertions": [
+      "The World Trade Organization (WTO) Appellate Body was established before or during 1948.",
+      "The WTO Appellate Body was functional (hearing cases) at any time between its establishment and 1948."
+    ],
+    "yearRetained": true,
+    "elapsedMs": 18080,
+    "errors": []
+  }
+]

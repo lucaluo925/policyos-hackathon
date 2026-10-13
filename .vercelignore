@@ -1,0 +1,52 @@
+# Keep local credentials, backups and generated files out of deployment uploads.
+.DS_Store
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.data/
+coverage/
+dist/
+build/
+out/
+tmp/
+logs/
+*.log
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+private/
+/data/
+datasets/
+outputs/
+output/
+reports/
+deliveries/
+*.pem
+*.key
+*.p12
+*.mobileprovision
+*.tsbuildinfo
+next-env.d.ts
+
+# research market data cache (re-downloadable)
+/research/data/
+__pycache__/
+
+# vercel project link (local)
+.vercel
+
+# Local DB backups taken before destructive cleanups — data, never committed.
+.backup-*.json
+.tmp-*.ts
+

@@ -1,0 +1,28 @@
+{
+  "version": "v2_exploratory",
+  "registered_at": "2026-09-21",
+  "status": "exploratory — motivated by v1 in-sample results; must NOT be tested on v1 events",
+  "motivation": "In v1 the CN equipment basket fell sharply on technology-wide rules (E09 Oct-2022: CAR[0,1] -23.9%) while entity-level additions showed no consistent sign. The v1 'domestic substitution' hypothesis (H2) pooled two mechanisms that may point in opposite directions.",
+  "rule_scope_definition": {
+    "supply_chain": "event cluster contains at least one BIS document tagged eventType=advanced_computing_semis by fr-tagger-v2 (technology- or country-wide controls on tools, chips, or US-person support)",
+    "entity": "event cluster contains only Entity List documents (named companies)"
+  },
+  "in_sample_descriptive_v1": {
+    "note": "Descriptive only, from research/event_study/export.py. Not evidence for v2.",
+    "CN_SEMI_EQUIP_SUBSTITUTE": {"supply_chain": {"n": 3, "mean_car_0_1": -0.0863, "median": -0.0291}, "entity": {"n": 13, "mean_car_0_1": 0.0098, "median": -0.0036}}
+  },
+  "test_sample": {
+    "events": "tightening BIS events whose event_instant is after 2026-09-22T00:00:00Z, collected by the PolicyOS federal_register backfill/cron and reviewed with the same rules as v1",
+    "method": "identical to hypotheses_v1.json (market model, [-250,-30] estimation, primary window [0,1], same baskets and event-day rule)",
+    "earliest_evaluation": "when either class has >= 8 out-of-sample events; report interim descriptive numbers yearly without inference"
+  },
+  "hypotheses": [
+    {"id": "H4", "primary": true, "basket": "CN_SEMI_EQUIP_SUBSTITUTE", "scope": "supply_chain", "expected_sign": "negative", "rationale": "Tool/chip-wide controls constrain Chinese fabs' capex and US-person support, cutting domestic equipment demand expectations."},
+    {"id": "H5", "primary": false, "basket": "CN_SEMI_EQUIP_SUBSTITUTE", "scope": "entity", "expected_sign": "positive", "rationale": "Named-customer restrictions redirect procurement to domestic vendors. Weak prior: v1 entity median was slightly negative."}
+  ],
+  "known_limitations": [
+    "Supply-chain rules are rare (3 in 2018–2026), so H4 may take years to reach n=8.",
+    "Scope classification depends on fr-tagger-v2; the tagger version is frozen for v2 evaluation.",
+    "Confounds (e.g. index-level rallies, earnings) are not controlled beyond the market model."
+  ]
+}

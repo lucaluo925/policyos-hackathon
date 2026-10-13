@@ -1,0 +1,136 @@
+{
+  "hypotheses_version": "fut_v1",
+  "n_events_input": 10,
+  "merged_away": [],
+  "baskets": {
+    "SPREAD_SOY_CORN": {
+      "expected_sign": "negative",
+      "primary_hypothesis": "HF1",
+      "windows": {
+        "[-1,1]": {
+          "n": 10,
+          "mean_car": 0.0009519810705556735,
+          "median_car": 0.0020065177564904113,
+          "sd": 0.01574915493561643,
+          "t": 0.19114857175691088,
+          "p_t_one_sided": 0.5736740925830787,
+          "n_expected_sign": 4,
+          "p_sign_one_sided": 0.828125
+        },
+        "[0,1]": {
+          "n": 10,
+          "mean_car": 0.0014313354755468735,
+          "median_car": -0.0006821244059349461,
+          "sd": 0.015256907080611977,
+          "t": 0.2966708897559076,
+          "p_t_one_sided": 0.613274861276799,
+          "n_expected_sign": 5,
+          "p_sign_one_sided": 0.623046875
+        },
+        "[0,5]": {
+          "n": 10,
+          "mean_car": -0.002850159100698993,
+          "median_car": 7.203976261481579e-05,
+          "sd": 0.013919047226207662,
+          "t": -0.6475295546878947,
+          "p_t_one_sided": 0.2667282047944012,
+          "n_expected_sign": 5,
+          "p_sign_one_sided": 0.623046875
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 326,
+        "placebo_draws": 1000,
+        "placebo_mean": 0.00028172354371810396,
+        "placebo_sd": 0.003780563162475367,
+        "p_placebo": 0.6303696303696303
+      }
+    },
+    "AG_SOYBEANS": {
+      "expected_sign": "negative",
+      "primary_hypothesis": "HF2",
+      "windows": {
+        "[-1,1]": {
+          "n": 10,
+          "mean_car": -0.0016595408628991206,
+          "median_car": 0.0017225859357133375,
+          "sd": 0.015575536062769827,
+          "t": -0.33693408533312436,
+          "p_t_one_sided": 0.37194529497903583,
+          "n_expected_sign": 5,
+          "p_sign_one_sided": 0.623046875
+        },
+        "[0,1]": {
+          "n": 10,
+          "mean_car": -0.0031462271241624504,
+          "median_car": -0.005978970452228944,
+          "sd": 0.01303576182074163,
+          "t": -0.7632268742992951,
+          "p_t_one_sided": 0.23243153015154144,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.376953125
+        },
+        "[0,5]": {
+          "n": 10,
+          "mean_car": -0.00955198372926682,
+          "median_car": -0.01466187808839906,
+          "sd": 0.018396788721598622,
+          "t": -1.6419183377308202,
+          "p_t_one_sided": 0.06751179059772622,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.171875
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 326,
+        "placebo_draws": 1000,
+        "placebo_mean": 0.0007337044655586984,
+        "placebo_sd": 0.004428275246892217,
+        "p_placebo": 0.1848151848151848
+      }
+    },
+    "AG_CORN": {
+      "expected_sign": "positive",
+      "primary_hypothesis": null,
+      "windows": {
+        "[-1,1]": {
+          "n": 9,
+          "mean_car": -0.008946295592069085,
+          "median_car": -0.008029223573287158,
+          "sd": 0.025395725060881842,
+          "t": -1.0568269546101041,
+          "p_t_one_sided": 0.8392717157021332,
+          "n_expected_sign": 3,
+          "p_sign_one_sided": 0.91015625
+        },
+        "[0,1]": {
+          "n": 9,
+          "mean_car": -0.010647190906618857,
+          "median_car": -0.010532724543026386,
+          "sd": 0.02046080098187096,
+          "t": -1.561110571778593,
+          "p_t_one_sided": 0.9214396463518668,
+          "n_expected_sign": 3,
+          "p_sign_one_sided": 0.91015625
+        },
+        "[0,5]": {
+          "n": 9,
+          "mean_car": -0.014869184796985117,
+          "median_car": -0.015447977364125141,
+          "sd": 0.03632578680434447,
+          "t": -1.2279859107035338,
+          "p_t_one_sided": 0.8728232084447167,
+          "n_expected_sign": 2,
+          "p_sign_one_sided": 0.98046875
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 344,
+        "placebo_draws": 1000,
+        "placebo_mean": -0.0003184630308691879,
+        "placebo_sd": 0.005532599329017303,
+        "p_placebo": 0.977022977022977
+      }
+    }
+  }
+}

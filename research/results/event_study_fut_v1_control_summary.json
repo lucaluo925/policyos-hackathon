@@ -1,0 +1,146 @@
+{
+  "hypotheses_version": "fut_v1_control",
+  "n_events_input": 25,
+  "merged_away": [
+    "C12",
+    "C13",
+    "C14",
+    "C15",
+    "C16",
+    "C18",
+    "C22",
+    "C23",
+    "C24"
+  ],
+  "baskets": {
+    "SPREAD_SOY_CORN": {
+      "expected_sign": "negative",
+      "primary_hypothesis": "HF1",
+      "windows": {
+        "[-1,1]": {
+          "n": 16,
+          "mean_car": -0.0012510084670198742,
+          "median_car": -0.00326730594181622,
+          "sd": 0.012272761228247733,
+          "t": -0.4077349648554971,
+          "p_t_one_sided": 0.3446141769116642,
+          "n_expected_sign": 9,
+          "p_sign_one_sided": 0.4018096923828125
+        },
+        "[0,1]": {
+          "n": 16,
+          "mean_car": 0.0026120084627683426,
+          "median_car": 0.003538115797888623,
+          "sd": 0.015095942347969616,
+          "t": 0.6921087541433687,
+          "p_t_one_sided": 0.7502782943710622,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.7727508544921875
+        },
+        "[0,5]": {
+          "n": 16,
+          "mean_car": 0.006064733764994136,
+          "median_car": 0.007882604674033119,
+          "sd": 0.02917725688197461,
+          "t": 0.8314330287493013,
+          "p_t_one_sided": 0.7906158561709724,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.8949432373046875
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 279,
+        "placebo_draws": 1000,
+        "placebo_mean": 2.816526815149992e-05,
+        "placebo_sd": 0.003012010864793841,
+        "p_placebo": 0.7892107892107892
+      }
+    },
+    "AG_SOYBEANS": {
+      "expected_sign": "positive",
+      "primary_hypothesis": null,
+      "windows": {
+        "[-1,1]": {
+          "n": 16,
+          "mean_car": -0.00033714817632391056,
+          "median_car": -0.005153965629456926,
+          "sd": 0.02005504650943025,
+          "t": -0.06724455635949332,
+          "p_t_one_sided": 0.5263624223368433,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.7727508544921875
+        },
+        "[0,1]": {
+          "n": 16,
+          "mean_car": 0.002670047810860362,
+          "median_car": -0.0013244522833476887,
+          "sd": 0.01914474567833706,
+          "t": 0.5578654019690871,
+          "p_t_one_sided": 0.2925834115455944,
+          "n_expected_sign": 8,
+          "p_sign_one_sided": 0.5981903076171875
+        },
+        "[0,5]": {
+          "n": 16,
+          "mean_car": 0.0016714813098711511,
+          "median_car": 0.003783777251012329,
+          "sd": 0.02060573883702737,
+          "t": 0.32446908564474125,
+          "p_t_one_sided": 0.37503184641194304,
+          "n_expected_sign": 9,
+          "p_sign_one_sided": 0.4018096923828125
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 279,
+        "placebo_draws": 1000,
+        "placebo_mean": 0.00019265882486216803,
+        "placebo_sd": 0.003746110106938037,
+        "p_placebo": 0.25374625374625376
+      }
+    },
+    "AG_CORN": {
+      "expected_sign": "positive",
+      "primary_hypothesis": null,
+      "windows": {
+        "[-1,1]": {
+          "n": 16,
+          "mean_car": 0.0017814338438627954,
+          "median_car": 0.0022507189289342725,
+          "sd": 0.027056669152170074,
+          "t": 0.2633633628505844,
+          "p_t_one_sided": 0.3979269678939422,
+          "n_expected_sign": 9,
+          "p_sign_one_sided": 0.4018096923828125
+        },
+        "[0,1]": {
+          "n": 16,
+          "mean_car": 0.00025855183875716104,
+          "median_car": -0.004913373880363349,
+          "sd": 0.02269205653110985,
+          "t": 0.04557574381197181,
+          "p_t_one_sided": 0.48212481352097064,
+          "n_expected_sign": 6,
+          "p_sign_one_sided": 0.8949432373046875
+        },
+        "[0,5]": {
+          "n": 16,
+          "mean_car": -0.008252235760196402,
+          "median_car": -0.006820874602824693,
+          "sd": 0.053232636920453595,
+          "t": -0.6200884448033528,
+          "p_t_one_sided": 0.7277472375746692,
+          "n_expected_sign": 7,
+          "p_sign_one_sided": 0.7727508544921875
+        }
+      },
+      "placebo_primary": {
+        "placebo_pool": 279,
+        "placebo_draws": 1000,
+        "placebo_mean": -0.0010408503554392254,
+        "placebo_sd": 0.004153960377687231,
+        "p_placebo": 0.36563436563436563
+      }
+    }
+  }
+}

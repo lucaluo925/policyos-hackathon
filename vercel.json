@@ -1,0 +1,23 @@
+{
+  "env": { "COUNTRY_RESEARCH_REQUIRE_SHARED_QUOTA": "1", "VERIFY_REQUIRE_SHARED_QUOTA": "1" },
+  "crons": [
+    { "path": "/api/pipeline/canada-immigration?trigger=cron",   "schedule": "0 0 * * *" },
+    { "path": "/api/pipeline/us-immigration?trigger=cron",       "schedule": "5 0 * * *" },
+    { "path": "/api/pipeline/uk-immigration?trigger=cron",       "schedule": "10 0 * * *" },
+    { "path": "/api/pipeline/singapore-climate?trigger=cron",    "schedule": "15 0 * * *" },
+    { "path": "/api/pipeline/australia-immigration?trigger=cron","schedule": "20 0 * * *" },
+    { "path": "/api/pipeline/eu-trade?trigger=cron",             "schedule": "25 0 * * *" },
+    { "path": "/api/pipeline/japan-trade?trigger=cron",          "schedule": "30 0 * * *" },
+    { "path": "/api/pipeline/korea-trade?trigger=cron",          "schedule": "35 0 * * *" },
+    { "path": "/api/pipeline/germany-climate?trigger=cron",      "schedule": "40 0 * * *" },
+    { "path": "/api/pipeline/uk-climate?trigger=cron",           "schedule": "45 0 * * *" },
+    { "path": "/api/pipeline/france-climate?trigger=cron",       "schedule": "50 0 * * *" },
+    { "path": "/api/pipeline/india-immigration?trigger=cron",    "schedule": "55 0 * * *" },
+    { "path": "/api/pipeline/brazil-migration?trigger=cron",     "schedule": "0 1 * * *" },
+    { "path": "/api/feeds/ingest",                               "schedule": "30 2 * * *" },
+    { "path": "/api/freshness/check",                            "schedule": "0 6 * * *" },
+    { "path": "/api/freshness/stale",                            "schedule": "0 8 * * *" },
+    { "path": "/api/review/auto-resolve",                        "schedule": "0 4 * * *" },
+    { "path": "/api/events/ingest",                              "schedule": "0 13 * * *" }
+  ]
+}

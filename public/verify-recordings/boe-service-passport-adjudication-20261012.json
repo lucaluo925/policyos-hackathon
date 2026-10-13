@@ -1,0 +1,283 @@
+{
+  "id": "boe-service-passport-adjudication-20261012",
+  "claim": "Spain’s Royal Decree 396/2025 on service passports took effect on the day it was published.",
+  "ranAt": "2026-10-12T21:45:18.378Z",
+  "decomposeModel": "nvidia/nemotron-3-super-120b-a12b",
+  "overall": "refuted",
+  "assertions": [
+    {
+      "assertion": {
+        "id": "a1",
+        "text": "Spain issued Royal Decree 396/2025 concerning service passports.",
+        "searchQuery": "Spain Royal Decree 396/2025 service passports"
+      },
+      "verdict": "supported",
+      "confidence": 0.99,
+      "citedUrls": [
+        "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963"
+      ],
+      "rationale": "The first document is the official publication of Real Decreto 396/2025, dated 20 May 2025, which explicitly states it regulates the 'pasaporte de servicio' (service passport). The title and content confirm Spain issued this royal decree concerning service passports.",
+      "conflicted": false
+    },
+    {
+      "assertion": {
+        "id": "a2",
+        "text": "Royal Decree 396/2025 took effect on the day it was published.",
+        "searchQuery": "Royal Decree 396/2025 effective date publication date"
+      },
+      "verdict": "refuted",
+      "confidence": 0.95,
+      "citedUrls": [
+        "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+        "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf"
+      ],
+      "rationale": "The decree's own 'Disposición final tercera' states: 'Este real decreto entrará en vigor el día siguiente al de su publicación en el «Boletín Oficial del Estado»' (it shall enter into force the day after its publication in the Official State Gazette). The correction notice confirms the decree was published in BOE number 122 of 21 May 2025. Therefore, the decree took effect on 22 May 2025, not on the day of publication.",
+      "conflicted": false
+    }
+  ],
+  "docs": {
+    "a1": [
+      {
+        "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+        "title": "BOE-A-2025-9963 Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+        "retrievalScore": 0.9374919,
+        "snippet": "Disposición final primera. Título competencial.\nEste real decreto se dicta al amparo de lo dispuesto en el artículo 149.1.3.ª de la Constitución Española, que atribuye al Estado la competencia exclusiva en materia de relaciones internacionales.\nDisposición final segunda. Desarrollo y ejecución.\nSe habilita a las personas titulares de los Ministerios de Asuntos Exteriores, Unión Europea y Cooperación y del Interior para regular mediante orden ministerial conjunta el procedimiento de expedición del pasaporte de servicio.\nDisposición final tercera. Entrada en vigor.\nEste real decreto entrará en vigor el día siguiente al de su publicación en el «Boletín Oficial del Estado».\nDado en Madrid, el 20 de mayo de 2025.\nFELIPE R.\nEl Ministro de la Presidencia, Justicia y Relaciones con las Cortes, [...] Se declara la ultraactividad del régimen contenido en el Real Decreto 825/1978, de 2 de marzo, con respecto a los titulares del pasaporte de servicio que lo obtuvieron conforme a dicha normativa, hasta la expiración del período de validez de los pasaportes de servicio expedidos.\nDisposición derogatoria única. Derogación normativa.\nQueda derogado el Real Decreto 825/1978, de 2 de marzo, por el que se crea el pasaporte de servicio para el personal de las representaciones diplomáticas y consulares de España en el extranjero, así como cuantas disposiciones de igual o inferior rango se opongan a lo establecido en este real decreto.\nDisposición final primera. Título competencial. [...] El manejo y tratamiento de los datos personales que podrán recabarse para la tramitación y expedición del pasaporte de servicio se adecuará a lo dispuesto en el Reglamento (UE) 2016/679, del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de esos datos y por el que se deroga la Directiva 95/46CE (Reglamento general de protección de datos), y a la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales.\nDisposición transitoria única. Ultraactividad de la normativa anterior. [...] Asimismo, se adecúa a los artículos 11 y 12 de la Ley Orgánica 4/2015, de 30 de marzo, de protección de la seguridad ciudadana. Concretamente, el artículo 12.3 establece que «Corresponde al Gobierno, a propuesta de los Ministros de",
+        "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+        "extractionRequestId": "56cf0a78-c64f-4596-9fd5-edb57fbbb9e6"
+      },
+      {
+        "url": "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf",
+        "title": "BOE-A-2025-11957.pdf",
+        "retrievalScore": 0.78054583,
+        "snippet": "I. DISPOSICIONES GENERALES MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES 11957 Corrección de errores del Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.\nAdvertido error en el Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio, publicado en el «Boletín Oficial del Estado» número 122, de 21 de mayo de 2025, se procede a efectuar la oportuna rectificación: En la página 65846, cuarto párrafo, en la cuarta línea, donde dice: «... disposición adicional quinta ...», debe decir: «... disposición final quinta ...».\nBOLETÍN OFICIAL DEL ESTADO Núm. 143 Sábado 14 de junio de 2025 Sec. I. Pág. 77566 cve: BOE-A-2025-11957 Verificable en   BOLETÍN OFICIAL DEL ESTADO D. L.: M-1/1958 - ISSN: 0212-033X",
+        "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+        "extractionRequestId": "56cf0a78-c64f-4596-9fd5-edb57fbbb9e6"
+      },
+      {
+        "url": "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2025-9963/metadatos",
+        "title": "BOE official open-data metadata: Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+        "retrievalScore": 1,
+        "snippet": "BOE issuer metadata for BOE-A-2025-9963. Publication date (fecha_publicacion): 2025-05-21. This metadata records publication only; consult the original law's final provision for entry into force."
+      }
+    ],
+    "a2": [
+      {
+        "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+        "title": "BOE-A-2025-9963 Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+        "retrievalScore": 0.9374919,
+        "snippet": "Disposición final primera. Título competencial.\nEste real decreto se dicta al amparo de lo dispuesto en el artículo 149.1.3.ª de la Constitución Española, que atribuye al Estado la competencia exclusiva en materia de relaciones internacionales.\nDisposición final segunda. Desarrollo y ejecución.\nSe habilita a las personas titulares de los Ministerios de Asuntos Exteriores, Unión Europea y Cooperación y del Interior para regular mediante orden ministerial conjunta el procedimiento de expedición del pasaporte de servicio.\nDisposición final tercera. Entrada en vigor.\nEste real decreto entrará en vigor el día siguiente al de su publicación en el «Boletín Oficial del Estado».\nDado en Madrid, el 20 de mayo de 2025.\nFELIPE R.\nEl Ministro de la Presidencia, Justicia y Relaciones con las Cortes, [...] Se declara la ultraactividad del régimen contenido en el Real Decreto 825/1978, de 2 de marzo, con respecto a los titulares del pasaporte de servicio que lo obtuvieron conforme a dicha normativa, hasta la expiración del período de validez de los pasaportes de servicio expedidos.\nDisposición derogatoria única. Derogación normativa.\nQueda derogado el Real Decreto 825/1978, de 2 de marzo, por el que se crea el pasaporte de servicio para el personal de las representaciones diplomáticas y consulares de España en el extranjero, así como cuantas disposiciones de igual o inferior rango se opongan a lo establecido en este real decreto.\nDisposición final primera. Título competencial. [...] El manejo y tratamiento de los datos personales que podrán recabarse para la tramitación y expedición del pasaporte de servicio se adecuará a lo dispuesto en el Reglamento (UE) 2016/679, del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de esos datos y por el que se deroga la Directiva 95/46CE (Reglamento general de protección de datos), y a la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales.\nDisposición transitoria única. Ultraactividad de la normativa anterior. [...] Asimismo, se adecúa a los artículos 11 y 12 de la Ley Orgánica 4/2015, de 30 de marzo, de protección de la seguridad ciudadana. Concretamente, el artículo 12.3 establece que «Corresponde al Gobierno, a propuesta de los Ministros de",
+        "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+        "extractionRequestId": "f3fa6820-ac9a-4e4c-9ffe-aa0e3a8303ae"
+      },
+      {
+        "url": "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf",
+        "title": "BOE-A-2025-11957.pdf",
+        "retrievalScore": 0.78054583,
+        "snippet": "I. DISPOSICIONES GENERALES MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES 11957 Corrección de errores del Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.\nAdvertido error en el Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio, publicado en el «Boletín Oficial del Estado» número 122, de 21 de mayo de 2025, se procede a efectuar la oportuna rectificación: En la página 65846, cuarto párrafo, en la cuarta línea, donde dice: «... disposición adicional quinta ...», debe decir: «... disposición final quinta ...».\nBOLETÍN OFICIAL DEL ESTADO Núm. 143 Sábado 14 de junio de 2025 Sec. I. Pág. 77566 cve: BOE-A-2025-11957 Verificable en   BOLETÍN OFICIAL DEL ESTADO D. L.: M-1/1958 - ISSN: 0212-033X",
+        "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+        "extractionRequestId": "f3fa6820-ac9a-4e4c-9ffe-aa0e3a8303ae"
+      },
+      {
+        "url": "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2025-9963/metadatos",
+        "title": "BOE official open-data metadata: Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+        "retrievalScore": 1,
+        "snippet": "BOE issuer metadata for BOE-A-2025-9963. Publication date (fecha_publicacion): 2025-05-21. This metadata records publication only; consult the original law's final provision for entry into force."
+      }
+    ]
+  },
+  "stats": {
+    "tavilyCalls": 5,
+    "modelCalls": 5,
+    "elapsedMs": 19710
+  },
+  "tavilyRequestIds": [
+    "6cad868d-7aa0-421b-92c2-b7ae7889f86e",
+    "31cb8f8b-b363-4296-bf90-83e492848c80",
+    "56cf0a78-c64f-4596-9fd5-edb57fbbb9e6",
+    "2d5d315d-ea6c-4e55-8f99-87bedefebada",
+    "f3fa6820-ac9a-4e4c-9ffe-aa0e3a8303ae"
+  ],
+  "provenance": {
+    "startedAt": "2026-10-12T21:44:58.668Z",
+    "completedAt": "2026-10-12T21:45:18.378Z",
+    "models": {
+      "decomposer": "nvidia/nemotron-3-super-120b-a12b",
+      "screener": "nvidia/nemotron-3-super-120b-a12b",
+      "adjudicator": "nvidia/Nemotron-3-Ultra-550b-a55b"
+    },
+    "adjudicationEvidence": {
+      "a1": [
+        {
+          "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+          "title": "BOE-A-2025-9963 Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+          "retrievalScore": 0.9374919,
+          "snippet": "Disposición final primera. Título competencial.\nEste real decreto se dicta al amparo de lo dispuesto en el artículo 149.1.3.ª de la Constitución Española, que atribuye al Estado la competencia exclusiva en materia de relaciones internacionales.\nDisposición final segunda. Desarrollo y ejecución.\nSe habilita a las personas titulares de los Ministerios de Asuntos Exteriores, Unión Europea y Cooperación y del Interior para regular mediante orden ministerial conjunta el procedimiento de expedición del pasaporte de servicio.\nDisposición final tercera. Entrada en vigor.\nEste real decreto entrará en vigor el día siguiente al de su publicación en el «Boletín Oficial del Estado».\nDado en Madrid, el 20 de mayo de 2025.\nFELIPE R.\nEl Ministro de la Presidencia, Justicia y Relaciones con las Cortes, [...] Se declara la ultraactividad del régimen contenido en el Real Decreto 825/1978, de 2 de marzo, con respecto a los titulares del pasaporte de servicio que lo obtuvieron conforme a dicha normativa, hasta la expiración del período de validez de los pasaportes de servicio expedidos.\nDisposición derogatoria única. Derogación normativa.\nQueda derogado el Real Decreto 825/1978, de 2 de marzo, por el que se crea el pasaporte de servicio para el personal de las representaciones diplomáticas y consulares de España en el extranjero, así como cuantas disposiciones de igual o inferior rango se opongan a lo establecido en este real decreto.\nDisposición final primera. Título competencial. [...] El manejo y tratamiento de los datos personales que podrán recabarse para la tramitación y expedición del pasaporte de servicio se adecuará a lo dispuesto en el Reglamento (UE) 2016/679, del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de esos datos y por el que se deroga la Directiva 95/46CE (Reglamento general de protección de datos), y a la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales.\nDisposición transitoria única. Ultraactividad de la normativa anterior. [...] Asimismo, se adecúa a los artículos 11 y 12 de la Ley Orgánica 4/2015, de 30 de marzo, de protección de la seguridad ciudadana. Concretamente, el artículo 12.3 establece que «Corresponde al Gobierno, a propuesta de los Ministros de",
+          "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+          "extractionRequestId": "56cf0a78-c64f-4596-9fd5-edb57fbbb9e6"
+        },
+        {
+          "url": "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf",
+          "title": "BOE-A-2025-11957.pdf",
+          "retrievalScore": 0.78054583,
+          "snippet": "I. DISPOSICIONES GENERALES MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES 11957 Corrección de errores del Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.\nAdvertido error en el Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio, publicado en el «Boletín Oficial del Estado» número 122, de 21 de mayo de 2025, se procede a efectuar la oportuna rectificación: En la página 65846, cuarto párrafo, en la cuarta línea, donde dice: «... disposición adicional quinta ...», debe decir: «... disposición final quinta ...».\nBOLETÍN OFICIAL DEL ESTADO Núm. 143 Sábado 14 de junio de 2025 Sec. I. Pág. 77566 cve: BOE-A-2025-11957 Verificable en   BOLETÍN OFICIAL DEL ESTADO D. L.: M-1/1958 - ISSN: 0212-033X",
+          "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+          "extractionRequestId": "56cf0a78-c64f-4596-9fd5-edb57fbbb9e6"
+        },
+        {
+          "url": "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2025-9963/metadatos",
+          "title": "BOE official open-data metadata: Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+          "retrievalScore": 1,
+          "snippet": "BOE issuer metadata for BOE-A-2025-9963. Publication date (fecha_publicacion): 2025-05-21. This metadata records publication only; consult the original law's final provision for entry into force."
+        }
+      ],
+      "a2": [
+        {
+          "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+          "title": "BOE-A-2025-9963 Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+          "retrievalScore": 0.9374919,
+          "snippet": "Disposición final primera. Título competencial.\nEste real decreto se dicta al amparo de lo dispuesto en el artículo 149.1.3.ª de la Constitución Española, que atribuye al Estado la competencia exclusiva en materia de relaciones internacionales.\nDisposición final segunda. Desarrollo y ejecución.\nSe habilita a las personas titulares de los Ministerios de Asuntos Exteriores, Unión Europea y Cooperación y del Interior para regular mediante orden ministerial conjunta el procedimiento de expedición del pasaporte de servicio.\nDisposición final tercera. Entrada en vigor.\nEste real decreto entrará en vigor el día siguiente al de su publicación en el «Boletín Oficial del Estado».\nDado en Madrid, el 20 de mayo de 2025.\nFELIPE R.\nEl Ministro de la Presidencia, Justicia y Relaciones con las Cortes, [...] Se declara la ultraactividad del régimen contenido en el Real Decreto 825/1978, de 2 de marzo, con respecto a los titulares del pasaporte de servicio que lo obtuvieron conforme a dicha normativa, hasta la expiración del período de validez de los pasaportes de servicio expedidos.\nDisposición derogatoria única. Derogación normativa.\nQueda derogado el Real Decreto 825/1978, de 2 de marzo, por el que se crea el pasaporte de servicio para el personal de las representaciones diplomáticas y consulares de España en el extranjero, así como cuantas disposiciones de igual o inferior rango se opongan a lo establecido en este real decreto.\nDisposición final primera. Título competencial. [...] El manejo y tratamiento de los datos personales que podrán recabarse para la tramitación y expedición del pasaporte de servicio se adecuará a lo dispuesto en el Reglamento (UE) 2016/679, del Parlamento Europeo y del Consejo, de 27 de abril de 2016, relativo a la protección de las personas físicas en lo que respecta al tratamiento de datos personales y a la libre circulación de esos datos y por el que se deroga la Directiva 95/46CE (Reglamento general de protección de datos), y a la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales.\nDisposición transitoria única. Ultraactividad de la normativa anterior. [...] Asimismo, se adecúa a los artículos 11 y 12 de la Ley Orgánica 4/2015, de 30 de marzo, de protección de la seguridad ciudadana. Concretamente, el artículo 12.3 establece que «Corresponde al Gobierno, a propuesta de los Ministros de",
+          "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+          "extractionRequestId": "f3fa6820-ac9a-4e4c-9ffe-aa0e3a8303ae"
+        },
+        {
+          "url": "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf",
+          "title": "BOE-A-2025-11957.pdf",
+          "retrievalScore": 0.78054583,
+          "snippet": "I. DISPOSICIONES GENERALES MINISTERIO DE LA PRESIDENCIA, JUSTICIA Y RELACIONES CON LAS CORTES 11957 Corrección de errores del Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.\nAdvertido error en el Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio, publicado en el «Boletín Oficial del Estado» número 122, de 21 de mayo de 2025, se procede a efectuar la oportuna rectificación: En la página 65846, cuarto párrafo, en la cuarta línea, donde dice: «... disposición adicional quinta ...», debe decir: «... disposición final quinta ...».\nBOLETÍN OFICIAL DEL ESTADO Núm. 143 Sábado 14 de junio de 2025 Sec. I. Pág. 77566 cve: BOE-A-2025-11957 Verificable en   BOLETÍN OFICIAL DEL ESTADO D. L.: M-1/1958 - ISSN: 0212-033X",
+          "searchRequestId": "31cb8f8b-b363-4296-bf90-83e492848c80",
+          "extractionRequestId": "f3fa6820-ac9a-4e4c-9ffe-aa0e3a8303ae"
+        },
+        {
+          "url": "https://www.boe.es/datosabiertos/api/legislacion-consolidada/id/BOE-A-2025-9963/metadatos",
+          "title": "BOE official open-data metadata: Real Decreto 396/2025, de 20 de mayo, por el que se regula el pasaporte de servicio.",
+          "retrievalScore": 1,
+          "snippet": "BOE issuer metadata for BOE-A-2025-9963. Publication date (fecha_publicacion): 2025-05-21. This metadata records publication only; consult the original law's final provision for entry into force."
+        }
+      ]
+    },
+    "modelCalls": [
+      {
+        "model": "nvidia/nemotron-3-super-120b-a12b",
+        "tool": "record_assertions",
+        "outcome": "tool_returned",
+        "elapsedMs": 2155,
+        "usage": {
+          "promptTokens": 556,
+          "completionTokens": 295,
+          "reasoningTokens": 173
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "decompose"
+      },
+      {
+        "model": "nvidia/nemotron-3-super-120b-a12b",
+        "tool": "record_screening",
+        "outcome": "tool_returned",
+        "elapsedMs": 2839,
+        "usage": {
+          "promptTokens": 2611,
+          "completionTokens": 596,
+          "reasoningTokens": 252
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "screen",
+        "assertionId": "a1"
+      },
+      {
+        "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+        "tool": "record_verdict",
+        "outcome": "tool_returned",
+        "elapsedMs": 1726,
+        "usage": {
+          "promptTokens": 1942,
+          "completionTokens": 404,
+          "reasoningTokens": 272
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "adjudicate",
+        "assertionId": "a1"
+      },
+      {
+        "model": "nvidia/nemotron-3-super-120b-a12b",
+        "tool": "record_screening",
+        "outcome": "tool_returned",
+        "elapsedMs": 3206,
+        "usage": {
+          "promptTokens": 2740,
+          "completionTokens": 656,
+          "reasoningTokens": 299
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "screen",
+        "assertionId": "a2"
+      },
+      {
+        "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+        "tool": "record_verdict",
+        "outcome": "tool_returned",
+        "elapsedMs": 2233,
+        "usage": {
+          "promptTokens": 1944,
+          "completionTokens": 713,
+          "reasoningTokens": 493
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "adjudicate",
+        "assertionId": "a2"
+      }
+    ],
+    "sourceInspection": {
+      "a1": {
+        "status": "done",
+        "requestedUrls": [
+          "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+          "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf",
+          "https://www.arintass.com/entry-into-force-of-the-new-immigration-regulation-in-spain"
+        ],
+        "extractedUrls": [
+          "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+          "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf",
+          "https://www.arintass.com/entry-into-force-of-the-new-immigration-regulation-in-spain"
+        ],
+        "failedUrls": [],
+        "requestId": "56cf0a78-c64f-4596-9fd5-edb57fbbb9e6",
+        "preservedSearchUrls": [],
+        "creditsReported": 1
+      },
+      "a2": {
+        "status": "done",
+        "requestedUrls": [
+          "https://www.federalregister.gov/documents/2025/12/30/2025-23970/security-bars-and-processing-confirmation-of-effective-date-partial-withdrawal",
+          "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+          "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf"
+        ],
+        "extractedUrls": [
+          "https://www.federalregister.gov/documents/2025/12/30/2025-23970/security-bars-and-processing-confirmation-of-effective-date-partial-withdrawal",
+          "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+          "https://www.boe.es/boe/dias/2025/06/14/pdfs/BOE-A-2025-11957.pdf"
+        ],
+        "failedUrls": [],
+        "requestId": "f3fa6820-ac9a-4e4c-9ffe-aa0e3a8303ae",
+        "preservedSearchUrls": [
+          "https://www.federalregister.gov/documents/2025/12/30/2025-23970/security-bars-and-processing-confirmation-of-effective-date-partial-withdrawal"
+        ],
+        "creditsReported": 1
+      }
+    }
+  },
+  "publicEvidenceScope": "adjudication_only",
+  "sourceAttribution": {
+    "label": "Basado en datos de la Agencia Estatal Boletín Oficial del Estado",
+    "url": "https://www.boe.es",
+    "reuseNoticeUrl": "https://www.boe.es/informacion/aviso_legal/",
+    "primaryDocumentUrl": "https://www.boe.es/buscar/doc.php?id=BOE-A-2025-9963",
+    "publicationDate": "2025-05-21",
+    "correctionDate": "2025-06-14",
+    "selectionNotice": "PolicyOS selected these passages from a real run. This is nonofficial analysis; BOE does not participate in or endorse it."
+  }
+}
