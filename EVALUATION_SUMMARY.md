@@ -320,3 +320,32 @@ pipeline and the actual API event stream, including Tavily search and a later
 verdict. They establish the control flow only. No live provider run, anonymous
 browser check, or reliability estimate exists for this new path. The currently
 shared Preview predates it.
+
+## Prospective hosted policy packet, 13 October 2026 UTC
+
+An eight-run protocol fixed four new claims, expected labels, paired retrieval
+modes, order and a strict issuer-grounding rubric before any provider request.
+The cases were developer-selected after checking the relevant issuing bodies;
+they are not an independent sample. The first run on the anonymous shared
+Preview checked whether Australian Group 1 entities must report for financial
+years beginning on or after 1 January 2025. It completed with the expected
+`supported` label, two Tavily calls, three Nemotron calls, no stage errors and
+one saved review assertion. **Strict issuer grounding failed (0/1):** the
+retained ASIC excerpt did not name Group 1, and the final citations were all
+secondary publishers. The second scheduled run received HTTP 429 from the
+deployment's rolling daily verification limit before a provider call. The
+protocol stopped there: one completed run, one cap-denied attempt and six
+unrun cells. There is no paired-mode comparison or accuracy percentage from
+this packet. The first run's two Tavily request IDs were
+`77647006-d7c6-462c-837b-e858568b9e26` and
+`5801cd1d-2296-4887-9cde-7bd8b01067dd`.
+
+After this exposed failure, the source gained a general retrieval check for
+named `Group N` policy cohorts. If an official excerpt lacks the named group
+and claim year together, optional source-inspection mode can spend a bounded
+official-domain Search call and retain a more specific excerpt from the same
+URL with its own request ID. A simulated end-to-end transport test confirms
+that such an excerpt reaches adjudication. This is a **post-packet debugging
+change**, not a rescoring of the Australian run or proof that a live provider
+draw will find or cite the needed passage. The shared Preview predates this
+change, and the hosted run cap prevented a fresh test of it.

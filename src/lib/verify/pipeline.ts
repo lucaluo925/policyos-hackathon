@@ -27,7 +27,8 @@ import { hasClaimDateRelation, inspectSourceExcerpts, readIssuerHtml,
   sourceInspectionUrls } from './source-inspection';
 import { needsOfficialSearch, officialSearchDomains, officialSearchQuery,
   isInSearchScope, scopedHitAddsSection, scopedHitAddsYear, scopedHitAddsBoundary,
-  lacksExceptionDisposition, scopedHitAddsDisposition, scopedHitAddsRoute } from './official-search';
+  lacksExceptionDisposition, scopedHitAddsDisposition, scopedHitAddsRoute,
+  scopedHitAddsGroup } from './official-search';
 import { preserveTopicalOfficialSource, screeningJudgements } from './screening';
 import { reusableIssuerEvidence } from './evidence-reuse';
 import { isOfficialSource } from './sources';
@@ -498,6 +499,7 @@ export async function* runVerification(
               const existing = docs.find(value => value.url === doc.url);
               return !existing || scopedHitAddsSection(claim, existing.snippet, doc.snippet) ||
                 scopedHitAddsYear(assertion.text, existing.snippet, doc.snippet) ||
+                scopedHitAddsGroup(assertion.text, existing.snippet, doc.snippet) ||
                 scopedHitAddsBoundary(assertion.text, existing.snippet, doc.snippet) ||
                 scopedHitAddsDisposition(assertion.text, existing.snippet, doc.snippet) ||
                 scopedHitAddsRoute(assertion.text, existing.snippet, doc.snippet);

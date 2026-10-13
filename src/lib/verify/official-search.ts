@@ -114,6 +114,14 @@ function referencedSection(claim: string): string | null {
   return claim.match(/\bsection\s+(\d{1,3})\b/i)?.[1] ?? null;
 }
 
+function namedGroup(claim: string): string | null {
+  return claim.match(/\bgroup\s+(\d{1,2})\b/i)?.[1] ?? null;
+}
+
+function passageNamesGroup(passage: string, group: string): boolean {
+  return new RegExp(`\\bgroup\\s+${group}\\b`, 'i').test(passage);
+}
+
 function passageNamesSection(passage: string, section: string, needsStatus: boolean): boolean {
   return [...passage.matchAll(/\bsections?\b/gi)].some(match => {
     const context = passage.slice(Math.max(0, match.index - 100), match.index + 260);
@@ -143,6 +151,13 @@ export function needsOfficialSearch(
   const years = claimYears(assertionText);
   if (years.length > 0 && !official.some(doc => years.every(year =>
     doc.snippet.includes(year)))) return true;
+  // Phased policies often use named cohorts. A page about the first year for
+  // "largest entities" does not, by itself, establish a claim about Group 1.
+  // Seek an issuer excerpt that names the cohort and date together. This is a
+  // retrieval gate, not an inference that the claimed rule is true.
+  const group = namedGroup(assertionText);
+  if (group && !official.some(doc => passageNamesGroup(doc.snippet, group) &&
+    years.every(year => doc.snippet.includes(year)))) return true;
   // An exception claim needs a passage that actually states how a rule
   // applies. A dated program table listing eligible courses does not settle
   // whether the applicant is exempt from a separate requirement. The
@@ -257,6 +272,18 @@ export function scopedHitAddsYear(
 ): boolean {
   const years = claimYears(assertionText);
   return years.length > 0 && !years.every(year => existing.includes(year)) &&
+    years.every(year => scoped.includes(year));
+}
+
+/** Preserve a second issuer excerpt of the same URL when it adds the named
+ * cohort and its year; the first excerpt may only say "largest entities". */
+export function scopedHitAddsGroup(
+  assertionText: string, existing: string, scoped: string,
+): boolean {
+  const group = namedGroup(assertionText);
+  if (!group) return false;
+  const years = claimYears(assertionText);
+  return !passageNamesGroup(existing, group) && passageNamesGroup(scoped, group) &&
     years.every(year => scoped.includes(year));
 }
 

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { needsOfficialSearch, officialSearchDomains, officialSearchQuery,
   isInSearchScope, scopedHitAddsSection, scopedHitAddsYear, scopedHitAddsBoundary,
-  scopedHitAddsDisposition, scopedHitAddsRoute, lacksExceptionDisposition } from '../official-search';
+  scopedHitAddsDisposition, scopedHitAddsRoute, scopedHitAddsGroup,
+  lacksExceptionDisposition } from '../official-search';
 import { runVerification } from '../pipeline';
 import type { VerifyEvent } from '../types';
 
@@ -182,6 +183,72 @@ test('an official page from a different year does not satisfy a dated assertion'
   assert.equal(needsOfficialSearch('Singapore tax rate in 2024 and 2026', [
     {url: 'https://www.nccs.gov.sg/one', snippet: 'The rate was S$25 in 2024 and S$45 in 2026.'},
   ], ['gov.sg']), false);
+});
+
+test('a dated official overview without the named policy cohort triggers scoped search', () => {
+  const claim = "Australia's Group 1 entities must prepare sustainability reports for financial years beginning on or after 1 January 2025.";
+  const url = 'https://www.asic.gov.au/regulatory-resources/sustainability-reporting';
+  const overview = 'The largest entities report for financial years beginning on or after 1 January 2025.';
+  const scoped = 'Group 1 entities must report for financial years commencing on or after 1 January 2025.';
+  assert.equal(needsOfficialSearch(claim, [{ url, snippet: overview }], ['gov.au']), true);
+  assert.equal(needsOfficialSearch(claim, [{ url, snippet: scoped }], ['gov.au']), false);
+  assert.equal(scopedHitAddsGroup(claim, overview, scoped), true);
+  assert.equal(scopedHitAddsGroup(claim, scoped, overview), false);
+  assert.equal(scopedHitAddsGroup('Australia reporting changed in 2025', overview, scoped), false);
+});
+
+test('a second issuer excerpt naming a cohort reaches adjudication with its search origin', async () => {
+  const previous = {nebius: process.env.NEBIUS_API_KEY, tavily: process.env.TAVILY_API_KEY};
+  process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
+  const claim = "Australia's Group 1 entities must prepare sustainability reports for financial years beginning on or after 1 January 2025.";
+  const url = 'https://www.asic.gov.au/regulatory-resources/sustainability-reporting';
+  const searches: Array<Record<string, unknown>> = [];
+  let adjudicationPrompt = '';
+  const transport: typeof fetch = async (input, init) => {
+    const endpoint = String(input);
+    const body = JSON.parse(String(init?.body));
+    if (endpoint.endsWith('/search')) {
+      searches.push(body);
+      const scoped = Boolean(body.include_domains);
+      return Response.json({request_id: scoped ? 'asic-scoped' : 'asic-overview', results: [{
+        url, title: 'Sustainability reporting', score: .94,
+        content: scoped
+          ? 'Group 1 entities must prepare sustainability reports for financial years commencing on or after 1 January 2025.'
+          : 'The largest entities prepare sustainability reports for financial years commencing on or after 1 January 2025.',
+      }]});
+    }
+    if (endpoint.endsWith('/extract')) return Response.json({request_id: 'asic-empty-extract', results: []});
+    const name = body.tool_choice.function.name;
+    if (name === 'record_verdict') adjudicationPrompt = body.messages.at(-1).content;
+    const args = name === 'record_assertions'
+      ? {assertions: [{text: claim, search_query: 'Australia sustainability reporting Group 1 start date'}]}
+      : name === 'record_screening'
+        ? {judgements: [0, 1].map(index => ({index, relevant: true, leaning: 'supports'}))}
+        : {verdict: 'supported', confidence: .8, cited_urls: [url], rationale: 'The issuer passage names the cohort and date.'};
+    return Response.json({choices: [{finish_reason: 'tool_calls', message: {
+      tool_calls: [{function: {name, arguments: JSON.stringify(args)}}],
+    }}]});
+  };
+  try {
+    const events: VerifyEvent[] = [];
+    for await (const event of runVerification(claim,
+      {inspectSources: true, tavilyBudget: 3, fetch: transport})) events.push(event);
+    const evidence = events.find(event => event.type === 'evidence');
+    const done = events.find(event => event.type === 'done');
+    assert.ok(evidence?.type === 'evidence');
+    assert.ok(done?.type === 'done');
+    assert.deepEqual(searches.map(search => search.include_domains ?? null), [null, ['gov.au']]);
+    assert.deepEqual(evidence.docs.map(doc => doc.searchRequestId), ['asic-overview', 'asic-scoped']);
+    assert.match(adjudicationPrompt, /Group 1 entities must prepare/);
+    assert.equal(done.result.stats.tavilyCalls, 3);
+    assert(done.result.provenance?.adjudicationEvidence.a1.some(doc =>
+      doc.url === url && doc.searchRequestId === 'asic-scoped' && /Group 1/.test(doc.snippet)));
+  } finally {
+    if (previous.nebius === undefined) delete process.env.NEBIUS_API_KEY;
+    else process.env.NEBIUS_API_KEY = previous.nebius;
+    if (previous.tavily === undefined) delete process.env.TAVILY_API_KEY;
+    else process.env.TAVILY_API_KEY = previous.tavily;
+  }
 });
 
 test('a changeover-year page does not settle a different before-date entitlement', () => {
