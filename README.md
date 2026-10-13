@@ -240,14 +240,19 @@ its review period, verified provider capacity, and a video of the final build.
 
 ## Evaluation and reproducibility
 
+The [13 October hosted packet](EVALUATION_V65.txt) completed three predeclared
+claims on the public app: three expected labels, but only one strict
+whole-claim issuer-grounding pass. The report records the French and
+New Zealand evidence gaps, exact source/deployment, calls, cost estimates
+and remaining judge-access requirements.
+
 [Evaluation summary](EVALUATION_SUMMARY.md) gives the recorded protocols,
 selected-case results and failures. Exact retrieval passages and model inputs
 from those dated evaluation runs remain in a separate private research archive
 because the public source package has not established redistribution rights for
 every publisher. The BOE example is a separate real run with exact adjudication
-inputs, not a replay of those evaluations. The summary does not represent a new
-test of this candidate or claim that judges can reproduce old scores from
-redacted outputs. Anyone with
+inputs, not a replay of those evaluations. Each packet identifies its tested build; it does not claim that judges can
+reproduce old scores from redacted outputs. Anyone with
 their own keys can run fresh claims through the shared production pipeline;
 `npm run verify:seed` writes its raw evidence to ignored `private/` storage.
 

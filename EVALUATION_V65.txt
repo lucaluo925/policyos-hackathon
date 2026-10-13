@@ -1,0 +1,116 @@
+POLICYOS — FUNDED PROSPECTIVE HOSTED EVALUATION
+13 October 2026. V65 execution of the frozen V59 packet.
+
+Result: 3/3 completed runs, 3/3 expected overall labels, 1/3 strict
+whole-claim issuer-grounding passes. No retries or replacement draws.
+This is a three-case developer-selected evaluation, scored by the development
+assistant. It is not an independent accuracy estimate or a controlled test
+of Tavily Extract's incremental effect.
+
+BUILD AND METHOD
+Source: 10ee5553e765332f05acd97adf5f25c79b2ff7d9
+Deployment: dpl_8yDRmLLYiqrX28G69BerN2chEgyu
+Site: https://policyos-app.vercel.app/verify
+The requests used the site's actual POST /api/verify route with source
+inspection enabled. This packet is hosted API evidence, not a browser UI test.
+The earlier anonymous browser EU smoke is a separate known-case observation.
+Core verifier logic is unchanged from frozen source da68fe0; the current
+build adds budgeted transport, admission and report changes.
+
+The original packet fixed exact claims, expected labels, order and scoring
+before any of these calls. A written pre-run amendment permitted funded
+evaluation before a separate judge-access path was ready; this relaxes only
+the earlier operational prerequisite. December availability remains unproven.
+Claims, label expectations, evidence criteria and stop rules did not change.
+Each run must finish without stage errors and record Tavily and model calls.
+Strict grounding additionally requires the exact saved model input to contain
+the issuing body's decisive scope and date/duration, and a final citation to
+that issuing body. Government-host matching alone does not pass that test.
+
+AU — LABEL PASS; STRICT ISSUER GROUNDING PASS
+Claim: Australia's Group 2 entities first have to prepare sustainability
+reports for financial years beginning on or after 1 January 2026.
+Expected / observed: refuted / refuted.
+Pipeline time: 14.789 seconds. Tavily calls: 3. Model calls: 3.
+Review persistence: 1 assertion saved. Stage errors: 0.
+The saved ASIC passage describes three phased cohorts and assigns the second
+cohort the financial-year start of 1 July 2026. This identifies Group 2 by its
+ordinal position rather than the literal phrase "Group 2". The verdict cites
+that ASIC page. The corresponding PwC passage is corroboration, not the basis
+for the issuer-grounding score. The earlier V58 Group 1 failure is retained;
+this Group 2 case is not a replacement result or a causal repair estimate.
+Issuer cited:
+https://www.asic.gov.au/regulatory-resources/sustainability-reporting/for-preparers-of-sustainability-reports/who-must-prepare-a-sustainability-report
+
+FR — LABEL PASS; STRICT ISSUER GROUNDING FAIL
+Claim: Businesses established in France and subject to VAT must be able to
+receive electronic invoices from 1 September 2026, while SMEs and
+micro-enterprises have until 1 September 2027 to issue them.
+Expected / observed: supported / supported.
+Pipeline time: 18.814 seconds. Tavily calls: 5. Model calls: 5.
+Review persistence: 2 assertions saved. Stage errors: 0.
+The tax authority excerpt supplied to the first assertion contains the two
+dates but omits the VAT scope. The second assertion's tax-authority excerpt
+does not preserve the SME issuing date; its final verdict cites the government
+information portal and secondary publishers, not the tax authority. The
+government portal provides useful official explanatory support, but it is not
+treated as the issuing tax authority merely because its domain is official.
+The stricter predeclared whole-claim test therefore fails. This is an evidence
+completeness/citation failure, not a wrong overall label.
+Tax authority retrieved and cited by the first assertion:
+https://www.impots.gouv.fr/internationalenbusiness/i-want-understand-electronic-invoicing
+Government information portal cited by both assertions:
+https://entreprendre.service-public.gouv.fr/actualites/A15683?lang=en
+Predeclared issuing-body reference:
+https://www.economie.gouv.fr/tout-savoir-sur-la-facturation-electronique-pour-les-entreprises
+
+NZ — LABEL PASS; STRICT ISSUER GROUNDING FAIL
+Claim: New Zealand Traveller and Transit NZeTAs are valid for five years
+from the date of issue.
+Expected / observed: refuted / refuted.
+Pipeline time: 10.082 seconds. Tavily calls: 2. Model calls: 3.
+Review persistence: 1 assertion saved. Stage errors: 0.
+The saved Immigration New Zealand passages distinguish travellers at two
+years from crew at five years. They do not explicitly settle the Transit
+category or the issue-date start. The model itself acknowledges the missing
+Transit category. Refuting the traveller part is enough to contradict the
+compound claim, but not enough for the deliberately stricter whole-claim
+grounding criterion. The predeclared Operations Manual passage was not in
+the exact adjudication input and cannot be added after the run to rescue it.
+Issuer cited:
+https://www.immigration.govt.nz/about-us/news-centre/new-zealand-electronic-travel-authority-nzeta
+https://www.immigration.govt.nz/visas/new-zealand-electronic-travel-authority-nzeta
+Predeclared issuing-body reference:
+https://www.immigration.govt.nz/opsmanual/72603.htm
+
+RUNTIME AND PERSISTENCE
+All 11 model calls returned tool calls with HTTP 200 and recorded token usage.
+Super handled decomposition/screening; Ultra handled adjudication on Nebius
+Token Factory. All 10 Tavily calls have recorded request IDs. Four assertion
+audit records were independently read from the isolated hosted database and
+all carry low stored confidence. No human approval or score change occurred.
+The database currently retains verdicts, cited URLs and request IDs, not the
+full saved adjudication excerpts. Complete streamed results are archived
+privately; a "saved for review" status is not proof of full-evidence storage.
+
+Packet model expense estimated from returned tokens: US$0.0240243 before tax.
+The application ledger charged US$0.030035 including 25% headroom and rounding.
+After these runs the hosted ledger totals US$0.038204, with no unsettled
+reservations. Including the preceding local smoke, known accounted usage is
+US$0.04637164 under the owner's US$5 authorization. Tavily credits are separate.
+These are application estimates, not a provider invoice or account-wide cap.
+
+LIMITS AND NEXT ACTION
+The next retrieval improvement should preserve all named categories, scope
+qualifiers and obligation/date pairs, and distinguish issuing bodies from
+official explanatory portals. Any use of these three exposed cases after a
+repair is a development regression check, not a new prospective evaluation.
+Raw SSE, exact model inputs, token diagnostics, request IDs, source/deployment
+metadata, SHA256 hashes and database acceptance evidence remain private.
+This public summary intentionally contains paraphrases and URLs, not the full
+third-party excerpts. It is not sufficient to replay the withheld inputs.
+
+Free unrestricted judge access through 15 December is not yet established.
+The current 12-run rolling daily cap and 20 October budget-review expiry remain
+release blockers. The owner's narration and final English captions, public
+YouTube publication, and owner-authorized Devpost submission remain pending.

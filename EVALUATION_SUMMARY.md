@@ -1,6 +1,13 @@
 # Dated verification evaluation summary
 
-These are development research results collected on 11–12 October 2026,
+Latest: [V65 funded hosted evaluation](EVALUATION_V65.txt), 13 October 2026,
+executed the frozen V59 packet on source `10ee555`: **3/3 completed and label
+matches; 1/3 strict whole-claim issuer-grounding passes**. Each case ran once.
+French tax-authority scope/citation and New Zealand Transit coverage were
+incomplete. Earlier failures remain below. These selected cases do not
+establish population accuracy or judging-period availability.
+
+The earlier packets below are development research results collected on 11–12 October 2026,
 before this public-source package excluded the full archived responses. Each
 packet fixed its claims and protocol before its own provider calls, but the
 case sets were small, developer-selected, correlated and reviewed by a
