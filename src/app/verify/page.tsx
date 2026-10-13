@@ -644,17 +644,36 @@ export default function VerifyPage() {
                       const exact = report?.adjudicationEvidence?.[v.assertion.id]?.find((d) => d.url === u);
                       const retrieved = docs.find((d) => d.url === u);
                       const excerpt = exact?.snippet ?? retrieved?.snippet;
+                      const origin = exact?.snippet !== undefined ? exact : retrieved;
+                      const discovery = origin?.issuerDiscovery;
                       return excerpt ? (
                         <div className="mt-2 border-l-2 border-border pl-3">
                           <p className="text-xs text-muted">{exact
                             ? t('Excerpt submitted for this verdict', '本次裁决接收的摘录')
-                            : t('Retrieved search excerpt', '检索到的搜索摘录')}</p>
-                          {(exact?.extractionRequestId ?? retrieved?.extractionRequestId) !== undefined && (
+                            : t('Retrieved source excerpt', '检索到的来源摘录')}</p>
+                          {origin?.extractionRequestId !== undefined && (
                             <p className="mt-1 break-all text-xs text-muted">{t('Read from source page · Tavily Extract', '已读取来源原文 · Tavily Extract')}
-                              {' · '}{(exact?.extractionRequestId ?? retrieved?.extractionRequestId) || t('Request ID not returned', '未返回请求编号')}</p>
+                              {' · '}{origin.extractionRequestId || t('Request ID not returned', '未返回请求编号')}</p>
                           )}
-                          {(exact?.issuerHtmlRead ?? retrieved?.issuerHtmlRead) === true && (
-                            <p className="mt-1 text-xs text-muted">{t('Read directly from the source URL found by Tavily', '直接读取 Tavily 找到的来源网址')}</p>
+                          {origin?.issuerHtmlRead === true && (
+                            <p className="mt-1 text-xs text-muted">{discovery
+                              ? t('Read directly from the document linked in the official index', '直接读取官方目录链接的文件')
+                              : t('Read directly from the source URL found by Tavily', '直接读取 Tavily 找到的来源网址')}</p>
+                          )}
+                          {discovery && (
+                            <details className="mt-2 text-xs text-muted">
+                              <summary className="cursor-pointer">{t('How we found this source', '如何找到这份来源')}</summary>
+                              <ol className="mt-2 list-decimal space-y-2 pl-5">
+                                <li>{t('Tavily found a related section: ', 'Tavily 找到相关章节：')}
+                                  <a href={discovery.seedUrl} target="_blank" rel="noopener noreferrer" className="break-all text-accent underline">{discovery.seedUrl}</a>
+                                </li>
+                                <li>{t('The official index linked to this document: ', '官方目录指向本文件：')}
+                                  <a href={discovery.indexUrl} target="_blank" rel="noopener noreferrer" className="break-all text-accent underline">{discovery.indexUrl}</a>
+                                </li>
+                                <li>{t('We read that document directly. Its retained passage appears below.', '直接读取该文件，保留的摘录见下方。')}</li>
+                              </ol>
+                              <p className="mt-2 break-all">{t('Tavily seed request: ', 'Tavily 线索请求：')}{discovery.seedRequestId || t('Not recorded', '未记录')}</p>
+                            </details>
                           )}
                           <blockquote className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">{excerpt}</blockquote>
                           <p className="mt-1 text-xs text-muted">{t('Truncated source excerpt; open the source for its full context.', '这是截取的来源内容，完整上下文请查看原文。')}</p>
@@ -681,7 +700,9 @@ export default function VerifyPage() {
                       <li key={d.url} className="min-w-0 rounded-lg border border-border p-3">
                         <div className="flex flex-wrap items-baseline gap-2">
                         <span className={kept ? 'text-foreground' : 'text-muted line-through'}>
-                          {d.retrievalScore.toFixed(2)}
+                          {d.issuerDiscovery
+                            ? t('Official-index discovery · not search-scored', '官方目录发现 · 无搜索评分')
+                            : d.retrievalScore.toFixed(2)}
                         </span>
                         <span className="text-muted">{leaning}</span>
                         <a href={d.url} target="_blank" rel="noopener noreferrer" className="break-words underline">
