@@ -1,12 +1,18 @@
 # Public source scope
 
+For the latest deployed source and access limits, see
+[`RELEASE_V78.txt`](RELEASE_V78.txt). Historical checks below retain their
+original dates and do not establish continuous availability.
+
 This public repository was created from one clean source snapshot; it is not
 the older Production deployment. It retains the full
 functional PolicyOS application: live Tavily/Nemotron verification, its
 evidence-trail report, the global directory, and the direct official-source
 announcement reader. It includes 13 claim-only starters that require a fresh
-provider-backed run, plus one dated BOE example that displays the exact
-official-source passages used for adjudication without calling providers.
+provider-backed run, plus dated BOE and EU AI Act examples without provider
+calls. The BOE example publishes all six of its adjudication passages. The
+EU example publishes one unchanged passage out of seven and lists the six
+withheld source URLs; it is not a complete public model-input archive.
 The map can hand off any directory economy to the live claim verifier and can
 initiate on-demand Tavily Search for climate, trade or immigration even where
 no fixed source is configured. Its country-specific links are research leads,
@@ -27,7 +33,7 @@ The unmodified raw records remain in the private v24 archive, where their
 original hashes and historical limitations can be checked. An older public
 ZIP must not be presented as this source scope. The public
 [`EVALUATION_SUMMARY.md`](EVALUATION_SUMMARY.md) reports selected-case outcomes
-and failures but does not claim to recreate exact old model inputs. The one
+and failures but does not claim to recreate exact old model inputs. The
 included BOE example is from a separate local v25 live run. It retains exact
 adjudication inputs and omits earlier retrieval and screening passages, which
 included other publishers' text. Its displayed tool counts are historical.

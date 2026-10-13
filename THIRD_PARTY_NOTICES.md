@@ -4,6 +4,27 @@ The MIT license applies to original PolicyOS code and documentation. It does
 not relicense externally retrieved pages, API responses, government marks,
 news articles or other publishers' assets.
 
+## Hosted models and retrieval services
+
+PolicyOS calls NVIDIA models through the Nebius Token Factory API. This
+repository distributes application code, not model weights or checkpoints.
+The model identifiers in `src/lib/verify/nemotron.ts` and the provider's
+catalog were checked on 13 October 2026:
+
+| Runtime model | Application role | License listed by Nebius |
+| --- | --- | --- |
+| [`nvidia/nemotron-3-super-120b-a12b`](https://tokenfactory.nebius.com/models/catalog/text2text/nvidia%2Fnemotron-3-super-120b-a12b) | Claim decomposition and evidence screening | [NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/) |
+| [`nvidia/Nemotron-3-Ultra-550b-a55b`](https://tokenfactory.nebius.com/models/catalog/text2text/nvidia%2FNemotron-3-Ultra-550b-a55b) | Evidence adjudication and bounded decomposition fallback | [OpenMDW-1.1](https://openmdw.ai/license/1-1/) |
+
+These are dated provider-catalog observations, not a grant of rights from
+PolicyOS. Model materials and hosted service access retain their own terms;
+the MIT license for this repository does not replace those terms. The
+[Nebius service agreement](https://docs.nebius.com/legal/agreement) governs
+the hosted service. Tavily Search and Extract are external API services;
+retrieved publishers' text remains subject to its original source terms.
+Provider and model names identify runtime dependencies and do not imply
+endorsement of PolicyOS or its verdicts.
+
 ## Included source data
 
 The 217-entry country/economy directory in
