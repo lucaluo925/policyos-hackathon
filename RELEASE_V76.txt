@@ -1,0 +1,58 @@
+V76 HOSTED ACCEPTANCE AND RELEASE — 13 OCTOBER 2026
+
+Public application: https://policyos-app.vercel.app/verify
+Runtime source: 901f5c44d88834372488311a055b89e6afab3f27
+Public merge: c44addf0e489b764c267e02fa45505571c485aa6 (identical source tree)
+Review: https://github.com/lucaluo925/policyos-hackathon/pull/1
+CI: https://github.com/lucaluo925/policyos-hackathon/actions/runs/38473191297
+
+The qualifier-preservation and issuer-discovery candidate is now released.
+V72 and V73–V75 evaluation files retain their original, pre-release status
+and outcomes. This receipt adds hosted acceptance; it does not replace them.
+
+One known-case browser run
+Claim: New Zealand Traveller and Transit NZeTAs are valid for five years
+from the date of issue.
+Source inspection enabled. Verify clicked once; no rescue rerun.
+Completed at 2026-10-13T21:51:08.699Z.
+Result: refuted. Pipeline time 11.494 seconds, three Tavily calls, three
+Nemotron calls, seven retrieved documents and one completed assertion.
+The cited current Immigration New Zealand manual included Traveller and
+Transit validity, different Crew validity, and the date-of-issue condition.
+Its discovery lineage retained the Tavily seed URL/request and issuer index.
+Direct index/document reads are not counted as Tavily calls. Request counts
+are not provider credits. The UI's generic direct-read label does not explain
+the index hop; the downloadable structured report retains that distinction.
+
+Persistence and access
+The actual browser-downloaded JSON matched the database snapshot for claim,
+overall result, assertions, statistics, Tavily IDs, models, model calls,
+adjudication evidence, successful search metadata and source-inspection data.
+One linked review item was saved at low confidence. Anonymous access to the
+saved-record API returned 401 with private/no-store cache control. The full
+download is retained privately because it includes third-party source text.
+
+Release
+All three CI jobs passed on the exact candidate: TypeScript tests/typecheck/
+lint/build, real PostgreSQL quota and persistence tests, and Python research
+tests. The local candidate previously passed 525 offline tests.
+The staged production build was promoted without rebuilding. The alias API
+confirmed policyos-app.vercel.app points to that same deployment; the browser
+opened /verify without a sign-in wall. The independent contest project has
+zero scheduled jobs. The original policyos-one project was not changed.
+
+Cost/accounting
+The shared model ledger increased by $0.008573 to $0.220504, with no unsettled
+reservations. Including earlier known out-of-ledger model usage gives
+$0.22867164. This is application accounting, not a provider invoice or balance.
+Tavily charges are separate. The owner's $5 ceiling was not increased.
+
+Scope and remaining gates
+This is one familiar-case hosted functionality/persistence check, not a new
+accuracy sample, typical latency, or sustained-availability proof. V73's
+new-case strict outcome remains 1/2; its later German repair is a known-case
+retest. V72's 3/3 strict passes are familiar development cases.
+Current live budget authorization expires October 20 and rolling daily caps
+remain. Free unrestricted judge access through December 15 is not yet proved.
+Owner narration, final synchronized English captions, authorized public
+YouTube publication and Devpost submission remain incomplete.

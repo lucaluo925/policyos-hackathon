@@ -23,6 +23,9 @@ withheld source URLs, and preserves the recorded verdict and call counts. The
 separate BOE recording publishes its complete adjudication passages. Neither
 recording is a fresh check.
 
+The [V76 release receipt](RELEASE_V76.txt) records the current candidate's
+hosted browser check, evidence-download/database comparison and promotion.
+It is one known-case functionality check, not an accuracy estimate.
 The [acceptance record](PREVIEW_ACCEPTANCE.md) documents earlier funded
 Tavily/Nemotron runs and anonymous browser checks on a Vercel Preview. These
 historical results do not establish current availability. Funded access throughout
