@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 export interface ReviewItemRow {
   id: string;
+  verificationRunId: string | null;
   targetType: string;
   status: string;
   priority: number;
@@ -285,6 +286,14 @@ export default function ReviewQueueActions({ items }: { items: ReviewItemRow[] }
                     )}
                   </td>
                   <td className="px-4 py-3">
+                    {item.verificationRunId && (
+                      <a
+                        href={`/api/verify/records/${encodeURIComponent(item.verificationRunId)}`}
+                        className="mb-2 inline-flex min-h-10 items-center rounded border border-border px-3 py-2 text-xs font-medium text-accent hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                      >
+                        Download saved evidence
+                      </a>
+                    )}
                     {isPending ? (
                       <div className="flex flex-wrap gap-2">
                         <button

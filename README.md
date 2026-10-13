@@ -240,6 +240,31 @@ its review period, verified provider capacity, and a video of the final build.
 
 ## Evaluation and reproducibility
 
+### Saved verification evidence
+
+New live results store one private `VerificationRun` snapshot containing the
+complete verification result, exact retained adjudication excerpts, source
+attribution, model diagnostics and tool request IDs. All assertion review items
+and their audit entries commit in the same transaction as this snapshot.
+The archive covers adjudication inputs, not full source pages or every earlier
+retrieval/screening passage. Historical items without saved evidence stay
+unlinked; the app never fills their gaps from today's web pages.
+
+After applying migration `0010_verification_evidence` with `npm run db:migrate`,
+an authenticated administrator can use **Download saved evidence** on the review
+queue, even after the original verifier page has closed. The JSON endpoint
+`/api/verify/records/<id>` requires the admin session and returns private,
+non-cacheable attachments. Record IDs and cron credentials do not grant access.
+Regular audit/review list APIs remain metadata-only. Browser-side exports still
+work when persistence fails; an oversized archive fails visibly rather than
+silently truncating its evidence. Existing application score guards are unchanged.
+
+No migration or new code recreates missing evidence for old reviews. A source
+record is evidence of what the model saw, not proof that the policy verdict is
+correct or that a human has approved it.
+
+### Dated evaluations
+
 The [13 October hosted packet](EVALUATION_V65.txt) completed three predeclared
 claims on the public app: three expected labels, but only one strict
 whole-claim issuer-grounding pass. The report records the French and

@@ -21,6 +21,7 @@ export interface CreateReviewItemInput {
   targetType: string;
   targetId: string;
   contributionId?: string | null;
+  verificationRunId?: string | null;
   priority?: number;
   confidence?: VerificationConfidence;
   recommendedAction?: string | null;
@@ -33,6 +34,7 @@ export async function createReviewItem(input: CreateReviewItemInput, client: Pri
       targetType: input.targetType,
       targetId: input.targetId,
       contributionId: input.contributionId ?? null,
+      verificationRunId: input.verificationRunId ?? null,
       priority: input.priority ?? 3,
       confidence: input.confidence ?? 'unverified',
       recommendedAction: input.recommendedAction ?? null,

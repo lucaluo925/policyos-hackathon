@@ -367,6 +367,7 @@ model ReviewQueueItem {
   targetType        String                 @map("target_type") // 'contribution' | 'source_change' | 'policy_proposal' | 'score_change'
   targetId          String                 @map("target_id")
   contributionId    String?                @map("contribution_id")
+  verificationRunId String?                @map("verification_run_id")
   priority          Int                    @default(3)
   confidence        VerificationConfidence @default(unverified)
   recommendedAction String?                @map("recommended_action")
@@ -390,11 +391,13 @@ model ReviewQueueItem {
   updatedAt         DateTime               @updatedAt @map("updated_at")
 
   contribution Contribution?  @relation(fields: [contributionId], references: [id])
+  verificationRun VerificationRun? @relation(fields: [verificationRunId], references: [id], onDelete: Restrict)
   actions      ReviewAction[]
 
   @@index([status, priority, createdAt])
   @@index([targetType, targetId])
   @@index([groupKey])
+  @@index([verificationRunId])
   @@index([status, resolvedAt])
   @@map("review_queue")
 }
@@ -414,6 +417,18 @@ model ReviewAction {
 }
 
 // ─── Audit & runs ──────────────────────────────────────────────────────────
+
+// One immutable snapshot per verification, shared by all its review items.
+// Contains private source excerpts. Never include in public list/export APIs.
+model VerificationRun {
+  id        String   @id @default(cuid())
+  snapshot  Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  reviewItems ReviewQueueItem[]
+
+  @@map("verification_runs")
+}
 
 model AuditLog {
   id            String                 @id @default(cuid())

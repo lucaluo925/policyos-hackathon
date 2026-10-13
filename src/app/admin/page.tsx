@@ -747,6 +747,7 @@ export default async function AdminPage() {
         <h2 className="text-xl font-bold mb-4">Review Queue</h2>
         <ReviewQueueActions items={reviewItems.map((r) => ({
           id: r.id,
+          verificationRunId: r.verificationRunId,
           targetType: r.targetType,
           status: r.status,
           priority: r.priority,

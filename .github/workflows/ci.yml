@@ -34,6 +34,7 @@ jobs:
       - run: npm ci
       - run: npm run db:migrate
       - run: node --import tsx --test tests/integration/quota-postgres.test.ts
+      - run: node --import tsx --test tests/integration/verification-postgres.test.ts
 
   web:
     name: TypeScript — tests, type-check, lint

@@ -34,6 +34,7 @@
 import type { VerificationConfidence } from '@prisma/client';
 import { auditRepo, getPrisma, isDatabaseConfigured, reviewRepo } from '@/lib/db';
 import type { AssertionResult, VerificationResult } from './types';
+import { verificationSnapshot } from './archive';
 
 /** targetType used for every row this module writes. Deliberately not 'policy_version'. */
 export const CLAIM_TARGET_TYPE = 'claim_verification';
@@ -137,13 +138,14 @@ export interface PersistedAssertion {
 
 export interface PersistOutcome {
   persisted: PersistedAssertion[];
+  verificationRunId?: string;
   skipped?: string;
 }
 
 /**
- * Writes one review-queue row and one audit entry per assertion. The entire
- * result is committed as one transaction, so a failed audit write cannot
- * leave an orphaned queue row or a partially saved multi-assertion result.
+ * Writes one evidence snapshot per run and a review/audit row per assertion.
+ * All commit together, so neither a missing snapshot nor a failed audit write
+ * can leave an apparently saved, partially reviewable result.
  *
  * Deduplication is deliberately not done here: the resolver already collapses
  * duplicates by groupKey, and re-running a claim is a legitimate action whose
@@ -157,7 +159,9 @@ export async function persistVerification(
     return { persisted: [], skipped: 'DATABASE_URL is not set; verification not persisted' };
   }
 
-  const persisted = await getPrisma().$transaction(async (tx): Promise<PersistedAssertion[]> => {
+  const snapshot = verificationSnapshot(result);
+  return getPrisma().$transaction(async (tx): Promise<PersistOutcome> => {
+    const run = await tx.verificationRun.create({ data: { snapshot }, select: { id: true } });
     const rows: PersistedAssertion[] = [];
     for (const r of result.assertions) {
       const storedConfidence = confidenceToEnum(r);
@@ -166,6 +170,7 @@ export async function persistVerification(
       const item = await reviewRepo.createReviewItem({
         targetType: CLAIM_TARGET_TYPE,
         targetId,
+        verificationRunId: run.id,
         priority: MACHINE_ROW_PRIORITY,
         confidence: storedConfidence,
         recommendedAction: 'human_review',
@@ -189,9 +194,10 @@ export async function persistVerification(
         actorId: opts.actorId ?? 'verify-pipeline',
         confidence: storedConfidence,
         sourceUrl: r.citedUrls[0] ?? null,
-        // The raw float and the full evidence trail live here, so capping the
-        // enum loses no information a reviewer might want.
+        // Metadata points to the same immutable snapshot as the review item.
+        // Full excerpts remain private and outside audit-list responses.
         newValue: {
+          verificationRunId: run.id,
           verdict: r.verdict,
           modelConfidence: r.confidence,
           conflicted: r.conflicted,
@@ -219,10 +225,8 @@ export async function persistVerification(
         },
       });
     }
-    return rows;
+    return { persisted: rows, verificationRunId: run.id };
   });
-
-  return { persisted };
 }
 
 /** Stable, readable id fragment for a claim. Not a security hash. */
