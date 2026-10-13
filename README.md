@@ -14,9 +14,11 @@ This is the **public source snapshot** prepared for the
 The [release scope](PUBLIC_RELEASE_SCOPE.md) explains which private research
 records are deliberately excluded. The MIT license applies to original PolicyOS
 code and documentation, not external websites or source data.
-An [acceptance record](PREVIEW_ACCEPTANCE.md) documents one funded Tavily/Nemotron
-run and one country search on a Vercel Preview. That Preview is login-protected;
-the unrestricted public demo required for judging is still pending.
+The [acceptance record](PREVIEW_ACCEPTANCE.md) documents funded Tavily/Nemotron
+runs, an anonymous country search, and positive/negative claim checks on a
+Vercel Preview. Its owner-approved shareable link gives anonymous visitors
+access while the link remains active. A stable final demo URL and public video
+still need to be supplied with the Devpost submission.
 
 ## What changed for the hackathon
 
@@ -181,10 +183,10 @@ npm run build
 ```
 
 Offline tests and local builds do not prove provider availability, live
-accuracy, unrestricted public access, or competition acceptance. The protected
-Preview acceptance record proves one narrow live run with funded Tavily and
-Nebius calls; judging still needs an unrestricted URL, verified provider
-capacity for the judging period, and a video of the same deployed build.
+accuracy, sustained public access, or competition acceptance. The shared
+Preview acceptance record proves selected anonymous browser runs with funded
+Tavily and Nebius calls; judging still needs a working URL available throughout
+its review period, verified provider capacity, and a video of the final build.
 
 ## Evaluation and reproducibility
 

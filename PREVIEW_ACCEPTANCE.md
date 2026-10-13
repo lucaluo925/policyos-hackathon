@@ -77,3 +77,13 @@ human review. See the [evaluation summary](EVALUATION_SUMMARY.md) for request
 IDs and limits. Provider capacity across repeated runs, a hosted observation
 of the Ultra decomposition fallback, and a final filmed demo remain
 unverified.
+
+A further predeclared negative-date browser smoke on this same anonymously
+shared Preview checked the EU AI Act's false 2025 entry-into-force date. The
+page returned `refuted` in about 11 seconds and cited only the European
+Commission's timeline, whose extracted passage stated the correct 2024 date
+and distinguished later application dates. Three Tavily and three Nemotron
+calls were recorded; one assertion was saved for human review. The downloaded
+Markdown and JSON reports preserved the verdict, citation and request IDs.
+The [evaluation summary](EVALUATION_SUMMARY.md) records the narrower evidence
+and limits. This known-fact case does not establish a general accuracy rate.

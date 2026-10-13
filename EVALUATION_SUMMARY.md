@@ -277,3 +277,27 @@ Commission passage included the exact claim date. Tavily request IDs were
 This is one successful anonymous browser flow on the new Preview. It neither
 exercises the Ultra decomposition fallback nor cancels the earlier browser
 failure. No reliability percentage is inferred from these few selected runs.
+
+## Final shared Preview: negative-date browser check
+
+Before a further provider call, a local plan fixed the false claim “The EU AI
+Act entered into force on 1 August 2025” and required `refuted` with an
+official source that states the correct entry-into-force date. In the shared
+Preview's anonymous browser, with source-page reading enabled, the run
+returned `refuted` in 11,169 ms. The three Tavily calls included open Search,
+scoped official-domain Search and Extract; three Nemotron calls completed and
+one assertion was saved for human review. The only cited URL was the
+[European Commission's AI Act timeline](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai),
+whose exact Extract passage supplied to adjudication distinguishes entry into
+force on 1 August 2024 from the later application of particular obligations.
+Tavily request IDs were `53765503-93f3-4450-9ec8-2cdfe065aeaa`,
+`e537df30-821d-4a72-a767-3a1e197bc7a1`, and
+`28561b6b-f114-418e-9566-84e165addc56`.
+
+The browser's Markdown and JSON exports were downloaded and checked locally:
+both preserved the false claim, `refuted` verdict, official cited URL, request
+IDs and model roles. The JSON reported seven retrieved documents, three Tavily
+and three model calls, and a saved review assertion. Raw third-party excerpts
+from these exports remain in the private evidence folder. This repeats a
+known-fact claim used on an older build; it is final-Preview smoke evidence,
+not a new holdout or a reliability estimate.
