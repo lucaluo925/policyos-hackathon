@@ -1,0 +1,42 @@
+V73 NEW-CASE CHECK AND V75 DEVELOPMENT REPAIR — 13 OCTOBER 2026
+
+Status: local candidate. Public V66 remains unchanged. No hosted acceptance is claimed here.
+
+V73 protocol and result
+Candidate 1fbcd13 was frozen before two developer-selected new cases, DE then IE. Each ran once through the local real-provider pipeline under the existing shared spend guard. The two topics were absent from the searched evaluation notes, tests and available private case/protocol files. They were not randomly selected or independently adjudicated. The developer inspected primary references before fixing expected labels. A proposed Singapore carbon-tax case was excluded before calls because it was already present in a decomposition test.
+
+DE: German domestic Kleinunternehmer must receive e-invoices from 1 January 2025 while their own invoices are exempt from mandatory electronic issuance.
+Expected/actual: supported/supported. Strict whole-claim issuer grounding: FAIL.
+14.521 seconds, 2 Tavily calls, 3 model calls. The actual model inputs and citations came entirely from commercial/secondary publishers. The verifier had no German jurisdiction scope, and its recognized German suffix bund.de excluded the finance ministry's real domain. A correct label does not repair the missing issuer evidence.
+
+IE: a 20-year-old employee in Ireland earning EUR 30,000 and without pension contributions through payroll is automatically enrolled in MyFutureFund.
+Expected/actual: refuted/refuted. Strict whole-claim issuer grounding: PASS.
+33.270 seconds, 6 Tavily calls, 7 model calls. Exact cited Department of Social Protection passages distinguish under-23 voluntary opt-in, automatic age eligibility, earnings and payroll pension conditions. The positive 23–60 interval appears in the third assertion's input; the first assertion cites the explicit under-23 opt-in clause. This is case-wide grounding, not a claim that every source contains every condition.
+
+V73 totals: 2/2 complete and label matches; 1/2 strict grounding. Zero stage errors. Preserve this result as the new-case outcome.
+
+V74 discovery diagnostics
+Three Tavily-only advanced searches followed the exposed German gap. Adding broad German government/finance-ministry scope returned irrelevant tax pages. Using German invoice/category vocabulary on the ministry domain returned broad or historical VAT manuals. Restricting that same query to the ministry's public FAQ and standard-article collections located its relevant FAQ. These failed probes remain in the private record; three requests cost six advertised Search credits, not three credits. No Nemotron calls were made during these probes.
+
+V75 change and known-case retest
+The German finance-ministry host is now recognized in the shared country/source registry, with parsed-host lookalike rejection. German claims can trigger scoped issuer discovery; invoice topics use German topical/category vocabulary and public-guidance collections. No answer date, verdict or final FAQ URL is embedded in the runtime query logic. Initial open-web discovery can still return legal PDFs.
+
+The exact DE claim and strict criteria were retained. One new full run on frozen source completed in 23.722 seconds with 6 Tavily and 5 model calls, returning supported. Strict grounding: PASS. Both assertions cite the BMF FAQ, and the actual submitted passages contain domestic receipt from 1 January 2025 and the Kleinunternehmer issuance exception. The first assertion cites a retained Search passage; extracted passages also reached the model. Multiple returned extension/fragment aliases refer to the same FAQ and must not be counted as independent corroborating sources.
+
+This is a repaired familiar case, not a second holdout. The original V73 result remains 1/2. Search draws and model decomposition differed between runs, so no isolated treatment effect or speed improvement is established. The improvement used more provider calls and took longer. Broad multilingual/country coverage, independent policy accuracy and continuous availability remain unproven.
+
+Validation
+525 offline tests, type checking, lint and production build passed. Tests cover real ministry-host recognition, lookalike/path rejection, shared map/verifier scope, multi-jurisdiction ambiguity, and query construction without answer dates. The current runtime matches its frozen pre-call manifest. No public deployment, schema or quota change was made in these packets.
+
+Costs
+V73 model-ledger increment: $0.031943; V75: $0.020718. Shared model ledger after V75: $0.211931 with zero unsettled reservations. Including earlier known out-of-ledger usage: $0.22009864. This is application accounting, not a provider invoice/account balance. Tavily is separate. The $5 authorization, shared guard and October 20 expiry remain unchanged.
+
+Primary references used for expected labels / source ownership
+https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html
+https://finanzamt-bw.fv-bwl.de/,Lde/5217465_5283529_6239123_6239349_6239379_22796546_22796549
+https://www.bundesfinanzministerium.de/Content/DE/Impressum/impressum.html
+https://www.gov.ie/en/department-of-social-protection/press-releases/my-future-fund/
+https://myfuturefund.ie/participant
+
+Next release gates
+Hosted acceptance of this exact candidate, including actual evidence exports and stored snapshots; judging-period access; final owner narration with aligned English captions; authorized YouTube publication and Devpost submission. No overall accuracy claim is warranted.

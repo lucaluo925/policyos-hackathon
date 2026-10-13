@@ -1,4 +1,5 @@
 import { missingQualifiers } from './qualifiers';
+import { countryGovernmentSearchDomains } from './sources';
 
 /**
  * Jurisdiction hints for a second, bounded Tavily search. These are search
@@ -25,6 +26,7 @@ const SCOPES: Array<{ names: RegExp; domains: string[] }> = [
   { names: /\b(?:India|Indian)\b|印度/i, domains: ['gov.in'] },
   { names: /\b(?:Brazil|Brazilian)\b|巴西/i, domains: ['gov.br'] },
   { names: /\b(?:France|French)\b|法国/i, domains: ['gouv.fr'] },
+  { names: /\b(?:Germany|German|Deutschland)\b|德国/i, domains: [...countryGovernmentSearchDomains('DE')] },
   { names: /\bHong Kong\b|香港/i, domains: ['gov.hk'] },
 ];
 
@@ -69,6 +71,13 @@ export function officialSearchDomains(claim: string): string[] {
       /\b(?:e[- ]?invoic\w*|electronic invoic\w*|facturation [ée]lectronique)\b/i.test(claim)) {
     return ['impots.gouv.fr'];
   }
+  // German B2B invoice requirements are published by the finance ministry,
+  // whose domain is outside bund.de. The broad portal also lists unrelated
+  // VAT-exemption applications; use the issuer for this topic.
+  if (matches[0].domains[0] === 'bund.de' &&
+      /\b(?:e[- ]?invoic\w*|electronic invoic\w*|E-Rechnung\w*)\b/i.test(claim)) {
+    return ['bundesfinanzministerium.de'];
+  }
   if (matches[0].domains[0] === 'govt.nz' && /\b(?:NZeTAs?|electronic travel authorit\w*)\b/i.test(claim)) {
     return ['immigration.govt.nz'];
   }
@@ -83,6 +92,12 @@ export function officialSearchCollections(claim: string): string[] {
   if (domains[0] === 'impots.gouv.fr') {
     return ['impots.gouv.fr/professionnel', 'impots.gouv.fr/internationalenbusiness'];
   }
+  if (domains[0] === 'bundesfinanzministerium.de') {
+    // Public guidance collections avoid ranking an entire historic VAT manual
+    // above a focused explanation. The initial open-web draw still admits PDFs.
+    return ['bundesfinanzministerium.de/Content/DE/FAQ',
+      'bundesfinanzministerium.de/Content/DE/Standardartikel'];
+  }
   if (domains[0] === 'immigration.govt.nz') return ['immigration.govt.nz/opsmanual'];
   return domains;
 }
@@ -90,6 +105,13 @@ export function officialSearchCollections(claim: string): string[] {
 /** Use the issuing authority's vocabulary for this narrow bilingual topic.
  * The year comes from the user's claim; no expected answer is injected. */
 export function officialSearchQuery(claim: string, searchQuery: string): string {
+  if (officialSearchDomains(claim)[0] === 'bundesfinanzministerium.de') {
+    // Translate topical/category vocabulary only. Do not repeat a claimed
+    // effective date or supply an expected exemption or verdict.
+    const category = /\bKleinunternehmer\b|\bsmall business\w*\b/i.test(claim)
+      ? 'Kleinunternehmer' : 'Unternehmen';
+    return `E-Rechnung ${category} Empfang Ausstellung Pflicht Ausnahmen Übergangsregelungen`;
+  }
   if (officialSearchDomains(claim)[0] === 'impots.gouv.fr') {
     // Issuer-language discovery, without asserted dates or expected answers.
     return 'facturation électronique entreprises assujetties TVA réception émission calendrier PME micro-entreprises';

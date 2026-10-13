@@ -13,6 +13,17 @@ test('searchable government domains exclude a bare top-level suffix', () => {
   assert.deepEqual(countryGovernmentSearchDomains('NG'), ['gov.ng']);
 });
 
+test('German finance ministry outside bund.de is recognized without trusting all German sites', () => {
+  assert.deepEqual(countryGovernmentSearchDomains('DE'), ['bund.de', 'bundesfinanzministerium.de']);
+  const url = 'https://www.bundesfinanzministerium.de/Content/DE/FAQ/e-rechnung.html';
+  assert.equal(isOfficialSource(url), true);
+  assert.equal(isCountryGovernmentSource(url, 'DE'), true);
+  assert.equal(isCountryGovernmentSource(url, 'FR'), false);
+  assert.equal(isOfficialSource('https://www.bundesfinanzministerium.de.attacker.test/policy'), false);
+  assert.equal(isOfficialSource('https://notbundesfinanzministerium.de/policy'), false);
+  assert.equal(isOfficialSource('https://example.de/bundesfinanzministerium.de/policy'), false);
+});
+
 test('new government research domains accept real agency hosts but not lookalikes', () => {
   for (const [country, host] of [
     ['SA', 'mep.gov.sa'], ['KE', 'immigration.go.ke'],
