@@ -62,6 +62,12 @@ function sse(event: VerifyEvent): string {
 }
 
 export async function POST(request: Request) {
+  if (process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1') {
+    return Response.json(
+      { error: 'This public demo shows a dated recorded run; live verification is paused.' },
+      { status: 503 },
+    );
+  }
   let claim = '';
   let inspectSources = false;
   try {

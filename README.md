@@ -27,7 +27,11 @@ but schedules no ingestion jobs; the main `vercel.json` retains the existing
 site's scheduled jobs. Configure provider keys as sensitive server-side
 variables, a reviewed database, and verified provider capacity before enabling
 public live calls. A deployment without those services is only a static/demo
-shell, not a working live-verification submission.
+shell, not a working live-verification submission. For that read-only mode,
+set `NEXT_PUBLIC_STATIC_DEMO_MODE=1` in the separate project's Production
+environment before building. It visibly pauses live Tavily/Nemotron controls
+and blocks their API routes even if keys are added later. Remove the flag and
+redeploy only after provider access and a judge-safe quota have been checked.
 
 ## What changed for the hackathon
 

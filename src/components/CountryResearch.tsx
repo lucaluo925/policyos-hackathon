@@ -5,6 +5,8 @@ import type { CountryResearchResult, CountryResearchDomain, CountryResearchScope
 import { countryGovernmentSearchDomains } from '@/lib/verify/sources';
 import { useLocale, useT } from '@/lib/i18n/client';
 
+const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1';
+
 export default function CountryResearch({ countryIso, domain }: {
   countryIso: string;
   domain: CountryResearchDomain;
@@ -20,6 +22,13 @@ export default function CountryResearch({ countryIso, domain }: {
   useEffect(() => () => controller.current?.abort(), []);
 
   const hasGovernmentSearch = countryGovernmentSearchDomains(countryIso).length > 0;
+
+  if (STATIC_DEMO) {
+    return <section className="border-t border-border pt-3 space-y-2" aria-label={t('On-demand policy research', '按需政策检索')}>
+      <div className="text-xs font-semibold text-muted uppercase tracking-wider">{t('On-demand policy research', '按需政策检索')}</div>
+      <p className="text-xs text-muted">{t('Live Tavily country search is paused on this free public demo.', '此免费公开演示已暂停 Tavily 实时国家检索。')}</p>
+    </section>;
+  }
 
   async function runSearch(scope: CountryResearchScope) {
     controller.current?.abort();

@@ -41,6 +41,7 @@ import type {
  */
 const PROMPT_INDEX_URL = '/verify-prompts/index.json';
 const BOE_RECORDING_URL = '/verify-recordings/boe-service-passport-adjudication-20261012.json';
+const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1';
 
 interface PromptIndexEntry {
   id: string;
@@ -310,6 +311,13 @@ export default function VerifyPage() {
       </section>
 
       <div className="mx-auto max-w-3xl px-4 py-10">
+      {STATIC_DEMO && <aside role="status" className="mb-5 rounded-xl border border-accent/40 bg-accent/5 p-4 text-sm">
+        <p className="font-semibold">{t('Recorded demonstration · live checks paused', '运行记录演示 · 实时核验暂停')}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted">{t(
+          'This free public build does not call Tavily or Nebius. Open the dated BOE run below to inspect real evidence and its recorded verdict.',
+          '这个免费公开版本不会调用 Tavily 或 Nebius。请打开下方带日期的 BOE 运行记录，查看真实证据及当时的判断。',
+        )}</p>
+      </aside>}
       {mapCountry && <aside data-testid="map-country-context" className="mb-5 rounded-xl border border-border bg-surface-2 p-4 text-sm">
         <p className="font-medium">{t('From the map: ', '来自地图：')}{countryName(mapCountry.iso, mapCountry.name, locale)}</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">
@@ -343,7 +351,7 @@ export default function VerifyPage() {
           className="w-full rounded-xl border border-border bg-surface p-4 text-foreground outline-none focus:border-accent"
         />
         <label className="mt-3 flex items-start gap-2 text-sm text-foreground">
-          <input type="checkbox" checked={inspectSources} disabled={running}
+          <input type="checkbox" checked={inspectSources} disabled={running || STATIC_DEMO}
             onChange={(e) => setInspectSources(e.target.checked)} className="mt-1 accent-accent" />
           <span>{t('Seek official sources and read source pages', '补找官方来源并读取原文')}
             <span className="mt-1 block text-xs text-muted">{t(
@@ -355,10 +363,10 @@ export default function VerifyPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="submit"
-            disabled={running || !claim.trim()}
+            disabled={running || !claim.trim() || STATIC_DEMO}
             className="rounded-full bg-accent px-5 py-2 font-medium text-white disabled:opacity-40"
           >
-            {running ? t('Verifying…', '核验中…') : t('Verify', '开始核验')}
+            {STATIC_DEMO ? t('Live checks paused', '实时核验暂停') : running ? t('Verifying…', '核验中…') : t('Verify', '开始核验')}
           </button>
           {running && (
             <button
@@ -375,7 +383,9 @@ export default function VerifyPage() {
       {prompts.length > 0 && (
         <div className="mt-5">
           <p className="mb-2 text-xs text-muted">
-            {t('Claim starters — choose one, then Verify to retrieve fresh sources.', '核验题目 —— 选一条，再点「开始核验」检索最新来源。')}
+            {STATIC_DEMO
+              ? t('Claim starters are examples; live checking is paused on this build.', '下列题目仅作示例；此版本已暂停实时核验。')
+              : t('Claim starters — choose one, then Verify to retrieve fresh sources.', '核验题目 —— 选一条，再点「开始核验」检索最新来源。')}
           </p>
           <div className="flex flex-wrap gap-2">
             {prompts.map((entry) => (
