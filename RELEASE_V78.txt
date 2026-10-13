@@ -1,0 +1,48 @@
+V78 BUDGET-EXPIRY RELEASE — 13 OCTOBER 2026
+
+Public app: https://policyos-app.vercel.app/verify
+Deployed source: 5adc52b48c7813b00220e8c1f25afba56dfdba45
+Deployment: dpl_GBuLM5zGuJcYijvFp2veKMHW7tue
+
+AUTHORIZED CHANGE
+The owner authorized extending model operation through December 15, 2026,
+12:00 p.m. Pacific (2026-12-15T20:00:00Z), within the SAME US$5 aggregate
+authorization, including earlier usage. This is not an additional US$5.
+No funding top-up, ledger reset or daily-limit increase was made.
+
+Production configuration was read back after the update:
+- VERIFY_MODEL_BUDGET_EXPIRES_AT = 2026-12-15T20:00:00Z
+- The existing campaign ID remains unchanged.
+- VERIFY_MODEL_BUDGET_USD remains 4.98, leaving room for known earlier
+  usage outside that campaign ledger within the owner's aggregate limit.
+- VERIFY_DAILY_RUN_CAP and VERIFY_DAILY_ASSERTION_CAP both remain 12.
+- NEXT_PUBLIC_STATIC_DEMO_MODE remains 0.
+
+VALIDATION
+Nebius public catalog rates were rechecked before deployment: Nemotron 3
+Super input/output US$0.30/US$0.90 per million tokens; Nemotron 3 Ultra
+US$1.00/US$3.00. These matched the application rate table.
+The configured budget validator accepted the updated configuration.
+An isolated copy of the exact source above was built for the independent
+contest project with the no-cron configuration. The production deployment
+reached READY, its anonymous page loaded, and that same deployment was
+promoted. The alias API confirmed policyos-app.vercel.app points to it.
+The clean public /verify page loaded anonymously after promotion.
+The project's cron list was empty. The original PolicyOS project was untouched.
+
+This release made no new Tavily Search or Nebius inference call. It verifies
+configuration, build, alias and anonymous page access, not a new paid
+end-to-end result. See RELEASE_V76.txt for the earlier metered hosted check.
+This deployed source also includes V77 evidence-origin and source-discovery
+display corrections; no verification-pipeline code changed for V78.
+
+REMAINING RELEASE GATES
+The shared rolling daily limits and finite provider funding still do not
+establish free unrestricted judge access through judging. Application budget
+accounting is not a provider invoice or account-balance guarantee. No reset
+or limit removal should be inferred from this expiry extension.
+Final owner narration, synchronized English captions, authorized public
+YouTube publication and final submission remain pending.
+
+Historical receipts describe their own deployment snapshots. In particular,
+the October 20 expiry recorded in RELEASE_V76.txt is superseded by this release.
