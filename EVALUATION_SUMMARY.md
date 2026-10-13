@@ -1,8 +1,20 @@
 # Dated verification evaluation summary
 
+## Release status
+
+The V72–V75 implementation was subsequently released in [V76](RELEASE_V76.txt).
+That release records one familiar New Zealand hosted check, including an
+evidence-export/database comparison. [V78](RELEASE_V78.txt) records the later
+deployment and budget-expiry extension through December 15, 2026, noon Pacific;
+it made no new paid end-to-end test. These release receipts supersede the
+packets' historical deployment status, not their evaluation results. Shared
+limits and finite funding still leave judging-period access unproven.
+
+## Latest evaluation packets
+
 Latest new-case check: [V73 and V75 evidence review](EVALUATION_V73_V75.txt), 13 October 2026: **2/2 labels but 1/2 strict grounding** on two new developer-selected cases. Germany lacked issuing-body evidence; Ireland passed. A separate German retrieval repair passed one known-case retest in V75, which does not replace V73 or establish general accuracy. These are local candidate results, not hosted acceptance.
 
-Latest local candidate: [V72 known-case development regression](EVALUATION_V72.txt), 13 October 2026: **3/3 label matches and 3/3 strict issuer-grounding passes**, after V71 passed 2/3. These familiar cases informed the changes; this is not unseen accuracy or hosted acceptance. The candidate has not been deployed.
+Latest local development regression: [V72 known-case development regression](EVALUATION_V72.txt), 13 October 2026: **3/3 label matches and 3/3 strict issuer-grounding passes**, after V71 passed 2/3. These familiar cases informed the changes; this is not unseen accuracy or hosted acceptance. The packet was local and pre-release; see V76 above for the separate subsequent hosted check.
 
 Latest hosted evaluation: [V65 funded hosted evaluation](EVALUATION_V65.txt), 13 October 2026,
 executed the frozen V59 packet on source `10ee555`: **3/3 completed and label
