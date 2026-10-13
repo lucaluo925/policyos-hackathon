@@ -19,6 +19,7 @@
     "pipeline:dry-run": "tsx scripts/pipeline-dry-run.ts",
     "events:sync-review": "tsx scripts/events-sync-review.ts",
     "verify:smoke": "tsx --env-file=.env.local scripts/verify-smoke.ts",
+    "verify:budget-audit": "node --import tsx scripts/verify-budget-audit.ts",
     "verify:seed": "tsx --env-file=.env.local scripts/seed-verify-examples.ts",
     "verify:probe-faithfulness": "tsx --env-file=.env.local scripts/probe-decompose-faithfulness.ts"
   },
