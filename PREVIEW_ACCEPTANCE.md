@@ -63,6 +63,17 @@ The browser loaded the map, opened Qatar, changed to Trade, and retrieved
 three labelled government-domain research leads. The browser's predeclared
 CBAM live verification then failed at decomposition without a verdict; see
 the [evaluation summary](EVALUATION_SUMMARY.md). The next source revision
-replaces the same-model timeout retry with an Ultra fallback, but this record
-does not yet claim hosted acceptance for that revision. Provider capacity and
-a final filmed demo remain unverified.
+replaces the same-model timeout retry with an Ultra fallback. A subsequent
+protected Preview run on that source completed a different known positive
+claim in 6.6 seconds with an official citation and a saved review assertion.
+Super responded immediately, so that run does not prove the fallback branch
+in the hosted environment. The owner then approved moving the Hobby
+shareable-link slot to that Preview. The new link returned HTTP 200 from a
+fresh anonymous cookie jar on `/`, `/verify`, and `/explore`; the old link
+redirected to Vercel login. In an unauthenticated browser, the predeclared AI
+Act claim completed in about 8 seconds with `supported`, an extracted
+European Commission passage, two Tavily calls, and one assertion saved for
+human review. See the [evaluation summary](EVALUATION_SUMMARY.md) for request
+IDs and limits. Provider capacity across repeated runs, a hosted observation
+of the Ultra decomposition fallback, and a final filmed demo remain
+unverified.

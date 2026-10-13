@@ -229,6 +229,51 @@ reliability rate. The next source revision changes only the default
 decomposition transport fallback: Super has a 15-second bound, then Ultra gets
 one attempt on timeout or network failure. Explicit model overrides remain on
 the selected model so comparison probes do not silently switch candidates.
-The new revision still needs its own hosted and browser acceptance; the
-anonymous browser failure belongs to the previous 25-second same-model retry
-deployment.
+The new revision's ordinary hosted path was checked separately below; the
+fallback branch still needs a live observed timeout. The anonymous browser
+failure belongs to the previous 25-second same-model retry deployment.
+
+## Ultra-fallback build hosted smoke, 13 October 2026 UTC
+
+The fallback source commit `b804a57d7c0d13ccafd81108e879853b3a9e22f9`
+built as protected Vercel Preview deployment
+`dpl_zGy4zEe1pnHgF6NHm4bB3eB3BPRS`. Its status endpoint returned `ok:
+true`, 13 source rows and 11 pipeline countries. A predeclared one-call smoke
+checked “The EU AI Act entered into force on 1 August 2024,” expecting
+`supported` with an official citation. The streamed run completed without an
+error in 6,557 ms: one supported assertion, two Tavily calls, three Nemotron
+calls, and one saved review assertion. It cited the
+[European Commission notice](https://commission.europa.eu/news-and-media/news/ai-act-enters-force-2024-08-01_en)
+alongside four secondary pages; the official cited URL and date were in the
+retained adjudication evidence. Tavily request IDs were
+`0595fb8b-8b07-4dc5-9160-8407d59939b7` and
+`b4d8a407-f7b9-4470-be13-480596b4f78b`.
+
+Super decomposition returned in 1,343 ms on this run, so Ultra fallback was
+**not exercised** by this hosted probe. The observed result supports the
+ordinary path on the new build, while the fallback itself is covered by an
+injected timeout test and a separate one-call Ultra capability check. The
+initial CI run for this source commit failed only on an unused variable in
+that new test file. Commit `aab25d5fdd9c3e12099a8cb1156308e730cccfd7`
+fixed the warning, and [CI run 38342057131](https://github.com/lucaluo925/policyos-hackathon/actions/runs/38342057131)
+passed. Neither the older anonymous failure nor this success establishes an
+end-to-end reliability rate.
+
+## Anonymous browser acceptance of the shared Preview
+
+With explicit owner approval, Vercel's single Hobby shareable-link slot was
+moved from the older Preview to `dpl_zGy4zEe1pnHgF6NHm4bB3eB3BPRS`; the old
+link redirected an anonymous request to Vercel login. A fresh unauthenticated
+cookie jar returned HTTP 200 for `/`, `/verify`, and `/explore` on the new
+share link. In a separate unauthenticated browser, the same predeclared AI Act
+claim was entered with official-source page reading enabled. The UI reported
+one supported assertion after about 8 seconds, two Tavily calls (Search and
+Extract), three Nemotron calls, five cited URLs (one recognized official
+domain), and one assertion saved for human review. Its displayed European
+Commission passage included the exact claim date. Tavily request IDs were
+`f767942d-096b-4f0c-86fd-fe236f14921c` and
+`21474503-acc1-439f-b467-ee0bc80a85c1`.
+
+This is one successful anonymous browser flow on the new Preview. It neither
+exercises the Ultra decomposition fallback nor cancels the earlier browser
+failure. No reliability percentage is inferred from these few selected runs.
