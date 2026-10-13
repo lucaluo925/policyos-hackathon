@@ -115,6 +115,8 @@ test('one decomposition timeout retries once and records both paid-call attempts
     [call.outcome, call.failureKind ?? null]), [['failed', 'timeout'], ['tool_returned', null]]);
   assert.deepEqual(done.result.provenance?.modelCalls?.slice(0, 2).map(call => call.model),
     [MODEL_DECOMPOSER, MODEL_ADJUDICATOR]);
+  assert.equal(done.result.provenance?.models.decomposer, MODEL_ADJUDICATOR,
+    'the exported model role names the model that returned the assertions');
 });
 
 test('an explicit decomposition model stays fixed across a transport retry', async () => {
@@ -147,7 +149,9 @@ test('an explicit decomposition model stays fixed across a transport retry', asy
     if (searchKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = searchKey;
   }
   assert.deepEqual(models, [MODEL_DECOMPOSER, MODEL_DECOMPOSER]);
-  assert.ok(events.some(event => event.type === 'done'));
+  const done = events.find(event => event.type === 'done');
+  assert.ok(done?.type === 'done');
+  assert.equal(done.result.provenance?.models.decomposer, MODEL_DECOMPOSER);
 });
 
 test('invalid decomposition response is not retried', async () => {

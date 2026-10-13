@@ -313,6 +313,7 @@ export async function* runVerification(
   // 1. Decompose ───────────────────────────────────────────────────────────
   yield { type: 'stage', stage: 'decompose', status: 'start' };
   let assertions: Array<Assertion & { searchQuery: string }>;
+  let decomposerUsed = opts.decomposeModel;
   try {
     const decompose = (model: string) => callTool<{
       assertions: Array<{ text: string; search_query: string }>;
@@ -349,9 +350,11 @@ export async function* runVerification(
       // candidates. Both attempts remain in diagnostics.
       if (opts.signal?.aborted || failed?.stage !== 'decompose' ||
           (failed.failureKind !== 'timeout' && failed.failureKind !== 'network_error')) throw error;
+      const retryModel = options.decomposeModel === undefined
+        ? MODEL_ADJUDICATOR : opts.decomposeModel;
       modelCalls += 1;
-      out = await decompose(options.decomposeModel === undefined
-        ? MODEL_ADJUDICATOR : opts.decomposeModel);
+      out = await decompose(retryModel);
+      decomposerUsed = retryModel;
     }
     if (!Array.isArray(out.args.assertions) || out.args.assertions.some(a =>
       !a || typeof a.text !== 'string' || !a.text.trim() ||
@@ -893,7 +896,7 @@ export async function* runVerification(
       provenance: {
         startedAt: new Date(started).toISOString(),
         completedAt: new Date().toISOString(),
-        models: { decomposer: opts.decomposeModel, screener: MODEL_SCREENER, adjudicator: MODEL_ADJUDICATOR },
+        models: { decomposer: decomposerUsed, screener: MODEL_SCREENER, adjudicator: MODEL_ADJUDICATOR },
         adjudicationEvidence,
         modelCalls: modelCallRecords,
         ...(opts.inspectSources ? { sourceInspection } : {}),
