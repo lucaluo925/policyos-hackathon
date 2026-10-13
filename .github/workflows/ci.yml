@@ -6,6 +6,35 @@ on:
   pull_request:
 
 jobs:
+  postgres-quota:
+    name: PostgreSQL — shared quota concurrency
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: policyos
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: policyos_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U policyos -d policyos_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://policyos:isolated-ci-only@127.0.0.1:5432/policyos_ci
+      TEST_DATABASE_DISPOSABLE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: node --import tsx --test tests/integration/quota-postgres.test.ts
+
   web:
     name: TypeScript — tests, type-check, lint
     runs-on: ubuntu-latest

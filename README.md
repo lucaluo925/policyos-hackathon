@@ -214,6 +214,15 @@ npm test
 npm run build
 ```
 
+CI also runs `tests/integration/quota-postgres.test.ts` against a fresh
+PostgreSQL 16 service after applying the repository migrations. Eight separate
+Node processes compete for verifier slots, then eight compete for the last
+country-research slot. The test checks committed reservations, rolling-window
+expiry, and denial without a new reservation. It makes no provider calls and
+requires an explicitly disposable local database named `policyos_ci`; it
+refuses an existing audit history. Serialization conflicts may deny attempts
+early, so the assertion is no overspending, not guaranteed concurrent throughput.
+
 Offline tests and local builds do not prove provider availability, live
 accuracy, sustained public access, or competition acceptance. The shared
 Preview acceptance record proves selected anonymous browser runs with funded
