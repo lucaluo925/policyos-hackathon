@@ -1,3 +1,5 @@
+import { missingQualifiers } from './qualifiers';
+
 /**
  * Jurisdiction hints for a second, bounded Tavily search. These are search
  * scopes, not proof that any returned page is the issuing authority or that
@@ -22,7 +24,7 @@ const SCOPES: Array<{ names: RegExp; domains: string[] }> = [
   { names: /\bIreland\b|爱尔兰/i, domains: ['gov.ie', 'irishimmigration.ie'] },
   { names: /\b(?:India|Indian)\b|印度/i, domains: ['gov.in'] },
   { names: /\b(?:Brazil|Brazilian)\b|巴西/i, domains: ['gov.br'] },
-  { names: /\bFrance\b|法国/i, domains: ['gouv.fr'] },
+  { names: /\b(?:France|French)\b|法国/i, domains: ['gouv.fr'] },
   { names: /\bHong Kong\b|香港/i, domains: ['gov.hk'] },
 ];
 
@@ -61,12 +63,22 @@ export function officialSearchDomains(claim: string): string[] {
       /\bright\s+to\s+disconnect\b/i.test(claim)) {
     return ['fairwork.gov.au'];
   }
+  // The French tax administration publishes invoice obligations. Broad
+  // government search can return company filings hosted by another agency.
+  if (matches[0].domains[0] === 'gouv.fr' &&
+      /\b(?:e[- ]?invoic\w*|electronic invoic\w*|facturation [ée]lectronique)\b/i.test(claim)) {
+    return ['impots.gouv.fr'];
+  }
   return matches[0].domains;
 }
 
 /** Use the issuing authority's vocabulary for this narrow bilingual topic.
  * The year comes from the user's claim; no expected answer is injected. */
 export function officialSearchQuery(claim: string, searchQuery: string): string {
+  if (officialSearchDomains(claim)[0] === 'impots.gouv.fr') {
+    // Issuer-language discovery, without asserted dates or expected answers.
+    return 'facturation électronique entreprises assujetties TVA réception émission calendrier PME micro-entreprises';
+  }
   if (officialSearchDomains(claim)[0] === 'boe.es') {
     const decree = claim.match(/\b(?:royal decree|real decreto)\s+(\d+\/\d{4})\b/i);
     if (decree) {
@@ -141,6 +153,7 @@ export function needsOfficialSearch(
 ): boolean {
   const official = docs.filter(doc => isInSearchScope(doc.url, domains));
   if (!official.length) return true;
+  if (!official.some(doc => missingQualifiers(assertionText, doc.snippet).length === 0)) return true;
   const section = referencedSection(claim);
   if (section && !official.some(doc =>
     passageNamesSection(doc.snippet, section, concernsCommencement(claim)))) return true;

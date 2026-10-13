@@ -21,8 +21,8 @@ export type Verdict = (typeof VERDICTS)[number];
 
 /** Shared by the prompt builder and the evidence record. */
 export const ADJUDICATION_EXCERPT_LIMIT = 900;
-/** Multiple query-reranked Extract chunks can contain a rule and its separate
- * publication metadata. Keep a bounded longer excerpt for official hosts. */
+/** Official page reads can separate scope, exceptions and dates across nearby
+ * paragraphs. Preserve bounded context in both prompts and the evidence record. */
 export const OFFICIAL_ADJUDICATION_EXCERPT_LIMIT = 2400;
 
 /**

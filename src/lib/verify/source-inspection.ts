@@ -319,13 +319,12 @@ export function inspectSourceExcerpts(
   // the first row can erase a later, decisive official passage.
   const passages = docs.map(doc => {
     const page = fullPages.get(doc.url);
-    // Tavily separates query-reranked chunks with a visible gap marker. Only
-    // these multi-chunk official extracts need a longer window; a normal
-    // contiguous page keeps the original tighter locator/provenance behavior.
-    const multiChunkOfficial = page !== undefined && isOfficialSource(doc.url) &&
-      /\s\[\.\.\.\]\s/.test(page);
+    // A contiguous official page can separate eligibility, exceptions and
+    // rollout dates too. Keep bounded context regardless of provider chunk
+    // formatting; the adjudication prompt and saved record use the same cap.
+    const extendedOfficial = Boolean(assertionText) && isOfficialSource(doc.url);
     return page === undefined ? null : selectSourceExcerpt(page, assertionText, doc.snippet,
-      multiChunkOfficial ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT);
+      extendedOfficial ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT);
   });
   const extractedUrls = requestedUrls.filter(url => fullPages.has(url));
   const preserve = docs.map((doc, index) => {

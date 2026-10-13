@@ -31,6 +31,7 @@ import { needsOfficialSearch, officialSearchDomains, officialSearchQuery,
   scopedHitAddsGroup } from './official-search';
 import { preserveTopicalOfficialSource, screeningJudgements } from './screening';
 import { reusableIssuerEvidence } from './evidence-reuse';
+import { qualifierSearchQuery, scopedHitAddsQualifier } from './qualifiers';
 import { isOfficialSource } from './sources';
 import { preserveClaimYears, preserveDatedContractEligibility, preserveIndependentReferents,
   preserveScopeDateRelation } from './decomposition';
@@ -486,7 +487,8 @@ export async function* runVerification(
       if (domains.length && needsOfficialSearch(claim, [...docs, ...officialEvidenceCache], domains, assertion.text) &&
           tavily.callsUsed < opts.tavilyBudget) {
         try {
-          const scoped = await tavily.search(officialSearchQuery(claim, assertion.searchQuery), {
+          const scoped = await tavily.search(qualifierSearchQuery(
+            officialSearchQuery(claim, assertion.searchQuery), assertion.text), {
             maxResults: opts.resultsPerAssertion,
             includeDomains: domains,
             signal: opts.signal,
@@ -497,7 +499,8 @@ export async function* runVerification(
             .filter(doc => {
               if (!isInSearchScope(doc.url, domains)) return false;
               const existing = docs.find(value => value.url === doc.url);
-              return !existing || scopedHitAddsSection(claim, existing.snippet, doc.snippet) ||
+              return !existing || scopedHitAddsQualifier(assertion.text, existing.snippet, doc.snippet) ||
+                scopedHitAddsSection(claim, existing.snippet, doc.snippet) ||
                 scopedHitAddsYear(assertion.text, existing.snippet, doc.snippet) ||
                 scopedHitAddsGroup(assertion.text, existing.snippet, doc.snippet) ||
                 scopedHitAddsBoundary(assertion.text, existing.snippet, doc.snippet) ||
@@ -676,7 +679,9 @@ export async function* runVerification(
     let unjudged = docs.length;
     try {
       const listing = docs
-        .map((d, i) => `[${i}] ${d.title}\n${d.url}\n${d.snippet.slice(0, ADJUDICATION_EXCERPT_LIMIT)}`)
+        .map((d, i) => `[${i}] ${d.title}\n${d.url}\n${d.snippet.slice(0,
+          isOfficialSource(d.url) && d.extractionRequestId
+            ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT)}`)
         .join('\n\n');
       modelCalls += 1;
       const out = await callTool<{
@@ -803,8 +808,7 @@ export async function* runVerification(
       const submittedDocs = [...relevant].sort((a, b) =>
         evidencePriority(a.url) - evidencePriority(b.url)).map((d) => ({
         url: d.url, title: d.title, retrievalScore: d.retrievalScore,
-        snippet: d.snippet.slice(0, isOfficialSource(d.url) && d.extractionRequestId &&
-          d.snippet.includes('[...]')
+        snippet: d.snippet.slice(0, isOfficialSource(d.url) && d.extractionRequestId
           ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT),
         ...(d.searchRequestId === undefined ? {} : { searchRequestId: d.searchRequestId }),
         ...(d.extractionRequestId === undefined ? {} : { extractionRequestId: d.extractionRequestId }),

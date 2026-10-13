@@ -207,7 +207,8 @@ test('a prepaid-delivery claim selects the matching payment timeline despite an 
   }, 'Goods fully paid in December 2023 but delivered in January 2024 use the newer tax rate.');
   assert.match(first.docs[0].snippet, /Full payment for goods made in 2023/);
   assert.match(first.docs[0].snippet, /advance payment amount keeps the earlier tax rate/);
-  assert.doesNotMatch(first.docs[0].snippet, /Full payment for goods made in 2024/);
+  // Wider source context may also contain the separately labelled scenario;
+  // it must preserve the matching rule verbatim rather than infer its outcome.
   assert.equal(first.docs[0].extractionRequestId, 'page-read');
 
   const reverse = inspectSourceExcerpts([doc(url, early)], [url], {
@@ -215,7 +216,6 @@ test('a prepaid-delivery claim selects the matching payment timeline despite an 
   }, 'Goods fully paid in January 2024 but delivered in January 2025 use the earlier tax rate.');
   assert.match(reverse.docs[0].snippet, /Full payment for goods made in 2024/);
   assert.match(reverse.docs[0].snippet, /later payment amount uses the newer tax rate/);
-  assert.doesNotMatch(reverse.docs[0].snippet, /Full payment for goods made in 2023/);
 });
 
 test('paid for in full locates the earlier-payment exception on an issuing page', () => {
@@ -258,9 +258,9 @@ test('separate Search draws of one official URL retain their own dated page pass
   }, 'In 2025, Canadian graduate students were exempt from the national study-permit cap and attestation letter.');
   assert.equal(result.docs.length, 2);
   assert.match(result.docs[0].snippet, /Starting in 2026/);
-  assert.doesNotMatch(result.docs[0].snippet, /For 2025/);
   assert.match(result.docs[1].snippet, /For 2025/);
-  assert.doesNotMatch(result.docs[1].snippet, /Starting in 2026/);
+  // Overlap is permitted: dates remain attached to their actual source text,
+  // and each original Search draw retains its own provenance.
   assert.deepEqual(result.docs.map(value => value.searchRequestId), ['open-search', 'scoped-search']);
   assert.deepEqual(result.docs.map(value => value.extractionRequestId), ['page-read', 'page-read']);
   assert.deepEqual(result.extractedUrls, [A]);
@@ -280,7 +280,7 @@ test('a page read cannot erase a more specific Search excerpt', () => {
   assert.deepEqual(result.failedUrls, []);
 });
 
-test('page selection keeps a Search passage covering both named ETA rules', () => {
+test('wider official context preserves both named ETA rules from the source page', () => {
   const search = 'ETA 1.3. A lawful Irish resident travelling within the Common Travel Area does not need an ETA. ' +
     'ETA 1.6. A person aged 16 or over may be required to show proof of that residence.';
   const page = 'UK Electronic Travel Authorisation guidance. '.repeat(12) +
@@ -290,20 +290,23 @@ test('page selection keeps a Search passage covering both named ETA rules', () =
   const result = inspectSourceExcerpts([doc(A, search)], [A], {
     requestId: 'eta-extract', passages: [{ url: A, content: page }],
   }, 'Under UK ETA 1.3 and 1.6, a lawful Irish resident travelling within the Common Travel Area is exempt and a person aged 16 or over may need to show proof.');
-  assert.equal(result.docs[0].snippet, search);
-  assert.equal(result.docs[0].extractionRequestId, undefined);
-  assert.deepEqual(result.preservedSearchUrls, [A]);
+  assert.match(result.docs[0].snippet, /ETA 1\.3\. A lawful Irish resident/);
+  assert.match(result.docs[0].snippet, /ETA 1\.6\. A person aged 16 or over/);
+  assert.ok(page.includes(result.docs[0].snippet));
+  assert.equal(result.docs[0].extractionRequestId, 'eta-extract');
+  assert.deepEqual(result.preservedSearchUrls, []);
 });
 
-test('a multilingual page read keeps a decisive source-language Search excerpt', () => {
+test('a multilingual page read retains the decisive source-language passage in wider context', () => {
   const search = 'Bestemmelsen om merverdiavgift for elbiler: fritaket gjelder de første 300 000 kronene ved kjøp av elektriske personkjøretøy med batteripakke.';
   const unrelated = 'Publikasjoner for ansatte og bedrifter. Andre avgiftsregler for institusjoner. '.repeat(15);
   const result = inspectSourceExcerpts([doc(A, search)], [A], {
     requestId: 'extract-norwegian', passages: [{ url: A, content: unrelated + search + unrelated }],
   }, 'Norway abolished every electric-car VAT exemption in 2026.');
-  assert.equal(result.docs[0].snippet, search);
-  assert.equal(result.docs[0].extractionRequestId, undefined);
-  assert.deepEqual(result.preservedSearchUrls, [A]);
+  assert.ok(result.docs[0].snippet.includes(search));
+  assert.ok((unrelated + search + unrelated).includes(result.docs[0].snippet));
+  assert.equal(result.docs[0].extractionRequestId, 'extract-norwegian');
+  assert.deepEqual(result.preservedSearchUrls, []);
 });
 
 test('Search and Extract reserve the same budget before concurrent network calls', async () => {
@@ -387,7 +390,7 @@ test('optional source passages reach actual adjudication and downloadable eviden
   assert.equal(result.stats.tavilyCalls, 2);
   assert.deepEqual(result.tavilyRequestIds, ['search-1', 'extract-1']);
   const exact = result.provenance!.adjudicationEvidence.a1[0];
-  assert.equal(exact.snippet.length, 900);
+  assert.ok(exact.snippet.length > 900 && exact.snippet.length <= 2400);
   assert.equal(exact.extractionRequestId, 'extract-1');
   assert.ok(submitted.includes(exact.snippet));
   assert.ok(!submitted.includes('Original Search excerpt.'));

@@ -60,6 +60,17 @@ test('Spanish decree scoped search targets the issuing gazette without repeating
   ], ['boe.es'], "Spain's Royal Decree 1155/2024 took effect on 20 May 2025."), false);
 });
 
+test('French invoice search uses the tax authority and neutral issuer vocabulary', () => {
+  const claim = 'French businesses subject to VAT must receive electronic invoices in 2026.';
+  assert.deepEqual(officialSearchDomains(claim), ['impots.gouv.fr']);
+  assert.deepEqual(officialSearchDomains('France housing policy changed'), ['gouv.fr']);
+  assert.deepEqual(officialSearchDomains('France and Canada electronic invoicing'), []);
+  const query = officialSearchQuery(claim, 'French invoices receive 2026');
+  assert.match(query, /facturation électronique/);
+  assert.match(query, /assujetties TVA/);
+  assert.doesNotMatch(query, /2026|2027|September|septembre/);
+});
+
 test('Spanish decree inspection sends a neutral reranking query and preserves distant BOE dates', async () => {
   const previous = {nebius: process.env.NEBIUS_API_KEY, tavily: process.env.TAVILY_API_KEY};
   process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
