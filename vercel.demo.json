@@ -1,0 +1,7 @@
+{
+  "env": {
+    "COUNTRY_RESEARCH_REQUIRE_SHARED_QUOTA": "1",
+    "VERIFY_REQUIRE_SHARED_QUOTA": "1"
+  },
+  "crons": []
+}
