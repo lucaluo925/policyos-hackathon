@@ -243,7 +243,7 @@ export default function VerifyPage() {
   const run = useCallback(
     async (text: string) => {
       const value = text.trim();
-      if (!value || running) return;
+      if (!value || running || STATIC_DEMO) return;
       const runLead = recorded ? null : bindResearchLead(lead, value);
       reset();
       setRunning(true);
@@ -434,9 +434,11 @@ export default function VerifyPage() {
             <a href={recorded.sourceAttribution.primaryDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">{t('Original BOE document', 'BOE 原始文件')}</a>
             <a href={recorded.sourceAttribution.reuseNoticeUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">{t('BOE reuse notice', 'BOE 转载声明')}</a>
           </div>
-          <button type="button" disabled={running} onClick={() => void run(recorded.claim)}
+          <button type="button" disabled={running || STATIC_DEMO} onClick={() => void run(recorded.claim)}
             className="mt-3 min-h-10 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-white disabled:opacity-40">
-            {t('Run this claim again with live sources', '用实时来源重新核验这条声明')}
+            {STATIC_DEMO
+              ? t('Live rerun paused on this build', '此版本已暂停实时重跑')
+              : t('Run this claim again with live sources', '用实时来源重新核验这条声明')}
           </button>
         </aside>
       )}
