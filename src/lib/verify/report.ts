@@ -20,14 +20,15 @@ export interface RecordedVerification {
   stats: Pick<VerificationResult['stats'], 'tavilyCalls' | 'modelCalls' | 'elapsedMs'>;
   tavilyRequestIds?: string[];
   provenance?: VerificationResult['provenance'];
-  /** Public recording contains exact model inputs, while earlier retrieval text is withheld. */
-  publicEvidenceScope?: 'adjudication_only';
+  /** Distinguish a complete adjudication input from a disclosed public subset. */
+  publicEvidenceScope?: 'adjudication_only' | 'selected_adjudication';
+  omittedAdjudicationUrls?: Record<string, string[]>;
   sourceAttribution?: {
     label: string;
     url: string;
     reuseNoticeUrl: string;
     primaryDocumentUrl: string;
-    publicationDate: string;
+    publicationDate?: string;
     correctionDate?: string;
     selectionNotice: string;
   };
@@ -54,6 +55,7 @@ export interface VerificationReport {
   reviewPersistence?: ReviewPersistence;
   leadContext?: { kind: 'unverified_lead'; headline: string; sourceUrl: string; selectedAt: string };
   publicEvidenceScope?: RecordedVerification['publicEvidenceScope'];
+  omittedAdjudicationUrls?: RecordedVerification['omittedAdjudicationUrls'];
   sourceAttribution?: RecordedVerification['sourceAttribution'];
   notes: string[];
 }
@@ -111,11 +113,13 @@ export function recordedReport(
     ...(recording.provenance?.sourceInspection ? { sourceInspection: recording.provenance.sourceInspection } : {}),
     ...(recording.provenance?.issuerHtmlReads ? { issuerHtmlReads: recording.provenance.issuerHtmlReads } : {}),
     ...(recording.publicEvidenceScope ? { publicEvidenceScope: recording.publicEvidenceScope } : {}),
+    ...(recording.omittedAdjudicationUrls ? { omittedAdjudicationUrls: recording.omittedAdjudicationUrls } : {}),
     ...(recording.sourceAttribution ? { sourceAttribution: recording.sourceAttribution } : {}),
     notes: [...NOTES, 'This is a historical run, not a live check or proof of the current policy state.',
       ...(recording.provenance?.decompositionFallback === 'whole_claim'
         ? ['Model decomposition failed twice; the original claim was checked as one assertion, without atomic splitting.'] : []),
       ...(recording.publicEvidenceScope === 'adjudication_only' ? ['This public recording contains the exact passages submitted to adjudication; earlier retrieval and screening passages are withheld.'] : []),
+      ...(recording.publicEvidenceScope === 'selected_adjudication' ? ['This public recording contains selected, unchanged adjudication passages, not the complete model input. Other adjudication passages and earlier retrieval/screening text are withheld; omitted source URLs are listed separately.'] : []),
       ...(!recording.provenance ? ['Exact prompt evidence and some model names were not saved in this older recording.'] : [])],
   };
 }
@@ -175,7 +179,7 @@ export function reportMarkdown(report: VerificationReport): string {
     text(report.sourceAttribution.label), '',
     sourceLink(report.sourceAttribution.url), '',
     `Primary document: ${sourceLink(report.sourceAttribution.primaryDocumentUrl)}`,
-    `Publication date: ${text(report.sourceAttribution.publicationDate)}`,
+    ...(report.sourceAttribution.publicationDate ? [`Publication date: ${text(report.sourceAttribution.publicationDate)}`] : []),
     ...(report.sourceAttribution.correctionDate ? [`Correction published: ${text(report.sourceAttribution.correctionDate)}`] : []),
     `Reuse notice: ${sourceLink(report.sourceAttribution.reuseNoticeUrl)}`,
     text(report.sourceAttribution.selectionNotice), '',
@@ -208,7 +212,13 @@ export function reportMarkdown(report: VerificationReport): string {
     const htmlReads = report.issuerHtmlReads?.[assertion.assertion.id];
     if (htmlReads?.length) lines.push('### Direct source URL HTML reads', '',
       ...htmlReads.map(read => `${sourceLink(read.url)} — ${read.status}${read.bytes === undefined ? '' : `; ${read.bytes} bytes`}`), '');
-    lines.push(report.publicEvidenceScope === 'adjudication_only'
+    const omitted = report.omittedAdjudicationUrls?.[assertion.assertion.id] ?? [];
+    if (report.publicEvidenceScope === 'selected_adjudication') lines.push(
+      '### Public evidence selection', '',
+      `Published: ${(report.adjudicationEvidence?.[assertion.assertion.id] ?? []).length} unchanged adjudication passage(s). Withheld: ${omitted.length} passage(s). This is not the complete model input.`, '',
+      'Sources whose adjudication passages are withheld:', '',
+      ...omitted.map(sourceLink), '');
+    lines.push(report.publicEvidenceScope
       ? '### Public adjudication passages' : '### Retrieved evidence', '');
     for (const doc of report.evidence[assertion.assertion.id] ?? []) {
       lines.push(`**${text(doc.title)}**`, '', sourceLink(doc.url), '',
@@ -218,7 +228,9 @@ export function reportMarkdown(report: VerificationReport): string {
         `Search relevance: ${doc.retrievalScore}; screening: ${doc.relevant === undefined ? 'not recorded' : doc.relevant ? 'kept' : 'discarded'}; cited: ${assertion.citedUrls.includes(doc.url) ? 'yes' : 'no'}`, '',
         doc.snippet ? quote(doc.snippet) : 'Excerpt not saved in this recording.', '');
     }
-    lines.push('### Exact excerpts submitted to adjudication', '');
+    lines.push(report.publicEvidenceScope === 'selected_adjudication'
+      ? '### Selected exact excerpts submitted to adjudication (incomplete input)'
+      : '### Exact excerpts submitted to adjudication', '');
     if (report.adjudicationEvidence === null) lines.push('Not saved in this older recording.', '');
     else {
       const docs = report.adjudicationEvidence[assertion.assertion.id] ?? [];

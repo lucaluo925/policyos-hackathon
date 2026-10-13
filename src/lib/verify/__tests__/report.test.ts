@@ -145,3 +145,30 @@ test('report file names distinguish live from recorded results and contain only 
   assert.match(reportFilename(report, 'md'), /^policyos-verification-live-[0-9TZ]+\.md$/);
   assert.match(reportFilename({ ...report, kind: 'recorded' }, 'json'), /^policyos-verification-recorded-[0-9TZ]+\.json$/);
 });
+
+test('filmed EU recording exports its incomplete evidence scope without relabeling it live or complete', () => {
+  const recording = JSON.parse(readFileSync('public/verify-recordings/eu-ai-act-entry-20261013.json', 'utf8')) as RecordedVerification;
+  const report = recordedReport(recording, '2026-10-13T06:00:00Z');
+  assert.equal(report.kind, 'recorded');
+  assert.equal(report.ranAt, '2026-10-13T04:33:55.739Z');
+  assert.equal(report.overall, 'refuted');
+  assert.equal(report.publicEvidenceScope, 'selected_adjudication');
+  assert.equal(report.adjudicationEvidence?.a1.length, 1);
+  assert.equal(report.omittedAdjudicationUrls?.a1.length, 6);
+  assert.deepEqual(report.evidence.a1, report.adjudicationEvidence?.a1);
+  assert.equal(report.adjudicationEvidence?.a1[0].snippet.length, 900);
+  assert.match(report.adjudicationEvidence?.a1[0].snippet ?? '', /entered into force on 1 August 2024/);
+  assert.deepEqual(report.assertions[0].citedUrls, report.evidence.a1.map(d => d.url));
+  assert.equal(report.stats.tavilyCalls, 3);
+  assert.equal(report.stats.modelCalls, 3);
+  for (const url of report.omittedAdjudicationUrls?.a1 ?? []) {
+    assert.ok(!report.evidence.a1.some(d => d.url === url));
+  }
+  const markdown = reportMarkdown(report);
+  assert.match(markdown, /HISTORICAL RECORDING/);
+  assert.match(markdown, /Published: 1 unchanged adjudication passage\(s\). Withheld: 6/);
+  assert.match(markdown, /Selected exact excerpts submitted to adjudication \(incomplete input\)/);
+  assert.match(markdown, /European Union/);
+  assert.doesNotMatch(markdown, /Publication date: undefined|Correction published: undefined|BOE/);
+  assert.ok(report.notes.some(note => note.includes('not the complete model input')));
+});

@@ -14,11 +14,20 @@ This is the **public source snapshot** prepared for the
 The [release scope](PUBLIC_RELEASE_SCOPE.md) explains which private research
 records are deliberately excluded. The MIT license applies to original PolicyOS
 code and documentation, not external websites or source data.
+The [public demo](https://policyos-hackathon-demo.vercel.app/verify) currently
+runs in **read-only mode**: live provider calls are paused. Open a dated
+recording to inspect evidence and export its historical report. The EU AI Act
+recording is the run shown in the demo video: it publishes one unchanged
+European Commission passage out of seven adjudication inputs, lists the six
+withheld source URLs in the export, and preserves the recorded verdict and
+call counts. The separate BOE recording publishes its complete adjudication
+passages. Neither is a fresh check or a substitute for funded judge access.
+
 The [acceptance record](PREVIEW_ACCEPTANCE.md) documents funded Tavily/Nemotron
 runs, an anonymous country search, and positive/negative claim checks on a
 Vercel Preview. Its owner-approved shareable link gives anonymous visitors
-access while the link remains active. A stable final demo URL and public video
-still need to be supplied with the Devpost submission.
+access while the link remains active. The stable demo above still needs live
+provider capacity before submission; the public YouTube video is also pending.
 
 For a separate contest demo Vercel project, make an isolated source copy,
 link it to that **separate** project, replace its `vercel.json` with

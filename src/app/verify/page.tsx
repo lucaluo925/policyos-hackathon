@@ -41,6 +41,7 @@ import type {
  */
 const PROMPT_INDEX_URL = '/verify-prompts/index.json';
 const BOE_RECORDING_URL = '/verify-recordings/boe-service-passport-adjudication-20261012.json';
+const EU_RECORDING_URL = '/verify-recordings/eu-ai-act-entry-20261013.json';
 const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1';
 
 interface PromptIndexEntry {
@@ -95,6 +96,7 @@ export default function VerifyPage() {
   const [overall, setOverall] = useState<OverallVerdict | null>(null);
   const [prompts, setPrompts] = useState<PromptIndexEntry[]>([]);
   const [recorded, setRecorded] = useState<RecordedVerification | null>(null);
+  const [recordingLoading, setRecordingLoading] = useState(false);
   const [finishedResult, setFinishedResult] = useState<VerificationResult | null>(null);
   const [reviewPersistence, setReviewPersistence] = useState<ReviewPersistence | null>(null);
   const [finishedLead, setFinishedLead] = useState<BoundResearchLead | null>(null);
@@ -106,6 +108,8 @@ export default function VerifyPage() {
     tavilyRequestIds: string[];
   } | null>(null);
   const [recordedDocs, setRecordedDocs] = useState<Record<string, DisplayDoc[]>>({});
+  const publicPassages = Object.values(recorded?.provenance?.adjudicationEvidence ?? {}).flat().length;
+  const withheldPassages = Object.values(recorded?.omittedAdjudicationUrls ?? {}).flat().length;
   const abortRef = useRef<AbortController | null>(null);
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -169,12 +173,14 @@ export default function VerifyPage() {
     };
   }, []);
 
-  const openBoeRecording = async () => {
+  const openRecording = async (url: string) => {
+    if (running || recordingLoading) return;
+    setRecordingLoading(true);
     try {
-      const response = await fetch(BOE_RECORDING_URL);
+      const response = await fetch(url);
       if (!response.ok) throw new Error(String(response.status));
       const example = await response.json() as RecordedVerification;
-      if (example.publicEvidenceScope !== 'adjudication_only' || !example.sourceAttribution) {
+      if (!['adjudication_only', 'selected_adjudication'].includes(example.publicEvidenceScope ?? '') || !example.sourceAttribution) {
         throw new Error('Unexpected recording scope');
       }
       reset();
@@ -192,7 +198,9 @@ export default function VerifyPage() {
       });
       setRecorded(example);
     } catch {
-      setErrors([t('Could not load the BOE recording.', 'BOE 录制范例无法加载。')]);
+      setErrors([t('Could not load the recording. Please try again.', '运行记录无法加载，请重试。')]);
+    } finally {
+      setRecordingLoading(false);
     }
   };
 
@@ -243,7 +251,7 @@ export default function VerifyPage() {
   const run = useCallback(
     async (text: string) => {
       const value = text.trim();
-      if (!value || running || STATIC_DEMO) return;
+      if (!value || running || recordingLoading || STATIC_DEMO) return;
       const runLead = recorded ? null : bindResearchLead(lead, value);
       reset();
       setRunning(true);
@@ -277,7 +285,7 @@ export default function VerifyPage() {
         abortRef.current = null;
       }
     },
-    [apply, running, t, inspectSources, lead, recorded],
+    [apply, running, recordingLoading, t, inspectSources, lead, recorded],
   );
 
   return (
@@ -314,8 +322,8 @@ export default function VerifyPage() {
       {STATIC_DEMO && <aside role="status" className="mb-5 rounded-xl border border-accent/40 bg-accent/5 p-4 text-sm">
         <p className="font-semibold">{t('Recorded demonstration · live checks paused', '运行记录演示 · 实时核验暂停')}</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">{t(
-          'This free public build does not call Tavily or Nebius. Open the dated BOE run below to inspect real evidence and its recorded verdict.',
-          '这个免费公开版本不会调用 Tavily 或 Nebius。请打开下方带日期的 BOE 运行记录，查看真实证据及当时的判断。',
+          'This free public build does not call Tavily or Nebius. Open a dated run below to inspect saved evidence and its recorded verdict.',
+          '这个免费公开版本不会调用 Tavily 或 Nebius。请打开下方带日期的运行记录，查看已保存的证据及当时的判断。',
         )}</p>
       </aside>}
       {mapCountry && <aside data-testid="map-country-context" className="mb-5 rounded-xl border border-border bg-surface-2 p-4 text-sm">
@@ -363,7 +371,7 @@ export default function VerifyPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="submit"
-            disabled={running || !claim.trim() || STATIC_DEMO}
+            disabled={running || recordingLoading || !claim.trim() || STATIC_DEMO}
             className="rounded-full bg-accent px-5 py-2 font-medium text-white disabled:opacity-40"
           >
             {STATIC_DEMO ? t('Live checks paused', '实时核验暂停') : running ? t('Verifying…', '核验中…') : t('Verify', '开始核验')}
@@ -406,13 +414,20 @@ export default function VerifyPage() {
       <div className="mt-5 rounded-xl border border-border bg-surface-2 p-4 text-sm">
         <p className="font-medium">{t('Inspect a dated real run', '查看有日期的真实运行记录')}</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">
-          {t('The BOE example opens without provider calls. It shows the exact official-source passages supplied to adjudication; earlier retrieval and screening text is withheld.',
-            'BOE 范例无需调用服务商。它展示提交给裁决模型的官方来源原文摘录；此前检索和筛选的文本未公开。')}
+          {t('These saved examples open without provider calls. The EU AI Act example is the run shown in the demo video. Each recording identifies which model-input passages are public and which are withheld.',
+            '这些历史案例无需调用服务商。EU AI Act 案例对应演示视频中的核验。每条记录均注明哪些模型输入摘录已公开、哪些未公开。')}
         </p>
-        <button type="button" disabled={running} onClick={() => void openBoeRecording()}
-          className="mt-3 min-h-10 rounded-lg border border-border px-3 py-2 text-xs font-medium transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-40">
+        <div className="mt-3 flex flex-wrap gap-3">
+        <button type="button" disabled={running || recordingLoading} onClick={() => void openRecording(EU_RECORDING_URL)}
+          className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-medium transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-40">
+          {t('Open EU AI Act recorded run', '打开 EU AI Act 运行记录')}
+        </button>
+        <button type="button" disabled={running || recordingLoading} onClick={() => void openRecording(BOE_RECORDING_URL)}
+          className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-medium transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-40">
           {t('Open BOE recorded run', '打开 BOE 运行记录')}
         </button>
+        </div>
+        {recordingLoading && <p role="status" className="mt-2 text-xs text-muted">{t('Loading saved record…', '正在加载历史记录…')}</p>}
       </div>
 
       {recorded?.sourceAttribution && (
@@ -420,19 +435,21 @@ export default function VerifyPage() {
           <p className="font-semibold">{t('Historical recording · not a live check', '历史运行记录 · 并非实时核验')}</p>
           <p className="mt-2 text-xs leading-relaxed text-muted">
             {t('Recorded on ', '运行于 ')}{recorded.ranAt}.{' '}
-            {t('Only exact passages submitted to adjudication are included publicly; earlier retrieval and screening text is withheld.',
-              '公开内容仅包含提交给裁决模型的原文摘录；此前检索和筛选的文本未公开。')}
+            {recorded.publicEvidenceScope === 'selected_adjudication'
+              ? t(`Selected evidence only: ${publicPassages} of ${publicPassages + withheldPassages} adjudication passages are public. The other ${withheldPassages} passages and earlier retrieval/screening text are withheld. This is not the complete model input.`,
+                `仅公开部分证据：${publicPassages + withheldPassages} 份裁决输入摘录中公开了 ${publicPassages} 份，其余 ${withheldPassages} 份及此前的检索、筛选文本未公开。这并非完整模型输入。`)
+              : t('Exact passages submitted to adjudication are included; earlier retrieval and screening text is withheld.',
+                '包含提交给裁决模型的原文摘录；此前检索和筛选的文本未公开。')}
           </p>
           <p className="mt-2 text-xs leading-relaxed text-muted">
             {recorded.sourceAttribution.label}.{' '}
-            {t('Primary document published', '原始文件公布于')} {recorded.sourceAttribution.publicationDate};{' '}
-            {t('correction published', '更正公布于')} {recorded.sourceAttribution.correctionDate}.{' '}
-            {t('PolicyOS selected these passages. This is nonofficial analysis and BOE does not endorse it.',
-              '摘录由 PolicyOS 选取。这是非官方分析，不代表 BOE 背书。')}
+            {recorded.sourceAttribution.publicationDate && <>{t('Primary document published', '原始文件公布于')} {recorded.sourceAttribution.publicationDate}.{' '}</>}
+            {recorded.sourceAttribution.correctionDate && <>{t('Correction published', '更正公布于')} {recorded.sourceAttribution.correctionDate}.{' '}</>}
+            {recorded.sourceAttribution.selectionNotice}
           </p>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-            <a href={recorded.sourceAttribution.primaryDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">{t('Original BOE document', 'BOE 原始文件')}</a>
-            <a href={recorded.sourceAttribution.reuseNoticeUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">{t('BOE reuse notice', 'BOE 转载声明')}</a>
+            <a href={recorded.sourceAttribution.primaryDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">{t('Original source', '原始来源')}</a>
+            <a href={recorded.sourceAttribution.reuseNoticeUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">{t('Source reuse notice', '来源转载声明')}</a>
           </div>
           <button type="button" disabled={running || STATIC_DEMO} onClick={() => void run(recorded.claim)}
             className="mt-3 min-h-10 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-white disabled:opacity-40">
@@ -652,7 +669,9 @@ export default function VerifyPage() {
             {docs.length > 0 && (
               <details className="mt-4">
                 <summary className="cursor-pointer text-xs text-muted">
-                  {t('Evidence considered', '参与判断的证据')} ({docs.length})
+                  {recorded?.publicEvidenceScope === 'selected_adjudication'
+                    ? t('Public evidence selection', '公开的部分证据')
+                    : t('Evidence considered', '参与判断的证据')} ({docs.length})
                 </summary>
                 <ul className="mt-2 space-y-2 text-xs">
                   {docs.map((d) => {

@@ -1,0 +1,148 @@
+{
+  "id": "eu-ai-act-entry-20261013",
+  "claim": "The EU AI Act entered into force on 1 August 2025.",
+  "ranAt": "2026-10-13T04:33:55.739Z",
+  "decomposeModel": "nvidia/nemotron-3-super-120b-a12b",
+  "overall": "refuted",
+  "assertions": [
+    {
+      "assertion": {
+        "id": "a1",
+        "text": "The EU AI Act entered into force on 1 August 2025.",
+        "searchQuery": "EU AI Act entered into force 1 August 2025"
+      },
+      "verdict": "refuted",
+      "confidence": 0.95,
+      "citedUrls": [
+        "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai"
+      ],
+      "rationale": "The official EU Digital Strategy page states: 'The AI Act entered into force on 1 August 2024 and became applicable on 2 August 2026'. The Puntersouthall FAQ confirms: 'The EU AI Act was published in the Official Journal on 12 July 2024, entered into force 20 days after publication (1 August 2024)'. Both sources directly contradict the assertion that entry into force occurred on 1 August 2025.",
+      "conflicted": false
+    }
+  ],
+  "docs": {
+    "a1": [
+      {
+        "url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
+        "title": "AI Act",
+        "retrievalScore": 0.8091708,
+        "snippet": " the AI Office.\nThe Commission and the European Union Agency for Cybersecurity (ENISA) will also create a blueprint to secure access to advanced AI systems for cybersecurity purposes and establish a secure testing platform to help organisations in critical sectors - such as energy, transport, health, finance and public administration - safely test and deploy AI solutions.\nApplication timeline\nThe AI Act entered into force on 1 August 2024 and became applicable on 2 August 2026, with some exceptions:\n   prohibited AI practices and AI literacy obligations entered into application from 2 February 2025\n   the governance rules and the obligations for GPAI models became applicable on 2 August 2025\n   the rules for high-risk AI systems embedded into regulated products (Annex I) have an extended transition period until 2 August 2028 and the rules for high-risk use cases in certain sensitive area",
+        "searchRequestId": "80f7cdb3-4d88-47ab-be97-1346f4b3b3d2",
+        "extractionRequestId": "8bfdea3e-32a8-4f3b-8567-d68426d8c815"
+      }
+    ]
+  },
+  "stats": {
+    "tavilyCalls": 3,
+    "modelCalls": 3,
+    "elapsedMs": 14873
+  },
+  "tavilyRequestIds": [
+    "af1cb655-e283-4af4-871a-89e06d641750",
+    "80f7cdb3-4d88-47ab-be97-1346f4b3b3d2",
+    "8bfdea3e-32a8-4f3b-8567-d68426d8c815"
+  ],
+  "publicEvidenceScope": "selected_adjudication",
+  "omittedAdjudicationUrls": {
+    "a1": [
+      "https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-113",
+      "https://www.dlapiper.com/en-us/insights/publications/2025/08/latest-wave-of-obligations-under-the-eu-ai-act-take-effect",
+      "https://puntersouthall.law/insights/the-eu-artificial-intelligence-act",
+      "https://www.aljazeera.com/news/2026/8/6/what-came-into-force-with-the-eus-ai-act-this-week-and-what-didnt",
+      "https://www.softwareimprovementgroup.com/blog/eu-ai-act-summary",
+      "https://www.artificial-intelligence-act.com"
+    ]
+  },
+  "provenance": {
+    "completedAt": "2026-10-13T04:33:55.739Z",
+    "models": {
+      "decomposer": "nvidia/nemotron-3-super-120b-a12b",
+      "screener": "nvidia/nemotron-3-super-120b-a12b",
+      "adjudicator": "nvidia/Nemotron-3-Ultra-550b-a55b"
+    },
+    "modelCalls": [
+      {
+        "model": "nvidia/nemotron-3-super-120b-a12b",
+        "tool": "record_assertions",
+        "outcome": "tool_returned",
+        "elapsedMs": 1465,
+        "usage": {
+          "promptTokens": 545,
+          "completionTokens": 135,
+          "reasoningTokens": 68
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "decompose"
+      },
+      {
+        "model": "nvidia/nemotron-3-super-120b-a12b",
+        "tool": "record_screening",
+        "outcome": "tool_returned",
+        "elapsedMs": 4334,
+        "usage": {
+          "promptTokens": 2262,
+          "completionTokens": 756,
+          "reasoningTokens": 393
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "screen",
+        "assertionId": "a1"
+      },
+      {
+        "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+        "tool": "record_verdict",
+        "outcome": "tool_returned",
+        "elapsedMs": 5511,
+        "usage": {
+          "promptTokens": 2471,
+          "completionTokens": 770,
+          "reasoningTokens": 576
+        },
+        "httpStatus": 200,
+        "finishReason": "tool_calls",
+        "stage": "adjudicate",
+        "assertionId": "a1"
+      }
+    ],
+    "sourceInspection": {
+      "a1": {
+        "status": "done",
+        "requestedUrls": [
+          "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
+          "https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-113",
+          "https://www.dlapiper.com/en-us/insights/publications/2025/08/latest-wave-of-obligations-under-the-eu-ai-act-take-effect"
+        ],
+        "extractedUrls": [
+          "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
+          "https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-113",
+          "https://www.dlapiper.com/en-us/insights/publications/2025/08/latest-wave-of-obligations-under-the-eu-ai-act-take-effect"
+        ],
+        "failedUrls": [],
+        "requestId": "8bfdea3e-32a8-4f3b-8567-d68426d8c815",
+        "preservedSearchUrls": [],
+        "creditsReported": 1
+      }
+    },
+    "adjudicationEvidence": {
+      "a1": [
+        {
+          "url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
+          "title": "AI Act",
+          "retrievalScore": 0.8091708,
+          "snippet": " the AI Office.\nThe Commission and the European Union Agency for Cybersecurity (ENISA) will also create a blueprint to secure access to advanced AI systems for cybersecurity purposes and establish a secure testing platform to help organisations in critical sectors - such as energy, transport, health, finance and public administration - safely test and deploy AI solutions.\nApplication timeline\nThe AI Act entered into force on 1 August 2024 and became applicable on 2 August 2026, with some exceptions:\n   prohibited AI practices and AI literacy obligations entered into application from 2 February 2025\n   the governance rules and the obligations for GPAI models became applicable on 2 August 2025\n   the rules for high-risk AI systems embedded into regulated products (Annex I) have an extended transition period until 2 August 2028 and the rules for high-risk use cases in certain sensitive area",
+          "searchRequestId": "80f7cdb3-4d88-47ab-be97-1346f4b3b3d2",
+          "extractionRequestId": "8bfdea3e-32a8-4f3b-8567-d68426d8c815"
+        }
+      ]
+    }
+  },
+  "sourceAttribution": {
+    "label": "European Union — AI Act regulatory framework (European Commission, Digital Strategy), CC BY 4.0",
+    "url": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
+    "primaryDocumentUrl": "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
+    "reuseNoticeUrl": "https://digital-strategy.ec.europa.eu/en/pages/legal-notice",
+    "selectionNotice": "PolicyOS selected this unchanged 900-character passage from the saved model input. Six other adjudication passages and earlier retrieval/screening excerpts are withheld. This is nonofficial analysis; the European Union does not endorse PolicyOS."
+  }
+}

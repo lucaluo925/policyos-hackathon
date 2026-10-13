@@ -65,3 +65,16 @@ la Agencia Estatal Boletín Oficial del Estado,” with the source and reuse lin
 The source document was published 21 May
 2025 and the correction 14 June 2025.
 No World Monitor code, assets or branding is used by PolicyOS.
+
+The dated EU AI Act example reproduces one unchanged 900-character passage
+from the recorded adjudication input. Source: **AI Act regulatory framework**,
+European Union / European Commission, Digital Strategy:
+https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai
+The source's [legal notice](https://digital-strategy.ec.europa.eu/en/pages/legal-notice)
+licenses EU-owned website content under CC BY 4.0 unless otherwise indicated.
+PolicyOS selected this passage; it does not reproduce the complete source
+page or the complete model input. Six other adjudication passages and all
+earlier retrieval/screening text are withheld, with omitted URLs listed in the
+record. Recorded model output, timestamps and call counts are preserved.
+The selected passage and its reuse terms are separate from the MIT code
+license. This is nonofficial analysis; no European Union endorsement is implied.
