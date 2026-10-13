@@ -1,6 +1,6 @@
 # PolicyOS
 
-PolicyOS is an original policy-intelligence prototype for researching climate,
+PolicyOS is an original policy-intelligence application for researching climate,
 trade and immigration developments across countries. Its contest-era
 improvement is a claim verifier that retrieves fresh sources with Tavily,
 reasons over bounded passages with NVIDIA Nemotron models on Nebius Token
@@ -14,20 +14,19 @@ This is the **public source snapshot** prepared for the
 The [release scope](PUBLIC_RELEASE_SCOPE.md) explains which private research
 records are deliberately excluded. The MIT license applies to original PolicyOS
 code and documentation, not external websites or source data.
-The [public demo](https://policyos-hackathon-demo.vercel.app/verify) currently
-runs in **read-only mode**: live provider calls are paused. Open a dated
-recording to inspect evidence and export its historical report. The EU AI Act
-recording is the run shown in the demo video: it publishes one unchanged
-European Commission passage out of seven adjudication inputs, lists the six
-withheld source URLs in the export, and preserves the recorded verdict and
-call counts. The separate BOE recording publishes its complete adjudication
-passages. Neither is a fresh check or a substitute for funded judge access.
+Open [PolicyOS](https://policyos-app.vercel.app/verify) to check a claim or inspect
+a dated recording. Live verification requires funded providers, a shared database
+and the cumulative model-budget guard described below. Historical recordings
+remain explicitly dated: the EU AI Act walkthrough publishes one unchanged
+European Commission passage out of seven adjudication inputs, identifies the six
+withheld source URLs, and preserves the recorded verdict and call counts. The
+separate BOE recording publishes its complete adjudication passages. Neither
+recording is a fresh check.
 
-The [acceptance record](PREVIEW_ACCEPTANCE.md) documents funded Tavily/Nemotron
-runs, an anonymous country search, and positive/negative claim checks on a
-Vercel Preview. Its owner-approved shareable link gives anonymous visitors
-access while the link remains active. The stable demo above still needs live
-provider capacity before submission; the public YouTube video is also pending.
+The [acceptance record](PREVIEW_ACCEPTANCE.md) documents earlier funded
+Tavily/Nemotron runs and anonymous browser checks on a Vercel Preview. These
+historical results do not establish current availability. Funded access throughout
+the judging period and publication of the final video remain release requirements.
 
 For a separate contest demo Vercel project, make an isolated source copy,
 link it to that **separate** project, replace its `vercel.json` with

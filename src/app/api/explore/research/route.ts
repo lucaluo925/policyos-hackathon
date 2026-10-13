@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   if (process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1') {
-    return NextResponse.json({ error: 'Live Tavily search is paused on this public demo.' }, { status: 503 });
+    return NextResponse.json({ error: 'Live Tavily search is paused on this public workspace.' }, { status: 503 });
   }
   let body: unknown;
   try { body = await request.json(); } catch {

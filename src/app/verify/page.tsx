@@ -320,7 +320,7 @@ export default function VerifyPage() {
 
       <div className="mx-auto max-w-3xl px-4 py-10">
       {STATIC_DEMO && <aside role="status" className="mb-5 rounded-xl border border-accent/40 bg-accent/5 p-4 text-sm">
-        <p className="font-semibold">{t('Recorded demonstration · live checks paused', '运行记录演示 · 实时核验暂停')}</p>
+        <p className="font-semibold">{t('Recorded runs · live checks paused', '运行记录 · 实时核验暂停')}</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">{t(
           'This free public build does not call Tavily or Nebius. Open a dated run below to inspect saved evidence and its recorded verdict.',
           '这个免费公开版本不会调用 Tavily 或 Nebius。请打开下方带日期的运行记录，查看已保存的证据及当时的判断。',
@@ -414,8 +414,8 @@ export default function VerifyPage() {
       <div className="mt-5 rounded-xl border border-border bg-surface-2 p-4 text-sm">
         <p className="font-medium">{t('Inspect a dated real run', '查看有日期的真实运行记录')}</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">
-          {t('These saved examples open without provider calls. The EU AI Act example is the run shown in the demo video. Each recording identifies which model-input passages are public and which are withheld.',
-            '这些历史案例无需调用服务商。EU AI Act 案例对应演示视频中的核验。每条记录均注明哪些模型输入摘录已公开、哪些未公开。')}
+          {t('These saved examples open without provider calls. The EU AI Act example is the run shown in the walkthrough video. Each recording identifies which model-input passages are public and which are withheld.',
+            '这些历史案例无需调用服务商。EU AI Act 案例对应操作视频中的核验。每条记录均注明哪些模型输入摘录已公开、哪些未公开。')}
         </p>
         <div className="mt-3 flex flex-wrap gap-3">
         <button type="button" disabled={running || recordingLoading} onClick={() => void openRecording(EU_RECORDING_URL)}

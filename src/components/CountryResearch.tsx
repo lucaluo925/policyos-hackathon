@@ -26,7 +26,7 @@ export default function CountryResearch({ countryIso, domain }: {
   if (STATIC_DEMO) {
     return <section className="border-t border-border pt-3 space-y-2" aria-label={t('On-demand policy research', '按需政策检索')}>
       <div className="text-xs font-semibold text-muted uppercase tracking-wider">{t('On-demand policy research', '按需政策检索')}</div>
-      <p className="text-xs text-muted">{t('Live Tavily country search is paused on this free public demo.', '此免费公开演示已暂停 Tavily 实时国家检索。')}</p>
+      <p className="text-xs text-muted">{t('Live Tavily country search is paused on this public workspace.', '此公开工作区已暂停 Tavily 实时国家检索。')}</p>
     </section>;
   }
 
