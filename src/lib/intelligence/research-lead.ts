@@ -1,3 +1,5 @@
+import { truncateClaim } from '../verify/claim-text';
+
 export interface ResearchClaim { claim: string; sourceUrl: string }
 
 export const RESEARCH_LEAD_STORAGE_KEY = 'policyos:intelligence-source';
@@ -24,6 +26,19 @@ function readRecord(value: unknown, now: number): ResearchLead | null {
 
 export function makeResearchLead(selected: ResearchClaim, now = Date.now()): ResearchLead | null {
   return readRecord({ ...selected, selectedAt: new Date(now).toISOString() }, now);
+}
+
+/** The source travels with the link even when no click handler or storage runs.
+ * An explicit empty source prevents stale session context from being inherited. */
+export function verificationHref(claim: string, sourceUrl?: string | null): string {
+  const text = truncateClaim(claim);
+  const lead = sourceUrl ? makeResearchLead({ claim: text, sourceUrl }) : null;
+  return `/verify?${new URLSearchParams({ claim: text, source: lead?.sourceUrl ?? '' })}`;
+}
+
+/** URL context is untrusted research context; it never supplies retrieval evidence. */
+export function linkedResearchLead(claim: string, sourceUrl: string | null, now = Date.now()): ResearchLead | null {
+  return sourceUrl ? makeResearchLead({ claim: truncateClaim(claim), sourceUrl }, now) : null;
 }
 
 export function readResearchLead(raw: string | null, expectedHeadline: string, now = Date.now()): ResearchLead | null {

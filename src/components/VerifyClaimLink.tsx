@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { truncateClaim } from '@/lib/verify/claim-text';
-import { makeResearchLead, RESEARCH_LEAD_CHANGED, RESEARCH_LEAD_STORAGE_KEY } from '@/lib/intelligence/research-lead';
+import { makeResearchLead, verificationHref, RESEARCH_LEAD_CHANGED, RESEARCH_LEAD_STORAGE_KEY } from '@/lib/intelligence/research-lead';
 
 /**
  * Hands a claim to /verify, pre-filled.
@@ -36,7 +36,7 @@ export function VerifyClaimLink({
   }
   return (
     <Link
-      href={`/verify?claim=${encodeURIComponent(verificationClaim)}`}
+      href={verificationHref(verificationClaim, sourceUrl)}
       onClick={rememberSource}
       className={`text-accent hover:underline ${className}`}
     >

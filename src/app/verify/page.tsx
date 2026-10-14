@@ -12,7 +12,7 @@
  * EventSource cannot issue a POST, and the claim does not belong in a URL.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useT } from '@/lib/i18n/client';
 import { countryName } from '@/lib/i18n';
@@ -22,7 +22,7 @@ import { consumeVerificationStream, IncompleteVerificationError } from '@/lib/ve
 import { loadPublicRecording } from '@/lib/verify/recording-loader';
 import { CLAIM_MAX_LENGTH, truncateClaim } from '@/lib/verify/claim-text';
 import { useResearchLead, clearResearchLead } from '@/lib/intelligence/use-research-lead';
-import { bindResearchLead, type BoundResearchLead } from '@/lib/intelligence/research-lead';
+import { bindResearchLead, linkedResearchLead, type BoundResearchLead } from '@/lib/intelligence/research-lead';
 import { liveReport, recordedReport, reportFilename, reportMarkdown,
   type RecordedVerification, type VerificationReport, type ReportDoc } from '@/lib/verify/report';
 import type {
@@ -83,7 +83,17 @@ export default function VerifyPage() {
   // verification spends real search and model calls, so the visitor starts it.
   const searchParams = useSearchParams();
   const mapCountry = getDirectoryCountry(searchParams.get('country') ?? '');
-  const lead = useResearchLead(searchParams.get('claim') ?? '');
+  const entryClaim = searchParams.get('claim') ?? '';
+  const entrySource = searchParams.get('source');
+  const storedLead = useResearchLead(entryClaim);
+  const linkedLead = useMemo(() => linkedResearchLead(entryClaim, entrySource), [entryClaim, entrySource]);
+  const leadKey = JSON.stringify([entryClaim, entrySource]);
+  const [clearedLeadKey, setClearedLeadKey] = useState<string | null>(null);
+  const lead = clearedLeadKey === leadKey ? null : entrySource !== null ? linkedLead : storedLead;
+  function clearLead() {
+    setClearedLeadKey(leadKey);
+    clearResearchLead();
+  }
   const [claim, setClaim] = useState(
     () => truncateClaim(searchParams.get('claim') ?? ''),
   );
@@ -183,7 +193,7 @@ export default function VerifyPage() {
     try {
       const example = await loadPublicRecording(url);
       reset();
-      clearResearchLead();
+      clearLead();
       setClaim(example.claim);
       setVerdicts(example.assertions);
       setRecordedDocs(example.docs);
@@ -345,7 +355,7 @@ export default function VerifyPage() {
       {lead && !recorded && <aside data-testid="research-lead" className="mb-5 rounded-xl border border-border bg-surface-2 p-4 text-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-medium">{t('Original article · unverified lead', '原报道 · 未核验线索')}</h2>
-          <button type="button" disabled={running} onClick={clearResearchLead} className="text-xs text-muted underline underline-offset-2 disabled:opacity-40">{t('Clear lead for next check', '清除下次核验的线索')}</button>
+          <button type="button" disabled={running} onClick={clearLead} className="text-xs text-muted underline underline-offset-2 disabled:opacity-40">{t('Clear lead for next check', '清除下次核验的线索')}</button>
         </div>
         <p className="mt-2 break-words">{lead.claim}</p>
         <a href={lead.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 block break-all text-accent underline underline-offset-2">{lead.sourceUrl}</a>
@@ -411,7 +421,7 @@ export default function VerifyPage() {
                 key={entry.id}
                 type="button"
                 disabled={running || recordingLoading}
-                onClick={() => { reset(); clearResearchLead(); setClaim(entry.claim); }}
+                onClick={() => { reset(); clearLead(); setClaim(entry.claim); }}
                 className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 py-2 text-xs text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-40"
               >
                 {entry.claim.slice(0, 46)}…

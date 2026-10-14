@@ -92,3 +92,19 @@ test('event export preserves every original and discloses candidate scope withou
   assert.equal(exported.verdict, undefined);
   assert.match(exported.notes.join(' '), /not verified policy identities/);
 });
+
+test('retained and saved event exports disclose their view, filters and read status', () => {
+  const input = [item('a'), item('b')];
+  const context = { view: 'loaded_announcements' as const,
+    filters: { q: 'carbon', country: 'NZ', domain: 'climate', days: '7' },
+    loadedAt: '2026-10-14T16:00:00Z', latestReadStatus: 'failed' as const };
+  const exported = JSON.parse(policyEventsJson(input, '2026-10-14T18:00:00Z', context));
+  assert.deepEqual(exported.context, context);
+  assert.deepEqual(exported.events.flatMap((group: {items: MonitorItem[]}) => group.items), input);
+  const saved = JSON.parse(policyEventsJson(input, undefined, {
+    ...context, view: 'saved_browser_snapshots', loadedAt: null, latestReadStatus: 'not_applicable',
+  }));
+  assert.equal(saved.context.view, 'saved_browser_snapshots');
+  assert.equal(saved.context.loadedAt, null);
+  assert.equal(saved.context.latestReadStatus, 'not_applicable');
+});

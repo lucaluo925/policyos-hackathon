@@ -1,0 +1,43 @@
+PolicyOS V83 — policy-event judge-flow repairs (14 October 2026)
+
+BEHAVIOR
+- Verification links carry a validated original source URL as unverified context.
+  Copying a link or opening it in another tab no longer depends on the original
+  tab's session storage. Empty/unsafe sources do not inherit stale context.
+- Source context stays separate from retrieval evidence and model input. It is
+  bound to the completed claim for report export, and can be cleared before
+  the next check. Historical recordings do not acquire this current context.
+- A failed refresh, including an unavailable-source response, retains previously
+  loaded announcements for the same filters and explicitly labels the failure.
+  Changing filters clears that batch rather than showing another country's rows.
+- Event JSON includes the selected view, filters, loadedAt and latest read status.
+  Saved browser snapshots have no invented collection time. CSV export failures
+  now provide a retry message; both download paths attach their temporary link.
+
+VALIDATION
+563 offline tests, type-check, lint and production build passed. Local OCR
+rule/delegate review covered all eight code/test files, including the two test
+files excluded by default; no blocking finding remained.
+
+An isolated local browser proxy intercepted all API calls, without production
+credentials. It exercised source handoff by opening a copied link, 429 admission
+failure, incomplete stream, a synthetic completed UI result and a later failed
+attempt. The original source stayed unverified and outside evidence/citations.
+Both report formats downloaded, and the previous-result recovery download
+matched its completed record except for the actual export timestamp.
+
+The same browser test exercised failed/unavailable monitor refreshes, successful
+recovery, empty country filtering, saved snapshots and JSON/CSV downloads. All
+12 historical input announcements were retained unchanged after refresh failure;
+the export disclosed that failure. Saved JSON/CSV preserved original fields.
+
+These are implementation and fault-injection checks, not a fresh paid provider
+E2E, real-world aggregation accuracy, or proof of unrestricted judging access.
+No Nebius/Tavily calls, database writes, migrations, cron tasks, quota changes or
+budget changes were made by this repair's tests. Existing cumulative US$5
+model authorization and shared daily caps remain in force.
+
+REMAINING BOUNDARIES
+Free judge-testing capacity is still unresolved. Owner narration is deferred;
+final synchronized video, YouTube publication and Devpost submission are still
+pending. Tests and a release do not guarantee a prize or full rules compliance.

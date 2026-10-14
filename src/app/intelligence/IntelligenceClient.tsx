@@ -8,7 +8,7 @@ import {PIPELINE_COVERAGE} from '@/lib/pipeline/coverage';
 import {ANNOUNCEMENT_SOURCES} from '@/lib/announcements/registry';
 import type {AnnouncementBundle,AnnouncementTopic,OfficialAnnouncement} from '@/lib/announcements/types';
 import {useLocale,useT} from '@/lib/i18n/client';
-import {makeResearchLead,RESEARCH_LEAD_STORAGE_KEY,RESEARCH_LEAD_CHANGED} from '@/lib/intelligence/research-lead';
+import {makeResearchLead,verificationHref,RESEARCH_LEAD_STORAGE_KEY,RESEARCH_LEAD_CHANGED} from '@/lib/intelligence/research-lead';
 
 const subscribeHydration=()=>()=>{};
 const configuredCountries=new Set([...PIPELINE_COVERAGE.map(source=>source.countryIso),...ANNOUNCEMENT_SOURCES.flatMap(source=>source.countries)]).size;
@@ -44,7 +44,7 @@ export default function IntelligenceClient({initialCountry=''}:{initialCountry?:
    if(lead)sessionStorage.setItem(RESEARCH_LEAD_STORAGE_KEY,JSON.stringify(lead));else sessionStorage.removeItem(RESEARCH_LEAD_STORAGE_KEY);
    window.dispatchEvent(new Event(RESEARCH_LEAD_CHANGED));
   }catch{/* The checker still opens when session storage is unavailable. */}
-  router.push('/verify?'+new URLSearchParams({claim:value.trim()}));
+  router.push(verificationHref(value,announcement?.url));
  }
  const dateLabel=(entry:OfficialAnnouncement)=>entry.datePrecision==='day'?entry.publishedAt:new Intl.DateTimeFormat(locale==='zh'?'zh-CN':'en-GB',{year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC',timeZoneName:'short'}).format(new Date(entry.publishedAt));
  return <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">

@@ -28,6 +28,8 @@ export default function MonitorClient() {
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState<MonitorResult | null>(null);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
+  const [loadedAt, setLoadedAt] = useState<string | null>(null);
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const [sourceInfo, setSourceInfo] = useState<MonitorResult | null>(null);
   const [refresh, setRefresh] = useState(0);
   const generation = useRef(0);
@@ -68,12 +70,18 @@ export default function MonitorClient() {
       try {
         const result = await fetchPage(controller.signal);
         if (controller.signal.aborted || generation.current !== run) return;
+        if (!result.available && seen.current.size > 0) {
+          // A failed source read must not erase a usable batch for these filters.
+          setRefreshFailed(true); setState('error');
+          return;
+        }
+        setRefreshFailed(!result.available);
         setCheckedAt(result.checkedAt);
         setSourceInfo(result);
         setState(result.available ? 'ready' : 'unavailable');
         if (initial || !initialized) {
           seen.current = new Set(result.items.map((item) => item.id));
-          setItems(result.items); setCursor(result.nextCursor); setPending(null); setBusyMore(false); initialized = true;
+          setItems(result.items); setLoadedAt(result.checkedAt); setCursor(result.nextCursor); setPending(null); setBusyMore(false); initialized = true;
         } else {
           const fresh = unseenItems(result.items, seen.current);
           if (fresh.length) setPending({ ...result, items: fresh });
@@ -81,7 +89,7 @@ export default function MonitorClient() {
       } catch {
         if (!controller.signal.aborted && generation.current === run) {
           if (initial) setState('error');
-          else setNotice(t('The latest refresh failed. Previously loaded announcements are still shown.', '刷新失败，当前保留此前读取的公告。'));
+          setRefreshFailed(true);
         }
       } finally { running = false; }
     }
@@ -91,7 +99,8 @@ export default function MonitorClient() {
   }, [fetchPage, refresh, savedOnly, t]);
 
   function updateFilter(next: WatchFilter) {
-    setState('loading'); setItems([]); setCursor(null); setPending(null); setSourceInfo(null); setCheckedAt(null); setFilter(next); setNotice('');
+    seen.current = new Set();
+    setState('loading'); setItems([]); setLoadedAt(null); setRefreshFailed(false); setCursor(null); setPending(null); setSourceInfo(null); setCheckedAt(null); setFilter(next); setNotice('');
   }
   function persist(key: string, value: unknown) {
     try { localStorage.setItem(key, JSON.stringify(value)); }
@@ -121,18 +130,26 @@ export default function MonitorClient() {
       const result = await fetchPage(controller.signal, cursor);
       if (generation.current !== run) return;
       setItems((previous) => [...previous, ...result.items.filter((item) => !previous.some((row) => row.id === item.id))]);
+      setLoadedAt(result.checkedAt);
       result.items.forEach((item) => seen.current.add(item.id)); setCursor(result.nextCursor);
     } catch { if (generation.current === run) setNotice(t('Could not load more. Please try again.', '加载更多失败，请重试。')); }
     finally { window.clearTimeout(timeout); if (generation.current === run) setBusyMore(false); }
   }
   const displayed = savedOnly ? filterSavedItems(saved, filter) : items;
   function exportItems() {
-    const url = URL.createObjectURL(new Blob([monitorCsv(displayed)], { type: 'text/csv;charset=utf-8' }));
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'policyos-announcements.csv'; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    try {
+      const url = URL.createObjectURL(new Blob([monitorCsv(displayed)], { type: 'text/csv;charset=utf-8' }));
+      const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'policyos-announcements.csv';
+      document.body.appendChild(anchor); anchor.click(); anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch { setNotice(t('Could not export announcements. Please try again.', '公告导出失败，请重试。')); }
   }
   function exportEvents() {
     try {
-      const url = URL.createObjectURL(new Blob([policyEventsJson(displayed)], { type: 'application/json;charset=utf-8' }));
+      const url = URL.createObjectURL(new Blob([policyEventsJson(displayed, undefined, {
+        view: savedOnly ? 'saved_browser_snapshots' : 'loaded_announcements',
+        filters: filter, loadedAt: savedOnly ? null : loadedAt,
+        latestReadStatus: savedOnly ? 'not_applicable' : refreshFailed ? 'failed' : 'succeeded',
+      })], { type: 'application/json;charset=utf-8' }));
       const anchor = document.createElement('a');
       anchor.href = url; anchor.download = 'policyos-policy-events.json';
       document.body.appendChild(anchor); anchor.click(); anchor.remove();
@@ -155,9 +172,10 @@ export default function MonitorClient() {
       {sourceInfo?.mode === 'direct' && <p data-testid="monitor-direct-scope" className="text-xs text-muted mb-4">{filter.country ? t('Reading configured official sources for the selected country. Source availability is shown below.', '正在读取所选国家已配置的官方来源；下方显示来源可用情况。') : t('Starter view: MY, NZ, HK, CH, NO and ZA official announcement sources. Select a country to read its configured sources.', '起始视图读取马来西亚、新西兰、香港、瑞士、挪威和南非的官方公告来源；选择国家可读取其已配置来源。')}{sourceInfo.sourceSummary && ` · ${t('Sources read', '成功读取')} ${sourceInfo.sourceSummary.available} · ${t('Retained', '保留旧数据')} ${sourceInfo.sourceSummary.retained} · ${t('Unavailable', '暂不可用')} ${sourceInfo.sourceSummary.unavailable}`}</p>}
       {rules.length > 0 && <section className="mb-5" aria-label={t('Saved watch conditions', '已保存关注条件')}><h2 className="text-sm font-medium mb-2">{t('Saved watch conditions', '我的关注条件')}</h2><div className="flex flex-wrap gap-2">{rules.map((rule) => <div key={rule.id} className="flex border border-border rounded-lg bg-surface"><button type="button" className="text-xs px-3 min-h-10" onClick={() => { setDraft(rule.q); setSavedOnly(false); updateFilter({ q: rule.q, country: rule.country, domain: rule.domain, days: rule.days }); }}>{rule.name}</button><button type="button" aria-label={t(`Remove watch conditions: ${rule.name}`, `移除关注条件：${rule.name}`)} className="px-3 min-h-10 text-muted" onClick={() => { const next = rules.filter((r) => r.id !== rule.id); setRules(next); persist(WATCH_RULES_KEY, next); }}>×</button></div>)}</div><p className="text-xs text-muted mt-2">{t('Select conditions to monitor them. Stored on this browser; no background email or push.', '选择一组条件开始监测。保存在此浏览器，不发送后台邮件或推送。')}</p></section>}
       {notice && <p className="text-sm text-muted border border-border rounded-lg p-3 mb-4" role="status">{notice}</p>}
+      {refreshFailed && !savedOnly && items.length > 0 && <p role="alert" className="text-sm border border-border rounded-lg p-3 mb-4">{t('The latest refresh failed. Previously loaded announcements are still shown and can be exported. Use Refresh to try again.', '最近一次刷新失败，仍显示此前读取的公告，也可导出。请点击刷新重试。')}</p>}
       {pending && !savedOnly && <button type="button" aria-live="polite" className="w-full text-left rounded-lg bg-accent/10 border border-accent/30 p-3 mb-4 text-sm text-accent" onClick={() => { setState('loading'); setRefresh((n) => n + 1); }}>{t(`${pending.items.length} new announcement(s) found — show latest`, `发现 ${pending.items.length} 条新公告，点击查看最新结果`)}</button>}
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-3"><div className="flex gap-2 text-sm"><button type="button" aria-pressed={!savedOnly && eventsView} className={`min-h-10 px-3 rounded-lg ${!savedOnly && eventsView ? 'bg-foreground text-background' : 'text-muted'}`} onClick={() => { setSavedOnly(false); setEventsView(true); }}>{t('Policy events', '政策事件')}</button><button type="button" aria-pressed={!savedOnly && !eventsView} className={`min-h-10 px-3 rounded-lg ${!savedOnly && !eventsView ? 'bg-foreground text-background' : 'text-muted'}`} onClick={() => { setSavedOnly(false); setEventsView(false); }}>{t('Announcements', '官方公告')}</button><button type="button" aria-pressed={savedOnly} className={`min-h-10 px-3 rounded-lg ${savedOnly ? 'bg-foreground text-background' : 'text-muted'}`} onClick={() => setSavedOnly(true)}>{t(`Saved (${saved.length})`, `收藏（${saved.length}）`)}</button></div><div className="flex gap-3 text-xs"><button type="button" disabled={!displayed.length} className="min-h-10 px-2 disabled:opacity-40" onClick={exportEvents}>{t('Export event groups (JSON)', '导出事件分组（JSON）')}</button><button type="button" disabled={!displayed.length} className="min-h-10 px-2 disabled:opacity-40" onClick={exportItems}>{t(`Export loaded results (${displayed.length})`, `导出已加载结果（${displayed.length}）`)}</button><button type="button" className="min-h-10 px-2" onClick={() => { setState('loading'); setRefresh((n) => n + 1); }}>{t('Refresh', '刷新')}</button></div></div>
-      {!savedOnly && state === 'loading' ? <p role="status" className="p-8 border border-border rounded-xl text-muted">{t('Loading official announcements…', '正在读取官方公告…')}</p> : !savedOnly && state === 'error' ? <p role="alert" className="p-8 border border-border rounded-xl">{t('Could not load updates. Use Refresh to try again.', '动态加载失败，请点击刷新重试。')}</p> : !savedOnly && state === 'unavailable' ? <p className="p-8 border border-border rounded-xl text-muted">{sourceInfo?.emptyReason === 'no_source' ? t('No official announcement connector is configured for this country. You can still investigate a precise claim in Research.', '这个国家尚未配置官方公告连接器；仍可在研究工作台核查具体声明。') : sourceInfo?.emptyReason === 'sources_unavailable' ? t('Configured official sources could not be read. This does not mean there are no announcements.', '已配置的官方来源暂时无法读取，这不代表没有公告。') : t('The announcement database is unavailable.', '公告数据库暂不可用。')}</p> : displayed.length === 0 ? <p className="p-8 border border-border rounded-xl text-muted">{savedOnly ? t('No saved announcements match these filters.', '没有符合筛选条件的收藏公告。') : sourceInfo?.mode === 'direct' ? t('No matching announcements in the official sources that were read. Try another topic or time window.', '已成功读取的官方来源中没有符合条件的公告；可尝试其他领域或时间范围。') : t('No matching announcements in this batch. If available, load more to search older records.', '当前批次没有匹配公告。如可加载更多，可继续查找较早记录。')}</p> : eventsView ? <PolicyEventList items={displayed} renderItem={renderItem} /> : <ul className="divide-y divide-border rounded-xl bg-surface border border-border">{displayed.map(renderItem)}</ul>}
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-3"><div className="flex gap-2 text-sm"><button type="button" aria-pressed={!savedOnly && eventsView} className={`min-h-10 px-3 rounded-lg ${!savedOnly && eventsView ? 'bg-foreground text-background' : 'text-muted'}`} onClick={() => { setSavedOnly(false); setEventsView(true); }}>{t('Policy events', '政策事件')}</button><button type="button" aria-pressed={!savedOnly && !eventsView} className={`min-h-10 px-3 rounded-lg ${!savedOnly && !eventsView ? 'bg-foreground text-background' : 'text-muted'}`} onClick={() => { setSavedOnly(false); setEventsView(false); }}>{t('Announcements', '官方公告')}</button><button type="button" aria-pressed={savedOnly} className={`min-h-10 px-3 rounded-lg ${savedOnly ? 'bg-foreground text-background' : 'text-muted'}`} onClick={() => setSavedOnly(true)}>{t(`Saved (${saved.length})`, `收藏（${saved.length}）`)}</button></div><div className="flex gap-3 text-xs"><button type="button" disabled={!displayed.length || (!savedOnly && state === 'loading')} className="min-h-10 px-2 disabled:opacity-40" onClick={exportEvents}>{t('Export event groups (JSON)', '导出事件分组（JSON）')}</button><button type="button" disabled={!displayed.length || (!savedOnly && state === 'loading')} className="min-h-10 px-2 disabled:opacity-40" onClick={exportItems}>{t(`Export loaded results (${displayed.length})`, `导出已加载结果（${displayed.length}）`)}</button><button type="button" className="min-h-10 px-2" onClick={() => { setState('loading'); setRefresh((n) => n + 1); }}>{t('Refresh', '刷新')}</button></div></div>
+      {!savedOnly && state === 'loading' ? <p role="status" className="p-8 border border-border rounded-xl text-muted">{t('Loading official announcements…', '正在读取官方公告…')}</p> : !savedOnly && state === 'error' && displayed.length === 0 ? <p role="alert" className="p-8 border border-border rounded-xl">{t('Could not load updates. Use Refresh to try again.', '动态加载失败，请点击刷新重试。')}</p> : !savedOnly && state === 'unavailable' ? <p className="p-8 border border-border rounded-xl text-muted">{sourceInfo?.emptyReason === 'no_source' ? t('No official announcement connector is configured for this country. You can still investigate a precise claim in Research.', '这个国家尚未配置官方公告连接器；仍可在研究工作台核查具体声明。') : sourceInfo?.emptyReason === 'sources_unavailable' ? t('Configured official sources could not be read. This does not mean there are no announcements.', '已配置的官方来源暂时无法读取，这不代表没有公告。') : t('The announcement database is unavailable.', '公告数据库暂不可用。')}</p> : displayed.length === 0 ? <p className="p-8 border border-border rounded-xl text-muted">{savedOnly ? t('No saved announcements match these filters.', '没有符合筛选条件的收藏公告。') : sourceInfo?.mode === 'direct' ? t('No matching announcements in the official sources that were read. Try another topic or time window.', '已成功读取的官方来源中没有符合条件的公告；可尝试其他领域或时间范围。') : t('No matching announcements in this batch. If available, load more to search older records.', '当前批次没有匹配公告。如可加载更多，可继续查找较早记录。')}</p> : eventsView ? <PolicyEventList items={displayed} renderItem={renderItem} /> : <ul className="divide-y divide-border rounded-xl bg-surface border border-border">{displayed.map(renderItem)}</ul>}
       {!savedOnly && state === 'ready' && cursor && <button type="button" className="w-full min-h-11 border border-border rounded-lg mt-4 text-sm disabled:opacity-50" disabled={busyMore} onClick={() => void loadMore()}>{busyMore ? t('Loading…', '加载中…') : t('Load more announcements', '加载更多公告')}</button>}
       <p className="text-xs text-muted mt-4">{sourceInfo?.mode === 'direct' ? t('Direct official-source reads are cached for 10 minutes. Titles are research leads, not proof that a policy is in force.', '直接读取的官方来源缓存 10 分钟。标题仅供研究，不证明政策已生效。') : sourceInfo?.mode === 'database' ? t('Only previously collected announcements are queried; refreshing does not run government-source ingestion.', '仅查询已采集公告；刷新不会触发政府来源采集。') : t('Checking available sources…', '正在确认可用来源…')}{checkedAt && ` · ${t('Last read', '最近读取')} ${new Date(checkedAt).toLocaleTimeString(locale === 'zh' ? 'zh-CN' : 'en-GB')}`}</p>
     </div>

@@ -1,4 +1,5 @@
 import type { MonitorItem } from './query';
+import type { WatchFilter } from './watch';
 import { lexicalSimilarity, reportText } from './vendor/aihot-similarity';
 
 export type EventLinkReason = 'same_document' | 'same_title' | 'similar_text';
@@ -68,12 +69,20 @@ export function aggregatePolicyEvents(items: MonitorItem[]): PolicyEvent[] {
   return groups;
 }
 
-export function policyEventsJson(items: MonitorItem[], exportedAt = new Date().toISOString()): string {
+export interface PolicyEventExportContext {
+  view: 'loaded_announcements' | 'saved_browser_snapshots';
+  filters: WatchFilter;
+  loadedAt: string | null;
+  latestReadStatus: 'succeeded' | 'failed' | 'not_applicable';
+}
+
+export function policyEventsJson(items: MonitorItem[], exportedAt = new Date().toISOString(), context?: PolicyEventExportContext): string {
   return JSON.stringify({ schemaVersion: 1, kind: 'policy_event_candidates', exportedAt,
     ruleVersion: 'lexical-candidates-v1', scope: 'loaded_announcements_only',
     notes: ['Groups are research leads, not verified policy identities or verdicts.',
       'Original titles, URLs, dates and provenance are preserved. No model or retrieval API is called by aggregation.',
       'Saved announcements are browser snapshots and may have changed at their source.'],
+    context,
     events: aggregatePolicyEvents(items),
   }, null, 2) + '\n';
 }
