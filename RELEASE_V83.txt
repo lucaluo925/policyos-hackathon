@@ -10,6 +10,8 @@ BEHAVIOR
 - A failed refresh, including an unavailable-source response, retains previously
   loaded announcements for the same filters and explicitly labels the failure.
   Changing filters clears that batch rather than showing another country's rows.
+- A source failure while loading an older page preserves the pagination cursor
+  and retry control rather than silently ending the list.
 - Event JSON includes the selected view, filters, loadedAt and latest read status.
   Saved browser snapshots have no invented collection time. CSV export failures
   now provide a retry message; both download paths attach their temporary link.
@@ -30,6 +32,9 @@ The same browser test exercised failed/unavailable monitor refreshes, successful
 recovery, empty country filtering, saved snapshots and JSON/CSV downloads. All
 12 historical input announcements were retained unchanged after refresh failure;
 the export disclosed that failure. Saved JSON/CSV preserved original fields.
+Pagination fault injection also retained all 12 loaded rows and the retry
+button on an unavailable response; a successful retry finished pagination
+and cleared the prior error message.
 
 These are implementation and fault-injection checks, not a fresh paid provider
 E2E, real-world aggregation accuracy, or proof of unrestricted judging access.

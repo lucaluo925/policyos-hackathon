@@ -129,10 +129,13 @@ export default function MonitorClient() {
     try {
       const result = await fetchPage(controller.signal, cursor);
       if (generation.current !== run) return;
+      if (!result.available) throw new Error('Announcement sources unavailable');
       setItems((previous) => [...previous, ...result.items.filter((item) => !previous.some((row) => row.id === item.id))]);
       setLoadedAt(result.checkedAt);
+      setRefreshFailed(false);
+      setNotice('');
       result.items.forEach((item) => seen.current.add(item.id)); setCursor(result.nextCursor);
-    } catch { if (generation.current === run) setNotice(t('Could not load more. Please try again.', '加载更多失败，请重试。')); }
+    } catch { if (generation.current === run) { setRefreshFailed(true); setNotice(t('Could not load more. Please try again.', '加载更多失败，请重试。')); } }
     finally { window.clearTimeout(timeout); if (generation.current === run) setBusyMore(false); }
   }
   const displayed = savedOnly ? filterSavedItems(saved, filter) : items;
