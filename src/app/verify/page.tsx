@@ -23,7 +23,7 @@ import { CLAIM_MAX_LENGTH, truncateClaim } from '@/lib/verify/claim-text';
 import { useResearchLead, clearResearchLead } from '@/lib/intelligence/use-research-lead';
 import { bindResearchLead, type BoundResearchLead } from '@/lib/intelligence/research-lead';
 import { liveReport, recordedReport, reportFilename, reportMarkdown,
-  type RecordedVerification, type ReportDoc } from '@/lib/verify/report';
+  type RecordedVerification, type VerificationReport, type ReportDoc } from '@/lib/verify/report';
 import type {
   AssertionResult,
   EvidenceDoc,
@@ -100,6 +100,7 @@ export default function VerifyPage() {
   const [finishedResult, setFinishedResult] = useState<VerificationResult | null>(null);
   const [reviewPersistence, setReviewPersistence] = useState<ReviewPersistence | null>(null);
   const [finishedLead, setFinishedLead] = useState<BoundResearchLead | null>(null);
+  const [previousReport, setPreviousReport] = useState<VerificationReport | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [runTrail, setRunTrail] = useState<{
     tavilyCalls: number;
@@ -124,16 +125,16 @@ export default function VerifyPage() {
     ? liveReport(finishedResult, { ...evidence, ...screened }, undefined, finishedLead, reviewPersistence)
     : recorded ? recordedReport(recorded) : null;
 
-  const exportReport = (format: 'md' | 'json') => {
-    if (!report || running) return;
+  const exportReport = (format: 'md' | 'json', selected = report) => {
+    if (!selected || running) return;
     setExportError(null);
     try {
-      const content = format === 'json' ? `${JSON.stringify(report, null, 2)}\n` : reportMarkdown(report);
+      const content = format === 'json' ? `${JSON.stringify(selected, null, 2)}\n` : reportMarkdown(selected);
       const blob = new Blob([content], { type: format === 'json' ? 'application/json;charset=utf-8' : 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = reportFilename(report, format);
+      link.download = reportFilename(selected, format);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -143,7 +144,8 @@ export default function VerifyPage() {
     }
   };
 
-  const reset = () => {
+  const reset = useCallback(() => {
+    if (report) setPreviousReport(report);
     setStages([]);
     setEvidence({});
     setScreened({});
@@ -157,7 +159,7 @@ export default function VerifyPage() {
     setExportError(null);
     setRunTrail(null);
     setRecordedDocs({});
-  };
+  }, [report]);
 
   useEffect(() => {
     let cancelled = false;
@@ -197,6 +199,7 @@ export default function VerifyPage() {
         tavilyRequestIds: example.tavilyRequestIds ?? [],
       });
       setRecorded(example);
+      setPreviousReport(null);
     } catch {
       setErrors([t('Could not load the recording. Please try again.', '运行记录无法加载，请重试。')]);
     } finally {
@@ -233,6 +236,7 @@ export default function VerifyPage() {
         setErrors((p) => [...p, ev.message]);
         break;
       case 'done':
+        setPreviousReport(null);
         setFinishedResult(ev.result);
         setReviewPersistence(ev.reviewPersistence ?? null);
         setOverall(ev.result.overall);
@@ -293,7 +297,7 @@ export default function VerifyPage() {
         abortRef.current = null;
       }
     },
-    [apply, running, recordingLoading, t, inspectSources, lead, recorded],
+    [apply, running, recordingLoading, t, inspectSources, lead, recorded, reset],
   );
 
   return (
@@ -487,6 +491,19 @@ export default function VerifyPage() {
           {msg}
         </p>
       ))}
+
+      {!running && !report && previousReport && (
+        <aside role="status" data-testid="previous-report" className="mt-6 rounded-xl border border-border bg-surface p-4 text-sm">
+          <p className="font-medium">{t('Previous completed report available', '上一份完整报告仍可下载')}</p>
+          <p className="mt-2 break-words">{t('Previous checked claim: ', '上次核验的声明：')}{previousReport.claim}</p>
+          <p className="mt-1 text-xs text-muted">{t('This is the previous result, not a result for the current attempt. Download it before leaving this page.', '这是上一次的结果，不代表当前尝试。离开此页面前请下载留存。')}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => exportReport('md', previousReport)} className="min-h-11 rounded-lg border border-border px-3 py-2">{t('Download previous report', '下载上一份报告')}</button>
+            <button type="button" onClick={() => exportReport('json', previousReport)} className="min-h-11 rounded-lg border border-border px-3 py-2">{t('Download previous data (JSON)', '下载上次数据（JSON）')}</button>
+          </div>
+          {exportError && <p role="alert" className="mt-2 text-red-500">{exportError}</p>}
+        </aside>
+      )}
 
       {overall && overallStyle && (
         <section className="mt-8 rounded-xl border border-border bg-surface p-5">
