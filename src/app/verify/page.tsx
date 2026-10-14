@@ -19,6 +19,7 @@ import { countryName } from '@/lib/i18n';
 import { getDirectoryCountry } from '@/lib/data/country-directory';
 import { countOfficial, isOfficialSource, officialFirst } from '@/lib/verify/sources';
 import { consumeVerificationStream, IncompleteVerificationError } from '@/lib/verify/stream';
+import { loadPublicRecording } from '@/lib/verify/recording-loader';
 import { CLAIM_MAX_LENGTH, truncateClaim } from '@/lib/verify/claim-text';
 import { useResearchLead, clearResearchLead } from '@/lib/intelligence/use-research-lead';
 import { bindResearchLead, type BoundResearchLead } from '@/lib/intelligence/research-lead';
@@ -129,12 +130,13 @@ export default function VerifyPage() {
     if (!selected || running) return;
     setExportError(null);
     try {
-      const content = format === 'json' ? `${JSON.stringify(selected, null, 2)}\n` : reportMarkdown(selected);
+      const download = { ...selected, exportedAt: new Date().toISOString() };
+      const content = format === 'json' ? `${JSON.stringify(download, null, 2)}\n` : reportMarkdown(download);
       const blob = new Blob([content], { type: format === 'json' ? 'application/json;charset=utf-8' : 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = reportFilename(selected, format);
+      link.download = reportFilename(download, format);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -179,12 +181,7 @@ export default function VerifyPage() {
     if (running || recordingLoading) return;
     setRecordingLoading(true);
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(String(response.status));
-      const example = await response.json() as RecordedVerification;
-      if (!['adjudication_only', 'selected_adjudication'].includes(example.publicEvidenceScope ?? '') || !example.sourceAttribution) {
-        throw new Error('Unexpected recording scope');
-      }
+      const example = await loadPublicRecording(url);
       reset();
       clearResearchLead();
       setClaim(example.claim);
