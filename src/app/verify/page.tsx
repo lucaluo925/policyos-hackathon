@@ -257,6 +257,7 @@ export default function VerifyPage() {
       setRunning(true);
       const controller = new AbortController();
       abortRef.current = controller;
+      let receivedFinal = false;
       try {
         const res = await fetch('/api/verify', {
           method: 'POST',
@@ -270,11 +271,16 @@ export default function VerifyPage() {
           return;
         }
         await consumeVerificationStream(res.body, (event) => {
-          if (event.type === 'done') setFinishedLead(runLead);
+          if (event.type === 'done') {
+            receivedFinal = true;
+            setFinishedLead(runLead);
+          }
           apply(event);
         });
       } catch (e) {
-        if ((e as Error).name !== 'AbortError') {
+        if (!receivedFinal && controller.signal.aborted) {
+          setErrors((p) => [...p, t('Verification stopped. Any partial findings below are incomplete; review saving is not confirmed.', '核验已停止。下方部分结果并不完整，复核记录是否保存也尚未确认。')]);
+        } else if (!receivedFinal) {
           setErrors((p) => [...p, e instanceof IncompleteVerificationError
             ? t('Verification ended before a complete result was received. Any partial findings below are incomplete; review saving is not confirmed.', '核验结束时未收到完整结果。下方部分结果并不完整，复核记录是否保存也尚未确认。')
             : t('Connection to the server was lost. A complete result and review saving are not confirmed.', '与服务器的连接中断，完整结果和复核记录保存均未确认。')]);
@@ -353,6 +359,7 @@ export default function VerifyPage() {
       >
         <textarea
           value={claim}
+          readOnly={running || recordingLoading}
           aria-label={t('Policy claim', '政策声明')}
           onChange={(e) => setClaim(e.target.value)}
           rows={3}
@@ -361,7 +368,7 @@ export default function VerifyPage() {
           className="w-full rounded-xl border border-border bg-surface p-4 text-foreground outline-none focus:border-accent"
         />
         <label className="mt-3 flex items-start gap-2 text-sm text-foreground">
-          <input type="checkbox" checked={inspectSources} disabled={running || STATIC_DEMO}
+          <input type="checkbox" checked={inspectSources} disabled={running || recordingLoading || STATIC_DEMO}
             onChange={(e) => setInspectSources(e.target.checked)} className="mt-1 accent-accent" />
           <span>{t('Seek official sources and read source pages', '补找官方来源并读取原文')}
             <span className="mt-1 block text-xs text-muted">{t(
@@ -402,7 +409,7 @@ export default function VerifyPage() {
               <button
                 key={entry.id}
                 type="button"
-                disabled={running}
+                disabled={running || recordingLoading}
                 onClick={() => { reset(); clearResearchLead(); setClaim(entry.claim); }}
                 className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 py-2 text-xs text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-40"
               >
