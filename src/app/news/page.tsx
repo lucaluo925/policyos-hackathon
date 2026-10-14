@@ -49,7 +49,7 @@ export default async function NewsPage({
         )}
       </p>
 
-      <Link href="/monitor" className="inline-flex min-h-11 items-center rounded-lg border border-border bg-surface px-4 text-sm mb-5">{t('Search, save and monitor updates →', '检索、收藏与关注政策动态 →')}</Link>
+      <Link href="/monitor" className="inline-flex min-h-11 items-center rounded-lg border border-border bg-surface px-4 text-sm mb-5">{t('Explore policy events, save and monitor updates →', '查看政策事件、收藏与关注动态 →')}</Link>
       <div className="flex flex-wrap gap-2 mb-3">
         {DOMAINS.map((d) => (
           <Link key={d} href={href(d, country)} className={pill((domain ?? 'all') === d)}>
@@ -104,6 +104,7 @@ export default async function NewsPage({
                 <div className="mt-2 text-xs">
                   <VerifyClaimLink
                     claim={it.title}
+                    sourceUrl={it.url}
                     label={t('Check this against sources', '对照来源核验这条')}
                   />
                 </div>

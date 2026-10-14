@@ -2,9 +2,20 @@ import type { Prisma } from '@prisma/client';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db';
 import { MONITOR_BATCH_SIZE, paginateMonitorRows, type MonitorQuery, type MonitorResult } from './query';
 import { queryDirectMonitor } from './direct-monitor';
+import { selectMonitorSource } from './monitor-source';
 
 export async function queryMonitor(query: MonitorQuery): Promise<MonitorResult> {
   if (!isDatabaseConfigured()) return queryDirectMonitor(query);
+  return selectMonitorSource(query, {
+    hasArchive: async () => !!await getPrisma().newsArticle.findFirst({
+      where: { ingestionType: 'rss_feed' }, select: { id: true },
+    }),
+    archive: queryStoredMonitor,
+    official: queryDirectMonitor,
+  });
+}
+
+async function queryStoredMonitor(query: MonitorQuery): Promise<MonitorResult> {
   // Topic classification is reapplied before pagination: historical stored
   // topics can be superseded by the feed registry's current classifier.
   const conditions: Prisma.NewsArticleWhereInput[] = [{ ingestionType: 'rss_feed' }];

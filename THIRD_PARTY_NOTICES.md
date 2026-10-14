@@ -99,3 +99,19 @@ earlier retrieval/screening text are withheld, with omitted URLs listed in the
 record. Recorded model output, timestamps and call counts are preserved.
 The selected passage and its reuse terms are separate from the MIT code
 license. This is nonofficial analysis; no European Union endorsement is implied.
+
+## AIHOT text similarity utilities
+
+`src/lib/news/vendor/aihot-similarity.ts` reproduces only `reportText` and
+`lexicalSimilarity` from [AIHOT events/relate.ts](https://github.com/KKKKhazix/AIHOT/blob/e57da5a4f151892a217529744cd68803aec580df/packages/backend/src/events/relate.ts),
+pinned at commit `e57da5a4f151892a217529744cd68803aec580df`. Copyright (c)
+2026 数字生命卡兹克. The complete upstream MIT license is retained in
+[`src/lib/news/vendor/aihot-LICENSE.txt`](src/lib/news/vendor/aihot-LICENSE.txt).
+The grouping guards, UI and export wrapper are original PolicyOS work.
+
+PolicyOS does not import AIHOT's runtime, operating database, live content,
+source list, scores, brand, logo or visual assets. Its own configured official
+announcement sources supply the inputs. Textual candidate grouping is not
+AIHOT's full event engine and does not establish policy identity, legal
+effect, independent confirmation or truth. AIHOT service terms are separate
+from its code license; no production request to aihot.news is introduced.

@@ -49,6 +49,31 @@ environment before building. It visibly pauses live Tavily/Nemotron controls
 and blocks their API routes even if keys are added later. Remove the flag and
 redeploy only after provider access and a judge-safe quota have been checked.
 
+## Policy event candidates
+
+`/monitor` opens with policy event candidates over the currently loaded
+official announcements. An empty announcement archive uses the existing bounded
+official-source readers; a populated archive keeps its own search and pagination.
+Every original title, source URL, source date and
+provenance remains visible, with per-announcement save and verification links.
+The announcement list remains available. JSON export includes group membership,
+link reasons and unchanged source records; the existing CSV exports originals.
+
+Groups require pairwise matches within 14 days, using a shared document URL,
+a substantial matching headline, or conservative lexical similarity within
+the same country/topic/language scope. Different title numbers and explicit
+negations block similarity grouping. Every group is an unverified research
+lead; similarity is not a legal-status or truth verdict. Groups cover only
+loaded results, may change as more are loaded, and are not persistent event IDs.
+Saved items remain browser snapshots and can be stale.
+
+Two MIT-licensed AIHOT text utilities are pinned and attributed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The full AIHOT event engine,
+models and live service are not used. Aggregation adds no model, embedding or
+Tavily calls, background jobs, database tables or quota changes. Selecting a
+verification link only pre-fills the verifier and remembers the original
+source as unverified context; the visitor explicitly starts the paid check.
+
 ## What changed for the hackathon
 
 The verifier at `/verify` was built after PolicyOS already existed as a policy
