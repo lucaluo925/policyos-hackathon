@@ -20,6 +20,8 @@ import { getDirectoryCountry } from '@/lib/data/country-directory';
 import { countOfficial, isOfficialSource, officialFirst } from '@/lib/verify/sources';
 import { consumeVerificationStream, IncompleteVerificationError } from '@/lib/verify/stream';
 import { loadPublicRecording } from '@/lib/verify/recording-loader';
+import { useVerificationAvailability } from '@/lib/verify/use-availability';
+import VerificationAvailability from './VerificationAvailability';
 import { CLAIM_MAX_LENGTH, truncateClaim } from '@/lib/verify/claim-text';
 import { useResearchLead, clearResearchLead } from '@/lib/intelligence/use-research-lead';
 import { bindResearchLead, linkedResearchLead, type BoundResearchLead } from '@/lib/intelligence/research-lead';
@@ -108,6 +110,8 @@ export default function VerifyPage() {
   const [prompts, setPrompts] = useState<PromptIndexEntry[]>([]);
   const [recorded, setRecorded] = useState<RecordedVerification | null>(null);
   const [recordingLoading, setRecordingLoading] = useState(false);
+  const { availability, loading: availabilityLoading, refresh: refreshAvailability } = useVerificationAvailability();
+  const accessBlocked = availability !== null && availability.status !== 'available';
   const [finishedResult, setFinishedResult] = useState<VerificationResult | null>(null);
   const [reviewPersistence, setReviewPersistence] = useState<ReviewPersistence | null>(null);
   const [finishedLead, setFinishedLead] = useState<BoundResearchLead | null>(null);
@@ -262,7 +266,7 @@ export default function VerifyPage() {
   const run = useCallback(
     async (text: string) => {
       const value = text.trim();
-      if (!value || running || recordingLoading || STATIC_DEMO) return;
+      if (!value || running || recordingLoading || STATIC_DEMO || accessBlocked) return;
       const runLead = recorded ? null : bindResearchLead(lead, value);
       reset();
       setRunning(true);
@@ -302,9 +306,10 @@ export default function VerifyPage() {
         }));
         setRunning(false);
         abortRef.current = null;
+        void refreshAvailability();
       }
     },
-    [apply, running, recordingLoading, t, inspectSources, lead, recorded, reset],
+    [apply, running, recordingLoading, t, inspectSources, lead, recorded, reset, accessBlocked, refreshAvailability],
   );
 
   return (
@@ -361,6 +366,7 @@ export default function VerifyPage() {
         <a href={lead.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 block break-all text-accent underline underline-offset-2">{lead.sourceUrl}</a>
         <p className="mt-2 text-xs text-muted">{t('This link is research context. It is not passed to the model or counted as evidence; a live check retrieves its own sources.', '该链接仅供研究参考，不传给模型，也不计入证据；实时核验会重新检索来源。')}</p>
       </aside>}
+      <VerificationAvailability availability={availability} loading={availabilityLoading} refresh={refreshAvailability} />
       <form
         className="mt-0"
         onSubmit={(e) => {
@@ -391,7 +397,7 @@ export default function VerifyPage() {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="submit"
-            disabled={running || recordingLoading || !claim.trim() || STATIC_DEMO}
+            disabled={running || recordingLoading || !claim.trim() || STATIC_DEMO || accessBlocked}
             className="rounded-full bg-accent px-5 py-2 font-medium text-white disabled:opacity-40"
           >
             {STATIC_DEMO ? t('Live checks paused', '实时核验暂停') : running ? t('Verifying…', '核验中…') : t('Verify', '开始核验')}

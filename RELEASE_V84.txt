@@ -1,0 +1,50 @@
+PolicyOS V84 — live availability and safe admission (14 October 2026)
+
+BEHAVIOR
+The verifier shows a read-only application-availability snapshot before a
+visitor starts a live run. A shared daily limit has an earliest retry time
+derived from the most recent cap-count timestamps, including the inclusive
+24-hour boundary. If both run/assertion limits block, both must have a slot.
+Shared usage can move this time. Budget stops/expiry never imply automatic
+daily renewal. A slot later than the authorized deadline is not advertised
+as a retry. Dated recordings and report downloads remain available.
+
+GET /api/verify/availability makes no provider calls or writes. It reads the
+original campaign and quota dates in a RepeatableRead, READ ONLY PostgreSQL
+transaction. The response exposes only status/check time and optional retry
+and budget-expiry dates, not amounts, ledger rows, campaign IDs or credentials.
+
+POST /api/verify checks the same status before admission. Previously a failed
+completed-assertion count was logged and execution continued; unknown quota or
+accounting now returns 503 before admission or provider work. A known rolling
+limit returns 429 with Retry-After. Atomic run admission and per-model spending
+reservations remain authoritative against races after the snapshot.
+
+An empty/damaged/mismatched campaign is unconfirmed, not fresh money. Failed
+model-call reservations are not refunded. There is no ledger reset, new budget
+ID, database migration, environment update, new cron or access-permission change.
+The existing cumulative US$5 authorization, $4.98 application ceiling and
+shared run/assertion limits remain unchanged. The separate live country-research
+Tavily path and its quota are unchanged too.
+
+VALIDATION
+577 offline tests, type-check, lint and production build passed. An isolated
+browser API proxy tested daily-full status and manual recovery, budget stops,
+expiry, an unavailable status response and authoritative request rejection.
+Recorded evidence/export remains available while live checks are blocked.
+The existing CI PostgreSQL concurrency test now also checks that availability
+reads do not alter any audit/quota rows, and that positive but insufficient
+reservation capacity has no misleading daily retry time. It also tests HTTP
+GET/POST with fake provider keys and a transport that forbids provider calls:
+known budget denial must not consume any run/model reservation. Its longer artificial
+expiry applies only to the disposable CI database, not production settings.
+
+READINESS IS NOT JUDGING ACCESS
+The snapshot does not reserve capacity, check provider account balances or
+credit expiry, or prove a complete run/future uptime. Finite funds and public
+shared limits remain a judging-access gap. The official Testing requirement
+still calls for free, unrestricted access until judging ends. The previously
+authorized organizer question showed zero replies on 14 October. A reserved
+judge login is only a proposal: it needs owner authorization for the access
+change and organizer clarification about the retained limits. No new message,
+credentials, login restriction, funding increase or submission was made.

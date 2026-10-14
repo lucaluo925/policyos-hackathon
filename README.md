@@ -259,6 +259,17 @@ This does not prove provider funding, complete-run capacity, source accuracy,
 or free access throughout judging. Known costs outside the campaign remain
 separate. Never create a new campaign ID to obtain a reassuring audit result.
 
+The verifier also reads `/api/verify/availability` before the visitor starts.
+This uncached, read-only status checks the original model ledger and shared
+rolling limits using database time. It returns only status, check time, optional
+earliest retry time and budget expiry; no amounts, ledger rows, campaign IDs or
+credentials are exposed. A status check does not reserve a run, check provider
+credits, or guarantee completion. The POST repeats this check and fails closed
+if accounting or quota reads are unavailable, then retains the existing atomic
+admission and per-model reservations. A known blocked attempt is rejected before
+reserving a run. Funding stops do not imply a daily reset; recordings remain
+available. Public/judge access permissions and all configured limits are unchanged.
+
 ```bash
 npm run type-check
 npm run lint

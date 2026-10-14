@@ -7,6 +7,9 @@ import { reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '../.
 import { reserveSharedCountryResearch, CountryResearchQuotaExceeded } from '../../src/lib/research/quota';
 import { requireDisposableDatabase } from './disposable-database';
 import { sharedModelBudgetStore, ModelBudgetStopped, MODEL_BUDGET_ENTITY } from '../../src/lib/verify/spend';
+import { readSharedVerificationAvailability } from '../../src/lib/verify/availability-server';
+import { POST as verifyPost } from '../../src/app/api/verify/route';
+import { GET as availabilityGet } from '../../src/app/api/verify/availability/route';
 
 // This test writes reservations. Only an explicitly disposable, empty local
 // CI database is accepted; it never deletes existing rows or calls providers.
@@ -55,7 +58,7 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
     assert.equal(research.filter(outcome => outcome === 'admitted').length, 1, 'only one remaining research slot can be consumed');
     await assert.rejects(reserveSharedCountryResearch(day, 'must not reserve'), CountryResearchQuotaExceeded);
     assert.equal(await db.auditLog.count({ where: researchWhere }), 60);
-    const modelBudget = { id: 'ci-shared-budget', capMicroUsd: 4_980_000, expiresAt: Date.now() + 60_000 };
+    const modelBudget = { id: 'ci-shared-budget', capMicroUsd: 4_980_000, expiresAt: Date.now() + 300_000 };
     const modelBurst = await burst('budget', day);
     const budgetWhere = { entityType: MODEL_BUDGET_ENTITY, entityId: modelBudget.id };
     const reservations = await db.auditLog.findMany({ where: budgetWhere });
@@ -88,6 +91,43 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
     assert.equal(auditReport.rolling24Hours.assertions, 0);
     assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit,
       'operator audit must not alter any ledger, run or assertion rows');
+    const availability = await readSharedVerificationAvailability(db, 12, 12, modelBudget);
+    assert.equal(availability.status, 'budget_limit');
+    assert.equal(availability.retryAt, undefined, 'funding does not reset daily');
+    assert.deepEqual(Object.keys(availability).sort(), ['budgetExpiresAt', 'checkedAt', 'status']);
+    assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit,
+      'public availability check must not reserve, settle or alter ledger/quota rows');
+    const settings: Record<string, string> = {
+      NEBIUS_API_KEY: 'isolated-ci-only', TAVILY_API_KEY: 'isolated-ci-only',
+      VERIFY_REQUIRE_SHARED_QUOTA: '1', NEXT_PUBLIC_STATIC_DEMO_MODE: '0',
+      VERIFY_MODEL_BUDGET_ID: modelBudget.id, VERIFY_MODEL_BUDGET_USD: '4.98',
+      VERIFY_MODEL_BUDGET_EXPIRES_AT: new Date(modelBudget.expiresAt).toISOString(),
+      VERIFY_DAILY_RUN_CAP: '12', VERIFY_DAILY_ASSERTION_CAP: '12',
+    };
+    const prior = Object.fromEntries(Object.keys(settings).map(key => [key, process.env[key]]));
+    const fetchBefore = globalThis.fetch;
+    let networkCalls = 0;
+    globalThis.fetch = async () => { networkCalls++; throw new Error('No provider calls permitted in isolated CI'); };
+    try {
+      Object.assign(process.env, settings);
+      const statusResponse = await availabilityGet();
+      assert.equal(statusResponse.headers.get('Cache-Control'), 'no-store');
+      assert.equal((await statusResponse.json()).status, 'budget_limit');
+      const denied = await verifyPost(new Request('http://localhost/api/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ claim: 'CI denied-capacity test' }),
+      }));
+      assert.equal(denied.status, 503);
+      assert.equal((await denied.json()).code, 'budget_limit');
+      assert.equal(denied.headers.get('Retry-After'), null);
+      assert.equal(networkCalls, 0);
+      assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit,
+        'a known funding denial must not consume a run slot or model reservation');
+    } finally {
+      globalThis.fetch = fetchBefore;
+      for (const [key, value] of Object.entries(prior)) {
+        if (value === undefined) delete process.env[key]; else process.env[key] = value;
+      }
+    }
     t.diagnostic(JSON.stringify({ verifier, research, modelBurst, paidProviderCalls: 0 }));
   } finally {
     await db.$disconnect();

@@ -30,9 +30,9 @@ import { CLAIM_MAX_LENGTH } from '@/lib/verify/claim-text';
 import { isDatabaseConfigured } from '@/lib/db';
 import { reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '@/lib/verify/admission';
 import { budgetedModelFetch, configuredModelBudget, ModelBudgetStopped, type ModelBudget } from '@/lib/verify/spend';
+import { getVerificationAvailability } from '@/lib/verify/availability-server';
+import { verificationAccessFailure } from '@/lib/verify/availability';
 import {
-  DAILY_ASSERTION_CAP,
-  countRecentVerifiedAssertions,
   persistVerification,
 } from '@/lib/verify/review-sink';
 
@@ -101,25 +101,14 @@ export async function POST(request: Request) {
     );
   }
 
-  // The completed-assertion counter remains a secondary limit. It misses
-  // failed and disconnected runs; the shared reservation below counts every
-  // admitted attempt before the first paid provider call.
-  try {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const spent = await countRecentVerifiedAssertions(since);
-    if (spent >= DAILY_ASSERTION_CAP) {
-      return Response.json(
-        {
-          error:
-            'Live verification has hit its daily limit on this deployment. ' +
-            'Claim starters can still fill the form; the dated BOE recording remains viewable. ' +
-            'Live checks resume within 24 hours.',
-        },
-        { status: 429 },
-      );
-    }
-  } catch (e) {
-    console.error('[verify] could not read the daily usage counter:', e);
+  // Known blocked/unknown capacity must not consume an attempt or paid call.
+  // This read does not reserve capacity; atomic admission below still applies.
+  const accessFailure = verificationAccessFailure(await getVerificationAvailability());
+  if (accessFailure) {
+    const { httpStatus, retryAfterSeconds, ...body } = accessFailure;
+    return Response.json(body, { status: httpStatus,
+      headers: { 'Cache-Control': 'no-store', ...(retryAfterSeconds ? { 'Retry-After': String(retryAfterSeconds) } : {}) },
+    });
   }
 
   const requiresSharedQuota = process.env.VERCEL === '1' ||
