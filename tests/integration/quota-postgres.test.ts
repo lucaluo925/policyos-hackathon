@@ -69,6 +69,25 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
     const ledger = await db.auditLog.findMany({ where: budgetWhere });
     assert.equal(ledger.reduce((sum, row) => sum + (row.newValue as { microUsd: number }).microUsd, 0), 4_505_867);
     await assert.rejects(sharedModelBudgetStore.reserve({ ...modelBudget, capMicroUsd: 50_000_000 }), ModelBudgetStopped, 'changing the cap cannot silently reset an existing campaign');
+    const beforeAudit = await db.auditLog.findMany({ orderBy: { id: 'asc' } });
+    const audit = await exec(process.execPath, ['--import', 'tsx', 'scripts/verify-budget-audit.ts'], {
+      timeout: 30_000,
+      env: { ...process.env,
+        VERIFY_MODEL_BUDGET_ID: modelBudget.id, VERIFY_MODEL_BUDGET_USD: '4.98',
+        VERIFY_MODEL_BUDGET_EXPIRES_AT: new Date(Date.now() + 60_000).toISOString(),
+        VERIFY_DAILY_RUN_CAP: '12', VERIFY_DAILY_ASSERTION_CAP: '12', NEXT_PUBLIC_STATIC_DEMO_MODE: '0',
+      },
+    }).then(result => ({ ...result, code: 0 }), (error: { stdout: string; stderr: string; code: number }) => error);
+    assert.equal(audit.code, 2, 'positive remaining balance cannot cover another full reservation');
+    assert.equal(audit.stderr, '');
+    const auditReport = JSON.parse(audit.stdout);
+    assert.equal(auditReport.ledger.accountedMicroUsd, 4_505_867);
+    assert.equal(auditReport.ledger.unsettledReservations, 3);
+    assert.equal(auditReport.ledger.nextReservationFits, false);
+    assert.equal(auditReport.rolling24Hours.runs, 3);
+    assert.equal(auditReport.rolling24Hours.assertions, 0);
+    assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit,
+      'operator audit must not alter any ledger, run or assertion rows');
     t.diagnostic(JSON.stringify({ verifier, research, modelBurst, paidProviderCalls: 0 }));
   } finally {
     await db.$disconnect();

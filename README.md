@@ -220,6 +220,20 @@ in one transaction; a failed write is reported separately from the evidence verd
 Provider keys must never be placed in the browser bundle or committed to source
 control.
 
+Before another metered check, an operator with existing database access can run
+`npm run verify:budget-audit` in an environment that already supplies
+`DATABASE_URL` and the existing `VERIFY_MODEL_BUDGET_*` settings. It reads the
+original campaign and rolling 24-hour counters in a PostgreSQL read-only
+transaction. It does not load secret files, migrate, seed, reset or settle rows,
+or contact Tavily/Nebius. Output contains only budget metadata and counters;
+connection errors are sanitized. Do not paste credentials into the terminal
+command or chat. An empty campaign is reported as needing review, not as new
+funding. Exit 0 means the snapshot has no detected admission blocker; exit 2
+means review or a limit is needed, and exit 1 means the audit could not run.
+This does not prove provider funding, complete-run capacity, source accuracy,
+or free access throughout judging. Known costs outside the campaign remain
+separate. Never create a new campaign ID to obtain a reassuring audit result.
+
 ```bash
 npm run type-check
 npm run lint
