@@ -15,7 +15,6 @@ export async function consumeVerificationStream(
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  let completed = false;
   try {
     for (;;) {
       const { done, value } = await reader.read();
@@ -27,14 +26,22 @@ export async function consumeVerificationStream(
         const line = frame.split('\n').find(l => l.startsWith('data:'));
         if (!line) continue;
         let event: VerifyEvent;
-        try { event = JSON.parse(line.slice(5).trim()) as VerifyEvent; } catch { continue; }
-        if (event?.type === 'done') completed = true;
+        try { event = JSON.parse(line.slice(5).trim()) as VerifyEvent; } catch {
+          // Do not silently lose an evidence event and later claim completion.
+          throw new IncompleteVerificationError();
+        }
         apply(event);
+        // The server emits done only after the review write outcome is known.
+        // Do not wait for a proxy to close the transport after that result.
+        if (event?.type === 'done') return;
       }
     }
     // Stage errors can be recoverable. Only the final result confirms completion.
-    if (!completed) throw new IncompleteVerificationError();
+    throw new IncompleteVerificationError();
   } finally {
+    // Stop consuming on parse/callback failure too, propagating cancellation
+    // instead of leaving an abandoned paid request running server-side.
+    try { await reader.cancel(); } catch { /* Preserve the original failure. */ }
     reader.releaseLock();
   }
 }

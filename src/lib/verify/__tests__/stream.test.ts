@@ -36,3 +36,31 @@ for (const stage of ['retrieve', 'extract', 'screen', 'adjudicate']) {
     await consumeVerificationStream(chunks(prefix + 'data: {"type":"done","result":{"claim":"test"}}\n\n'), () => {});
   });
 }
+
+test('a corrupt evidence event cannot be silently dropped before a final result', async () => {
+  let cancelled = false;
+  const events: unknown[] = [];
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) { controller.enqueue(new TextEncoder().encode(
+      'data: {"type":"evidence",BROKEN}\n\ndata: {"type":"done","result":{}}\n\n')); },
+    cancel() { cancelled = true; },
+  });
+  await assert.rejects(consumeVerificationStream(body, event => events.push(event)), IncompleteVerificationError);
+  assert.deepEqual(events, []);
+  assert.equal(cancelled, true);
+  assert.equal(body.locked, false);
+});
+
+test('the final result completes without waiting for transport close', { timeout: 1000 }, async () => {
+  let cancelled = false;
+  const events: unknown[] = [];
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) { controller.enqueue(new TextEncoder().encode(
+      'data: {"type":"done","result":{"claim":"final"}}\n\n')); },
+    cancel() { cancelled = true; },
+  });
+  await consumeVerificationStream(body, event => events.push(event));
+  assert.equal(events.length, 1);
+  assert.equal(cancelled, true);
+  assert.equal(body.locked, false);
+});

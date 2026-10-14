@@ -252,8 +252,14 @@ export function reportMarkdown(report: VerificationReport): string {
       const docs = report.adjudicationEvidence[assertion.assertion.id] ?? [];
       if (!docs.length) lines.push('No documents were submitted to adjudication for this assertion.', '');
       for (const doc of docs) lines.push(sourceLink(doc.url), '',
+        ...(doc.searchRequestId === undefined ? [] : [`Search request ID: ${text(doc.searchRequestId || 'Not recorded')}`, '']),
+        ...(!doc.issuerHtmlRead && doc.extractionRequestId !== undefined
+          ? [`Excerpt origin: Tavily Extract; request ID: ${text(doc.extractionRequestId || 'Not recorded')}`, ''] : []),
+        ...(!doc.issuerHtmlRead && doc.extractionRequestId === undefined && doc.searchRequestId
+          ? ['Excerpt origin: Tavily Search', ''] : []),
         ...(doc.issuerHtmlRead ? ['Excerpt origin: bounded direct source URL HTML read', ''] : []),
-        ...(doc.issuerDiscovery ? [`Issuer index: ${sourceLink(doc.issuerDiscovery.indexUrl)}; seed: ${sourceLink(doc.issuerDiscovery.seedUrl)}`, ''] : []),
+        ...(doc.issuerDiscovery ? [`Issuer index: ${sourceLink(doc.issuerDiscovery.indexUrl)}; seed: ${sourceLink(doc.issuerDiscovery.seedUrl)}`,
+          `Seed Search request: ${text(doc.issuerDiscovery.seedRequestId ?? 'Not recorded')}`, ''] : []),
         quote(doc.snippet), '');
     }
   }

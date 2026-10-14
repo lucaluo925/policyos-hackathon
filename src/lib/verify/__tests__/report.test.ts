@@ -172,3 +172,22 @@ test('filmed EU recording exports its incomplete evidence scope without relabeli
   assert.doesNotMatch(markdown, /Publication date: undefined|Correction published: undefined|BOE/);
   assert.ok(report.notes.some(note => note.includes('not the complete model input')));
 });
+
+test('exact adjudication passages carry their own discovery and excerpt provenance', () => {
+  const saved = result();
+  const doc = saved.provenance!.adjudicationEvidence.a1[0];
+  doc.searchRequestId = 'search-precise';
+  doc.extractionRequestId = 'extract-precise';
+  const exact = () => reportMarkdown(liveReport(saved, {})).split('### Exact excerpts submitted to adjudication')[1];
+  assert.match(exact(), /Search request ID: search\\-precise/);
+  assert.match(exact(), /Excerpt origin: Tavily Extract; request ID: extract\\-precise/);
+  delete doc.extractionRequestId;
+  assert.match(exact(), /Excerpt origin: Tavily Search/);
+  doc.issuerHtmlRead = true;
+  delete doc.searchRequestId;
+  doc.issuerDiscovery = { seedUrl: 'https://example.gov/old', indexUrl: 'https://example.gov/index', seedRequestId: 'seed-id', readBytes: 500 };
+  assert.match(exact(), /bounded direct source URL HTML read/);
+  assert.match(exact(), /Seed Search request: seed\\-id/);
+  assert.doesNotMatch(exact(), /Excerpt origin: Tavily/);
+  assert.match(exact(), /https:\/\/example.gov\/index/);
+});
