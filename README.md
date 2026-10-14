@@ -375,7 +375,7 @@ judge budget, reset, recharge or limit bypass is introduced. Sign-in links open
 a new tab so the current claim, source lead or country selection is preserved;
 return to the original tab and check availability/retry explicitly.
 
-### Prepared historical-cost checkpoint (not applied)
+### Operator-reviewed historical-cost checkpoint
 
 The call ledger is conservative application accounting (including 25% headroom),
 not all provider billing. Historical account costs can predate the campaign.
@@ -396,12 +396,14 @@ anchor changes, duplicates, invalid checkpoint data or a cap mismatch fail close
 The review SQL uses SERIALIZABLE isolation and rechecks the entire anchor so
 new calls after preview invalidate the packet rather than being hidden.
 
-This release prepares support only. No production checkpoint is written and
-`VERIFY_MODEL_COST_CHECKPOINT_REQUIRED` remains unset/0. Before applying, the
-operator must review statement coverage, posting delay and any older account
-costs, then approve the concrete production change. After application set the
-server-only requirement to `1` and redeploy: a missing checkpoint or old DB
-restore then cannot silently restore funds. A stored checkpoint is always
+On 14 October 2026, the owner approved application to the independent contest
+project. One checkpoint was appended after rechecking the unchanged settled
+anchor. `VERIFY_MODEL_COST_CHECKPOINT_REQUIRED=1` is enabled there and the app
+was redeployed; see [V88](RELEASE_V88.txt). No original call row was changed.
+Other deployments must review their own statement coverage, posting delay and
+older account costs before explicitly approving a checkpoint. After application
+set the server-only requirement to `1` and redeploy: a missing checkpoint or old
+DB restore then cannot silently restore funds. A stored checkpoint is always
 counted even if the requirement is later unset. No API edits/replaces checkpoints.
 
 Budget ID, configured dollar cap, deadline and daily caps are unchanged. This

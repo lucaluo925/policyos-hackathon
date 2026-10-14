@@ -9,10 +9,10 @@ is complete, submitted, eligible for every award, or guaranteed to win.
   [policy events](https://policyos-app.vercel.app/monitor) and
   [country research](https://policyos-app.vercel.app/explore).
 - Independent Vercel project: `policyos-hackathon-demo`; no scheduled cron jobs.
-- Application source: [`e05e090c24e25e131fb764748e0ce267bcf34758`](https://github.com/lucaluo925/policyos-hackathon/commit/e05e090c24e25e131fb764748e0ce267bcf34758).
-- [CI for that exact source](https://github.com/lucaluo925/policyos-hackathon/actions/runs/38650539309):
+- Application source: [`e779293ffea39d690a8229ee5a5a1267f8061483`](https://github.com/lucaluo925/policyos-hackathon/commit/e779293ffea39d690a8229ee5a5a1267f8061483).
+- [CI for that exact source](https://github.com/lucaluo925/policyos-hackathon/actions/runs/38651493349):
   successful, including 604 offline tests and disposable PostgreSQL checks.
-- Deployment: `dpl_E9zGDwfepqS59xRfNCfCCrDLuk51`, READY. The public alias was
+- Deployment: `dpl_PmePkhUaVZUDtJFDmNmkUJ8V4HhN`, READY. The public alias was
   explicitly assigned to it. Anonymous page and read-only status checks passed.
 
 Repository documentation can advance independently of the compiled app. This
@@ -44,7 +44,10 @@ The [authorized clarification thread](https://nebiusglobalaihackathon.devpost.co
 had zero comments at the latest 14 October read. This is not an organizer waiver.
 
 The original campaign, cumulative budget, expiry and shared limits remain in
-force. Prepared historical-cost reconciliation has not been applied. An
+force. The owner-approved historical-cost checkpoint was applied and its
+missing-checkpoint stop requirement enabled on 14 October; see [V88](RELEASE_V88.txt).
+The original model rows were preserved. This does not establish complete
+lifetime provider billing or authorize further spending. An
 application availability response is advisory: it does not check provider
 credits, reserve a run or guarantee completion. Private credentials, finite
 funding and shared caps do not by themselves prove free unrestricted judging

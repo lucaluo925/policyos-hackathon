@@ -1,0 +1,40 @@
+PolicyOS V88 — approved historical-cost protection activated
+Date: 2026-10-14
+
+The owner explicitly approved the prepared historical-cost checkpoint and
+missing-checkpoint protection, while keeping the original budget, campaign,
+expiry and limits. Judge isolation must still remain off pending organizer
+confirmation. Owner narration remains deferred.
+
+The approved protection was applied to the existing database after a read-only
+preflight. A read-only postflight confirmed that the original records were
+preserved. Private billing observations, amounts, row identifiers and financial
+hashes are retained only in the owner's private receipt, not this document.
+
+Only VERIFY_MODEL_COST_CHECKPOINT_REQUIRED=1 was added to the independent
+Vercel project's Production configuration. Other budget and quota settings
+were retained. No provider/database credential was pulled or copied. The
+application was rebuilt with the new requirement and the public alias assigned
+after staged anonymous page and read-only status checks. Judge session remains
+enabled=false, ready=false, authenticated=false. No judge code was distributed.
+
+Project: policyos-hackathon-demo (independent contest project; no cron).
+Application source: e779293ffea39d690a8229ee5a5a1267f8061483.
+CI: https://github.com/lucaluo925/policyos-hackathon/actions/runs/38651493349
+Exact-source CI completed successfully: 604 offline tests, type-check/lint/build,
+real disposable PostgreSQL concurrency/checkpoint SQL checks and Python tests.
+Deployment: dpl_PmePkhUaVZUDtJFDmNmkUJ8V4HhN, READY, production.
+Public app: https://policyos-app.vercel.app/verify
+This receipt may be a later documentation commit than the compiled app source.
+
+The stored checkpoint counts even if the requirement flag is unset. Missing
+required checkpoints, duplicate/damaged data or changed original anchors fail
+closed. Missing-checkpoint/restore behavior was tested on disposable PostgreSQL;
+the production checkpoint was not deleted to demonstrate it. There was no new
+paid Tavily/Nemotron run. The dated V76 hosted check remains separate evidence.
+
+This protection does not prove complete provider billing, current provider
+balance or unrestricted judging capacity. No budget-ID reset, cap increase,
+limit bypass, new grant redemption, recharge or judge activation occurred.
+Provider-credit expiry, organizer access confirmation, final media/publication
+and final Devpost submission remain outstanding.
