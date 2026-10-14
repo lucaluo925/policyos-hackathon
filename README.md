@@ -406,3 +406,30 @@ Budget ID, configured dollar cap, deadline and daily caps are unchanged. This
 feature does not verify a provider balance, enforce spending by other projects,
 fund unrestricted judge tests or establish rules compliance. Judge isolation
 remains independently disabled until organizer confirmation.
+
+### Country research recovery and source handoff
+
+Country research keeps the last successful batch while an explicit refresh is
+pending or fails. The original date/scope/request ID remain attached to those
+results. A newer failed government-site request never relabels an earlier public
+batch. Changing country/domain clears that component's batch. A valid empty
+response is a completed replacement, not a reason to keep old hits.
+
+The browser wait ends after 45 seconds and can be stopped explicitly. Stopping
+only ends the browser wait: an already-started server search can still consume
+its original reservation. There is no automatic paid retry, refund or quota
+change. Retry is an explicit action. Invalid/non-JSON responses use safe error
+messages and cannot replace a valid retained batch or crash URL rendering.
+
+Each transferable hit can open a draft verification claim with its exact source
+URL through the existing source-lead handoff. This does not run verification;
+the visitor reviews/edits the claim and explicitly starts the existing verifier.
+These hits are unverified leads, not verdicts or automatic score updates.
+
+Download search leads (JSON) uses kind `country-research-leads`, preserving the
+batch and original search time separately from export time, with latest attempt
+status/scope and a retained flag. It is not a completed verification report.
+The backend also retains the actual submitted Tavily query, domain restriction,
+search depth and max-results parameters. Query details are optional for older
+responses; the client never reconstructs missing historical request parameters.
+Direct official HTML reading remains a separate feature, not a Tavily search hit.

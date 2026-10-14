@@ -28,6 +28,7 @@ test('an unconfigured map country can search once and gets traceable, safe leads
   assert.equal(result.scope, 'public');
   assert.equal(result.requestId, 'tavily-test-request');
   assert.equal(calls.length, 1);
+  assert.deepEqual(result.search, { query: calls[0], includeDomains: [], searchDepth: 'basic', maxResults: 5 });
   assert.match(calls[0], /Qatar.*trade tariffs customs/);
   assert.deepEqual(result.items.map(item => item.title), ['Customs rule update', 'Official Qatar tariff update', 'Qatar customs commentary']);
   assert.equal(result.items[0].recognizedOfficialDomain, true);

@@ -1,0 +1,39 @@
+PolicyOS V87 - country research recovery, source handoff and lead export
+Date: 2026-10-14
+
+Fixes visible country-search workflow gaps: starting a retry no longer destroys
+an earlier successful batch. Failed/pending reads retain source URLs, original
+search time, scope and request ID with an explicit retained-results notice.
+Switching country/domain resets the old batch; valid empty responses replace it.
+The latest requested scope is separate from the retained result's scope.
+
+Browser wait is bounded to 45 seconds and can be stopped. Manual cancellation
+never promises server cancellation, released quota or a refund. No automatic
+retry or extra provider request is added. Response validation rejects unrelated
+or unsafe data, strips unknown diagnostic fields and shows safe retry messages.
+Late responses from abandoned requests cannot overwrite current results.
+
+Existing VerifyClaimLink carries country/title/excerpt and exact original URL
+into a bounded draft claim, marked unverified. Opening it never starts a paid
+verification. Download search leads (JSON) preserves original source/request/date
+context and discloses failed/pending latest attempts. It is not a policy verdict.
+Actual submitted Tavily query/domain restrictions/basic depth/max-results are
+retained in new successful batches and exported; older responses remain supported
+without inventing their missing query. Search counts and search arguments remain
+bounded as before, with one explicit Search call and existing caching/quota.
+
+604 offline tests, lint, type-check and production build pass. Browser acceptance
+uses LOCAL-UI-TEST responses with all API calls intercepted and empty provider
+credentials. It is not new real Tavily/Nemotron acceptance or an accuracy result.
+No budget, ID, daily limit, historical checkpoint, judge activation or original
+ledger mutation is included. Production cost checkpoint still needs approval;
+judge isolation stays disabled pending organizer confirmation. Exact published
+CI/deployment and browser evidence are recorded separately after release.
+
+Review: OCR delegate/manual review covered 8/8 changed repository files
+(four selected source files, four docs/test files inspected separately).
+The local-only API interception harness was also inspected and not published.
+No remaining blocking finding. Actual local browser additionally confirmed
+45-second timeout, manual stop, explicit successful recovery, source handoff
+without verifier POST, context-switch clearing and downloaded retained JSON.
+No real provider calls or production ledger changes in this acceptance.

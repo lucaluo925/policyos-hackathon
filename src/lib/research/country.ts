@@ -10,6 +10,8 @@ export const COUNTRY_RESEARCH_DOMAINS = ['climate', 'trade', 'immigration'] as c
 export type CountryResearchDomain = (typeof COUNTRY_RESEARCH_DOMAINS)[number];
 export type CountryResearchScope = 'public' | 'country-government';
 
+export interface CountryResearchSearch { query: string; includeDomains: string[]; searchDepth: 'basic'; maxResults: number }
+
 export interface CountryResearchResult {
   countryIso: string;
   countryName: string;
@@ -17,6 +19,7 @@ export interface CountryResearchResult {
   scope: CountryResearchScope;
   searchedAt: string;
   requestId: string;
+  search?: CountryResearchSearch;
   items: Array<{ title: string; url: string; excerpt: string; recognizedOfficialDomain: boolean; countryGovernmentDomain: boolean }>;
 }
 
@@ -126,6 +129,7 @@ function toResearchResult(
   domain: CountryResearchDomain,
   scope: CountryResearchScope,
   search: TavilySearchResult,
+  request: CountryResearchSearch,
 ): CountryResearchResult {
   const seen = new Set<string>();
   const ranked = search.hits.flatMap(hit => {
@@ -161,6 +165,7 @@ function toResearchResult(
     scope,
     searchedAt: new Date().toISOString(),
     requestId: search.requestId,
+    search: request,
     items,
   };
 }
@@ -192,6 +197,8 @@ export async function researchCountry(
   }[domain];
   const year = new Date().getUTCFullYear();
   const query = `${countrySearchName(country)} government official ${topic} policy announcement ${year}`;
+  const request: CountryResearchSearch = { query, searchDepth: 'basic', maxResults: 5,
+    includeDomains: scope === 'country-government' ? [...countryGovernmentSearchDomains(country.iso)] : [] };
   const result = (async () => {
     if (!client) {
       if ((process.env.VERCEL === '1' || process.env.COUNTRY_RESEARCH_REQUIRE_SHARED_QUOTA === '1')
@@ -201,10 +208,10 @@ export async function researchCountry(
       if (isDatabaseConfigured()) await reserveSharedCountryResearch(day, key);
     }
     const search = await (client ?? new TavilyClient(1)).search(query, {
-      maxResults: 5, timeoutMs: 15_000,
-      ...(scope === 'country-government' ? { includeDomains: countryGovernmentSearchDomains(country.iso) } : {}),
+      maxResults: request.maxResults, searchDepth: request.searchDepth, timeoutMs: 15_000,
+      ...(scope === 'country-government' ? { includeDomains: request.includeDomains } : {}),
     });
-    return toResearchResult(country, domain, scope, search);
+    return toResearchResult(country, domain, scope, search, request);
   })();
   if (!client) {
     cache.set(key, { expiresAt: Date.now() + CACHE_MS, result });
