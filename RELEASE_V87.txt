@@ -37,3 +37,10 @@ No remaining blocking finding. Actual local browser additionally confirmed
 45-second timeout, manual stop, explicit successful recovery, source handoff
 without verifier POST, context-switch clearing and downloaded retained JSON.
 No real provider calls or production ledger changes in this acceptance.
+
+Daily-limit messages refer to the shared search limit and its reset, rather
+than promising a wait until the visitor's local tomorrow. The counter still
+uses the same UTC day and unchanged cap; no automatic retry is introduced.
+
+Final combined review coverage is 9/9 files, including the quota-message
+clarification (counters and limits unchanged). No extra tests mirror UI copy.

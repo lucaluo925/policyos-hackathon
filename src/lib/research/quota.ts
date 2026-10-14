@@ -47,7 +47,7 @@ export async function reserveSharedCountryResearch(
       await run(async tx => {
         const used = await tx.count(day);
         if (used >= COUNTRY_RESEARCH_DAILY_CAP) {
-          throw new CountryResearchQuotaExceeded('Daily live research budget reached. Try again tomorrow.');
+          throw new CountryResearchQuotaExceeded('Shared daily research limit reached. Try again after the daily reset.');
         }
         await tx.reserve(day, summary);
       });

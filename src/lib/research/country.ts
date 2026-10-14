@@ -185,7 +185,7 @@ export async function researchCountry(
     if (cached && cached.expiresAt > Date.now()) return cached.result;
     if (dailyUsage.day !== day) dailyUsage = { day, used: 0 };
     if (dailyUsage.used >= DAILY_PROCESS_CAP) {
-      throw new CountryResearchQuotaExceeded('Daily live research budget reached. Try again tomorrow.');
+      throw new CountryResearchQuotaExceeded('Shared daily research limit reached. Try again after the daily reset.');
     }
     dailyUsage.used += 1;
   }

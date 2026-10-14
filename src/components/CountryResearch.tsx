@@ -58,7 +58,7 @@ export default function CountryResearch({ countryIso, domain }: {
       setJudgeRequired(code === 'judge_required');
       const messages = {
         judge_required: t('Sign in at the judge testing entrance, then retry this search.', '请通过评委测试入口登录，再重试这次检索。'),
-        daily_limit: t('The daily search budget has been reached. Try again tomorrow.', '今日检索额度已用完，请明天重试。'),
+        daily_limit: t('The shared daily search limit has been reached. Please try again later.', '共享日检索限额已达到，请稍后重试。'),
         timeout: t('The search wait timed out. A search already sent may still use credits. Retry only when ready.', '检索等待已超时。已发出的检索仍可能使用额度；准备好后再手动重试。'),
         invalid_response: t('The search response was incomplete or invalid. You can retry.', '检索响应不完整或无效，可以重试。'),
         unavailable: t('Live search is unavailable right now. You can retry.', '实时检索暂时不可用，可以重试。'),
