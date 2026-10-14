@@ -134,7 +134,7 @@ export async function readIssuerHtml(
     for (const chunk of chunks) { buffer.set(chunk, offset); offset += chunk.byteLength; }
     const body = deepExtractFromHtml(new TextDecoder().decode(buffer), rawUrl).cleanBody;
     if (!hasClaimDateRelation(body, assertionText)) return null;
-    const excerpt = selectSourceExcerpt(body, assertionText);
+    const excerpt = selectSourceExcerpt(body, assertionText, '', OFFICIAL_ADJUDICATION_EXCERPT_LIMIT);
     return hasClaimDateRelation(excerpt, assertionText) ? { excerpt, bytes } : null;
   } finally { clearTimeout(timer); }
 }

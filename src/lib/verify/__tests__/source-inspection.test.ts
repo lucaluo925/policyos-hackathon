@@ -154,6 +154,8 @@ test('the verifier records direct issuer text separately from Tavily Extract', a
   process.env.NEBIUS_API_KEY = process.env.TAVILY_API_KEY = 'offline-key';
   const url = 'https://www.canada.ca/en/immigration/eligibility.html';
   const claim = 'In Canada, college graduates who submitted their study permit application before 1 November 2024 do not need the PGWP field-of-study requirement.';
+  const qualifier = 'Applicants must also meet the separate language requirement.';
+  const modelInputs: Record<string, string> = {};
   const transport: typeof fetch = async (input, init) => {
     const endpoint = String(input);
     if (endpoint.endsWith('/search')) return Response.json({ request_id: 'search-discovery', results: [{
@@ -166,9 +168,11 @@ test('the verifier records direct issuer text separately from Tavily Extract', a
     if (endpoint === url) return new Response('<html><main><h3>College programs</h3>' +
       '<p>If you submitted your study permit application on or after November 1, 2024, you must meet a field-of-study requirement.</p>' +
       '<p>If you submitted your study permit application before November 1, 2024, you do not need to meet it.</p>' +
+      '<p>' + 'Administrative guidance for applicants. '.repeat(30) + qualifier + '</p>' +
       '</main></html>', { headers: { 'content-type': 'text/html' } });
     const request = JSON.parse(String(init?.body));
     const name = request.tool_choice.function.name;
+    modelInputs[name] = request.messages.at(-1).content;
     const args = name === 'record_assertions'
       ? { assertions: [{ text: claim, search_query: 'Canada college PGWP study permit before November 2024 field of study' }] }
       : name === 'record_screening'
@@ -189,6 +193,11 @@ test('the verifier records direct issuer text separately from Tavily Extract', a
     const passage = done.result.provenance?.adjudicationEvidence.a1[0];
     assert.match(passage?.snippet ?? '', /study permit application before November 1, 2024/);
     assert.equal(passage?.issuerHtmlRead, true);
+    assert.ok((passage?.snippet.length ?? 0) > 900);
+    assert.ok((passage?.snippet.length ?? 0) <= 2400);
+    assert.ok(passage?.snippet.includes(qualifier), 'The later condition must survive in saved adjudication evidence');
+    assert.ok(modelInputs.record_screening.includes(qualifier), 'Screening must see the condition');
+    assert.ok(modelInputs.record_verdict.includes(passage!.snippet), 'The exact saved passage must reach adjudication');
     assert.equal(passage?.searchRequestId, 'search-discovery');
     assert.equal(passage?.extractionRequestId, undefined);
     assert.equal(done.result.provenance?.issuerHtmlReads?.a1[0].status, 'used');

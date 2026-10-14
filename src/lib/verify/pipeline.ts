@@ -717,7 +717,7 @@ export async function* runVerification(
     try {
       const listing = docs
         .map((d, i) => `[${i}] ${d.title}\n${d.url}\n${d.snippet.slice(0,
-          isOfficialSource(d.url) && (d.extractionRequestId || d.issuerDiscovery)
+          isOfficialSource(d.url) && (d.extractionRequestId || d.issuerHtmlRead || d.issuerDiscovery)
             ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT)}`)
         .join('\n\n');
       modelCalls += 1;
@@ -846,7 +846,7 @@ export async function* runVerification(
       const submittedDocs = [...relevant].sort((a, b) =>
         evidencePriority(a.url) - evidencePriority(b.url)).map((d) => ({
         url: d.url, title: d.title, retrievalScore: d.retrievalScore,
-        snippet: d.snippet.slice(0, isOfficialSource(d.url) && (d.extractionRequestId || d.issuerDiscovery)
+        snippet: d.snippet.slice(0, isOfficialSource(d.url) && (d.extractionRequestId || d.issuerHtmlRead || d.issuerDiscovery)
           ? OFFICIAL_ADJUDICATION_EXCERPT_LIMIT : ADJUDICATION_EXCERPT_LIMIT),
         ...(d.searchRequestId === undefined ? {} : { searchRequestId: d.searchRequestId }),
         ...(d.extractionRequestId === undefined ? {} : { extractionRequestId: d.extractionRequestId }),
