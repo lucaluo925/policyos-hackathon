@@ -18,7 +18,7 @@ import { useLocale, useT } from '@/lib/i18n/client';
 import { countryName } from '@/lib/i18n';
 import { getDirectoryCountry } from '@/lib/data/country-directory';
 import { countOfficial, isOfficialSource, officialFirst } from '@/lib/verify/sources';
-import { consumeVerificationStream } from '@/lib/verify/stream';
+import { consumeVerificationStream, IncompleteVerificationError } from '@/lib/verify/stream';
 import { CLAIM_MAX_LENGTH, truncateClaim } from '@/lib/verify/claim-text';
 import { useResearchLead, clearResearchLead } from '@/lib/intelligence/use-research-lead';
 import { bindResearchLead, type BoundResearchLead } from '@/lib/intelligence/research-lead';
@@ -275,7 +275,9 @@ export default function VerifyPage() {
         });
       } catch (e) {
         if ((e as Error).name !== 'AbortError') {
-          setErrors((p) => [...p, t('Connection to the server was lost.', '与服务器的连接中断。')]);
+          setErrors((p) => [...p, e instanceof IncompleteVerificationError
+            ? t('Verification ended before a complete result was received. Any partial findings below are incomplete; review saving is not confirmed.', '核验结束时未收到完整结果。下方部分结果并不完整，复核记录是否保存也尚未确认。')
+            : t('Connection to the server was lost. A complete result and review saving are not confirmed.', '与服务器的连接中断，完整结果和复核记录保存均未确认。')]);
         }
       } finally {
         setStages(prev => prev.map(stage => stage.done ? stage : {

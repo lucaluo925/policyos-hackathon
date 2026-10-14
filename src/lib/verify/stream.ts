@@ -1,5 +1,12 @@
 import type { VerifyEvent } from './types';
 
+export class IncompleteVerificationError extends Error {
+  constructor() {
+    super('Verification stream ended without a result');
+    this.name = 'IncompleteVerificationError';
+  }
+}
+
 /** A closed HTTP stream alone is not a completed verification. */
 export async function consumeVerificationStream(
   body: ReadableStream<Uint8Array>,
@@ -9,7 +16,6 @@ export async function consumeVerificationStream(
   const decoder = new TextDecoder();
   let buffer = '';
   let completed = false;
-  let reportedError = false;
   try {
     for (;;) {
       const { done, value } = await reader.read();
@@ -23,11 +29,11 @@ export async function consumeVerificationStream(
         let event: VerifyEvent;
         try { event = JSON.parse(line.slice(5).trim()) as VerifyEvent; } catch { continue; }
         if (event?.type === 'done') completed = true;
-        if (event?.type === 'error') reportedError = true;
         apply(event);
       }
     }
-    if (!completed && !reportedError) throw new Error('Verification stream ended without a result');
+    // Stage errors can be recoverable. Only the final result confirms completion.
+    if (!completed) throw new IncompleteVerificationError();
   } finally {
     reader.releaseLock();
   }
