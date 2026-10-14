@@ -1,3 +1,7 @@
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { COST_CHECKPOINT_ACTION } from '../../src/lib/verify/cost-checkpoint';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -18,7 +22,7 @@ import { GET as availabilityGet } from '../../src/app/api/verify/availability/ro
 requireDisposableDatabase();
 
 const exec = promisify(execFile);
-async function burst(mode: 'verify' | 'research' | 'budget', time: string) {
+async function burst(mode: 'verify' | 'research' | 'budget' | 'checkpoint-budget', time: string) {
   // Independent processes have independent Prisma pools, as separate hosted
   // instances do. A shared in-memory counter cannot make this test pass.
   return Promise.all(Array.from({ length: 8 }, async () => {
@@ -150,6 +154,71 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
     }
     t.diagnostic(JSON.stringify({ verifier, research, modelBurst, paidProviderCalls: 0 }));
   } finally {
+    await db.$disconnect();
+  }
+});
+
+
+test('reviewed cost checkpoint is append-only and enforces the same cap across processes', { timeout: 120_000 }, async t => {
+  const db = getPrisma();
+  const directory = await mkdtemp(join(tmpdir(), 'policyos-cost-ci-'));
+  const budget = { id: 'ci-checkpoint-budget', capMicroUsd: 4_980_000, expiresAt: Date.now() + 300_000 };
+  const where = { entityType: MODEL_BUDGET_ENTITY, entityId: budget.id };
+  const now = Date.now();
+  try {
+    await db.auditLog.createMany({ data: [100_000, 110_000].map((microUsd, i) => ({
+      ...where, actionType: 'model_call_reserved', createdAt: new Date(now - (120 - i * 60) * 1000),
+      newValue: { microUsd, capMicroUsd: budget.capMicroUsd, state: 'settled' },
+    })) });
+    const anchors = await db.auditLog.findMany({ where, orderBy: { id: 'asc' } });
+    const beforePreview = await db.auditLog.findMany({ orderBy: { id: 'asc' } });
+    const statement = join(directory, 'observation.json');
+    await writeFile(statement, JSON.stringify({ costUsd: '3.25', asOf: new Date(now - 30_000).toISOString(), periodStart: new Date(now - 86400000).toISOString() }), { mode: 0o600 });
+    const preview = await exec(process.execPath, ['--import', 'tsx', 'scripts/verify-cost-checkpoint-preview.ts', '--statement-file', statement], {
+      env: { ...process.env, VERIFY_MODEL_BUDGET_ID: budget.id, VERIFY_MODEL_BUDGET_USD: '4.98', VERIFY_MODEL_BUDGET_EXPIRES_AT: new Date(budget.expiresAt).toISOString() }, timeout: 30_000,
+    });
+    assert.equal(preview.stderr, '');
+    const packet = JSON.parse(preview.stdout);
+    assert.equal(packet.kind, 'review-only-cost-checkpoint');
+    assert.equal(packet.checkpoint.historicalCostMicroUsd, 3_040_000);
+    assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforePreview, 'preview cannot write any ledger or quota row');
+    const block = packet.reviewSql.match(/DO \$checkpoint\$[\s\S]+?\$checkpoint\$;/)?.[0];
+    assert.ok(block, 'must produce a single reviewable append block');
+    // Explicitly applying to a guarded disposable fixture only. Production
+    // application is a separate owner-approved action, never preview behavior.
+    await db.$transaction(tx => tx.$executeRawUnsafe(block), { isolationLevel: 'Serializable' });
+    assert.equal(await db.auditLog.count({ where: { ...where, actionType: COST_CHECKPOINT_ACTION } }), 1);
+    assert.deepEqual(await db.auditLog.findMany({ where: { id: { in: anchors.map(row => row.id) } }, orderBy: { id: 'asc' } }), anchors);
+    await assert.rejects(db.$transaction(tx => tx.$executeRawUnsafe(block), { isolationLevel: 'Serializable' }), /checkpoint already exists/);
+    const outcomes = await burst('checkpoint-budget', new Date(now).toISOString());
+    assert.equal(outcomes.filter(value => value === 'admitted').length, 1, 'observed historical cost leaves room for one full model reservation');
+    await assert.rejects(sharedModelBudgetStore.reserve(budget), ModelBudgetStopped);
+    const callRows = await db.auditLog.findMany({ where: { ...where, actionType: 'model_call_reserved' } });
+    assert.equal(callRows.length, 3, 'two settled anchors plus one retained call, no invented model entries');
+    const held = callRows.find(row => !anchors.some(anchor => anchor.id === row.id))!;
+    assert.equal((held.newValue as { microUsd: number }).microUsd, 1_500_000);
+    const beforeDenied = await db.auditLog.findMany({ orderBy: { id: 'asc' } });
+    const status = await readSharedVerificationAvailability(db, 12, 12, budget);
+    assert.equal(status.status, 'budget_limit');
+    assert.deepEqual(Object.keys(status).sort(), ['budgetExpiresAt', 'checkedAt', 'status'], 'no financial data in public status');
+    assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeDenied);
+    assert.deepEqual(await db.auditLog.findMany({ where: { id: { in: anchors.map(row => row.id) } }, orderBy: { id: 'asc' } }), anchors, 'old settled rows remain intact after concurrent admission');
+    const requiredBefore = process.env.VERIFY_MODEL_COST_CHECKPOINT_REQUIRED;
+    try {
+      process.env.VERIFY_MODEL_COST_CHECKPOINT_REQUIRED = '1';
+      // Deletion is exclusively in this disposable test database to model an
+      // old-backup restore; never delete a real campaign checkpoint.
+      await db.auditLog.deleteMany({ where: { ...where, actionType: COST_CHECKPOINT_ACTION } });
+      const afterSimulatedRestore = await db.auditLog.findMany({ orderBy: { id: 'asc' } });
+      await assert.rejects(sharedModelBudgetStore.reserve(budget), ModelBudgetStopped);
+      await assert.rejects(readSharedVerificationAvailability(db, 12, 12, budget), /Required cost checkpoint is missing/);
+      assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), afterSimulatedRestore, 'missing required checkpoint cannot reserve or reset the ledger');
+    } finally {
+      if (requiredBefore === undefined) delete process.env.VERIFY_MODEL_COST_CHECKPOINT_REQUIRED; else process.env.VERIFY_MODEL_COST_CHECKPOINT_REQUIRED = requiredBefore;
+    }
+    t.diagnostic(JSON.stringify({ outcomes, providerCalls: 0, originalAnchorRowsUnchanged: true }));
+  } finally {
+    await rm(directory, { recursive: true, force: true });
     await db.$disconnect();
   }
 });

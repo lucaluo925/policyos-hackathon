@@ -1,3 +1,4 @@
+import { COST_CHECKPOINT_ACTION, configuredCheckpointRequired, historicalCostFromCheckpoint } from './cost-checkpoint';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { getPrisma, isDatabaseConfigured } from '@/lib/db/client';
 import { configuredVerificationRunCap } from './admission';
@@ -13,14 +14,16 @@ export async function readSharedVerificationAvailability(
     const [{ now }] = await tx.$queryRaw<Array<{ now: Date }>>`SELECT CURRENT_TIMESTAMP AS now`;
     const since = new Date(now.getTime() - 86_400_000);
     const base = { entityType: 'claim_verification', createdAt: { gte: since } };
-    const [runs, assertions, ledger] = await Promise.all([
+    const [runs, assertions, ledger, checkpoints] = await Promise.all([
       tx.auditLog.findMany({ where: { ...base, actionType: 'verify_run_reserved' }, select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: runCap }),
       tx.auditLog.findMany({ where: { ...base, actionType: 'claim_verified' }, select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: assertionCap }),
-      budget ? tx.auditLog.findMany({ where: { entityType: MODEL_BUDGET_ENTITY, entityId: budget.id, actionType: 'model_call_reserved' }, select: { newValue: true } }) : [],
+      budget ? tx.auditLog.findMany({ where: { entityType: MODEL_BUDGET_ENTITY, entityId: budget.id, actionType: 'model_call_reserved' }, select: { id: true, createdAt: true, newValue: true } }) : [],
+      budget ? tx.auditLog.findMany({ where: { entityType: MODEL_BUDGET_ENTITY, entityId: budget.id, actionType: COST_CHECKPOINT_ACTION }, select: { newValue: true } }) : [],
     ]);
+    const historicalCostMicroUsd = budget ? historicalCostFromCheckpoint(ledger, checkpoints.map(row => row.newValue), budget.capMicroUsd, MODEL_RESERVATION_MICRO_USD, now, configuredCheckpointRequired()) : 0;
     return availabilityFromSnapshot({ now, runCap, assertionCap,
       runDates: runs.map(row => row.createdAt), assertionDates: assertions.map(row => row.createdAt),
-      budget: budget ? { ...budget, reservationMicroUsd: MODEL_RESERVATION_MICRO_USD, rows: ledger.map(row => row.newValue) } : undefined,
+      budget: budget ? { ...budget, historicalCostMicroUsd, reservationMicroUsd: MODEL_RESERVATION_MICRO_USD, rows: ledger.map(row => row.newValue) } : undefined,
     });
   }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 5_000 });
 }

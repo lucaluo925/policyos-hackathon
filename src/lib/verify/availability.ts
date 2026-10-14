@@ -15,7 +15,7 @@ export interface AvailabilitySnapshot {
   assertionCap: number;
   runDates: Date[];
   assertionDates: Date[];
-  budget?: { capMicroUsd: number; expiresAt: number; reservationMicroUsd: number; rows: unknown[] };
+  budget?: { capMicroUsd: number; expiresAt: number; reservationMicroUsd: number; rows: unknown[]; historicalCostMicroUsd?: number };
 }
 
 function nextSlot(dates: Date[], cap: number, now: number): number | null {
@@ -38,7 +38,7 @@ export function availabilityFromSnapshot(snapshot: AvailabilitySnapshot): Verifi
       if (!Number.isFinite(budget.expiresAt)) throw new Error('Invalid expiry');
       result.budgetExpiresAt = new Date(budget.expiresAt).toISOString();
       if (budget.expiresAt <= now) return { ...result, status: 'expired' };
-      const ledger = summarizeBudgetLedger(budget.rows, budget.capMicroUsd, budget.reservationMicroUsd);
+      const ledger = summarizeBudgetLedger(budget.rows, budget.capMicroUsd, budget.reservationMicroUsd, budget.historicalCostMicroUsd);
       if (ledger.status === 'needs_review') return { ...result, status: 'unavailable' };
       if (!ledger.nextReservationFits) return { ...result, status: 'budget_limit' };
     }

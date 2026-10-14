@@ -1,0 +1,36 @@
+PolicyOS V86 - prepared cumulative-cost checkpoint, NOT activated
+Date: 2026-10-14
+
+A separate historical-cost checkpoint can add observed pre-campaign costs to
+all pre-run and per-model-call budget decisions under the SAME campaign/cap.
+It does not rewrite existing calls, create another budget or relax quotas.
+The observation is anchored to settled row IDs, amounts, caps and timestamps.
+Exact USD parsing rounds upward, preserves conservative call headroom, and
+never treats a provider balance or grant as another spending authorization.
+Missing required checkpoints, anchor drift, duplicates and invalid data stop
+admission. Reserved failed calls remain fully counted. Checkpoint requirement
+is a server-only fail-closed guard, independent of judge isolation.
+
+Operator preview is SELECT-only and emits guarded SERIALIZABLE append SQL;
+SQL is NOT executed by preview. It rechecks the original financial anchor so
+an intervening model call requires a new preview. The eventual operation adds
+one checkpoint audit row, never invented model calls, UPDATE, DELETE or reset.
+
+Prepared support only: production checkpoint is absent, requirement remains
+unset/0, judge isolation remains disabled. No new real Nebius/Tavily test,
+no billing setting change, refund, recharge, budget increase or data migration.
+The owner must review the concrete statement/packet before production applies.
+Provider window coverage, delayed or older fees must be distinguished from
+call accounting. This release does not certify all lifetime billing or free
+unrestricted judge access, and is not new paid end-to-end acceptance.
+
+Offline and disposable PostgreSQL CI validate exact parsing, no double count,
+unchanged anchor rows, preview read-only behavior, actual review SQL, concurrency
+under the original cap, retained reservations and missing-checkpoint recovery.
+Exact passing test/CI/deployment evidence is recorded separately after release.
+
+Before publication: 593 offline tests, lint, type-check and build pass.
+OCR delegate/manual review covers 15/15 files (10 selected by OCR, five
+config/docs/test files read separately). No remaining blocking issue found.
+No external LLM review, provider request or production checkpoint write.
+CI/production evidence must be checked on the actual published commit.

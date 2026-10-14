@@ -1,4 +1,5 @@
 /** Run with an existing operator-provided environment; never loads or writes a secret file. */
+import { COST_CHECKPOINT_ACTION, configuredCheckpointRequired, historicalCostFromCheckpoint } from '../src/lib/verify/cost-checkpoint';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { configuredModelBudget, MODEL_RESERVATION_MICRO_USD, MODEL_BUDGET_ENTITY } from '../src/lib/verify/spend';
 import { configuredVerificationRunCap } from '../src/lib/verify/admission';
@@ -19,7 +20,9 @@ async function main() {
       const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const rows = await tx.auditLog.findMany({ where: {
         entityType: MODEL_BUDGET_ENTITY, entityId: budget.id, actionType: 'model_call_reserved',
-      }, select: { newValue: true } });
+      }, select: { id: true, createdAt: true, newValue: true } });
+      const checkpoints = await tx.auditLog.findMany({ where: { entityType: MODEL_BUDGET_ENTITY, entityId: budget.id, actionType: COST_CHECKPOINT_ACTION }, select: { newValue: true } });
+      const historicalCost = historicalCostFromCheckpoint(rows, checkpoints.map(row => row.newValue), budget.capMicroUsd, MODEL_RESERVATION_MICRO_USD, now, configuredCheckpointRequired());
       const runs = await tx.auditLog.count({ where: {
         entityType: 'claim_verification', actionType: 'verify_run_reserved', createdAt: { gte: since },
       } });
@@ -31,10 +34,10 @@ async function main() {
         expiresAt: new Date(budget.expiresAt).toISOString(),
         expiredAtDatabaseTime: budget.expiresAt <= now.getTime(),
         capMicroUsd: budget.capMicroUsd,
-        ledger: summarizeBudgetLedger(rows.map(row => row.newValue), budget.capMicroUsd, MODEL_RESERVATION_MICRO_USD),
+        ledger: summarizeBudgetLedger(rows.map(row => row.newValue), budget.capMicroUsd, MODEL_RESERVATION_MICRO_USD, historicalCost),
         rolling24Hours: { runs, runCap, assertions, assertionCap },
         staticDemo: process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1',
-        limitation: 'Read-only snapshot, not a reservation, provider balance, invoice, or judging-access guarantee. Known out-of-ledger costs remain separate. No provider calls made.',
+        limitation: 'Read-only snapshot, not a reservation, provider balance, invoice, or judging-access guarantee. Only an explicitly reviewed stored checkpoint adds observed historical costs; absence leaves unrecorded provider costs unresolved. No provider calls made.',
       };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 15_000 });
     console.log(JSON.stringify(report, null, 2));

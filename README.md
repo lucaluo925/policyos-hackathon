@@ -372,3 +372,37 @@ to apply. Login neither reserves capacity nor increases funding. No separate
 judge budget, reset, recharge or limit bypass is introduced. Sign-in links open
 a new tab so the current claim, source lead or country selection is preserved;
 return to the original tab and check availability/retry explicitly.
+
+### Prepared historical-cost checkpoint (not applied)
+
+The call ledger is conservative application accounting (including 25% headroom),
+not all provider billing. Historical account costs can predate the campaign.
+`verify:cost-checkpoint:preview -- --statement-file /private/observation.json`
+uses the existing operator environment and a three-field JSON observation:
+`costUsd` (decimal string), `asOf` and `periodStart` (canonical UTC ISO strings).
+The observation must cover a complete settled anchor. The command uses a
+READ ONLY transaction, emits a review packet and guarded SQL, and NEVER applies
+that SQL or calls a provider. Keep the account statement/packet private.
+
+The new `model_cost_checkpoint` action belongs to the SAME campaign and does
+not replace model-call rows. Its adjustment is observed provider cost minus
+anchored conservative call accounting, floored at zero and rounded upward in
+integer microdollars. It is a reconciliation adjustment, not measured cost of
+an independently identified set of untracked calls. Later calls and outstanding
+reservations still consume the original cap. The original call rows are hashed;
+anchor changes, duplicates, invalid checkpoint data or a cap mismatch fail closed.
+The review SQL uses SERIALIZABLE isolation and rechecks the entire anchor so
+new calls after preview invalidate the packet rather than being hidden.
+
+This release prepares support only. No production checkpoint is written and
+`VERIFY_MODEL_COST_CHECKPOINT_REQUIRED` remains unset/0. Before applying, the
+operator must review statement coverage, posting delay and any older account
+costs, then approve the concrete production change. After application set the
+server-only requirement to `1` and redeploy: a missing checkpoint or old DB
+restore then cannot silently restore funds. A stored checkpoint is always
+counted even if the requirement is later unset. No API edits/replaces checkpoints.
+
+Budget ID, configured dollar cap, deadline and daily caps are unchanged. This
+feature does not verify a provider balance, enforce spending by other projects,
+fund unrestricted judge tests or establish rules compliance. Judge isolation
+remains independently disabled until organizer confirmation.

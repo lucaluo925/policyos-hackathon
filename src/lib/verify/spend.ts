@@ -4,6 +4,8 @@
  * output tokens at the higher rate, with 25% headroom, rounded up to $1.50.
  * This is application accounting, not a provider-enforced billing ceiling.
  */
+import { summarizeBudgetLedger } from './budget-audit';
+import { COST_CHECKPOINT_ACTION, configuredCheckpointRequired, historicalCostFromCheckpoint } from './cost-checkpoint';
 import { Prisma } from '@prisma/client';
 import { getPrisma } from '@/lib/db';
 import { MODEL_ADJUDICATOR, MODEL_DECOMPOSER } from './nemotron';
@@ -44,22 +46,23 @@ export const sharedModelBudgetStore: BudgetStore = {
     for (let attempt = 0; ; attempt++) {
       try {
         return await getPrisma().$transaction(async tx => {
-          const rows = await tx.auditLog.findMany({ where: {
-            entityType: MODEL_BUDGET_ENTITY, entityId: budget.id, actionType: ACTION,
-          }, select: { newValue: true } });
-          let total = 0;
-          for (const row of rows) {
-            const record = row.newValue as { microUsd?: number; capMicroUsd?: number } | null;
-            const amount = record?.microUsd;
-            // Never ignore a damaged ledger entry or silently reset on deploy.
-            if (typeof amount !== 'number' || !Number.isSafeInteger(amount) || amount < 0 || record?.capMicroUsd !== budget.capMicroUsd) {
-              throw new ModelBudgetStopped('Live verification budget ledger needs review.');
-            }
-            total += amount;
-          }
-          if (Date.now() >= budget.expiresAt || !Number.isSafeInteger(total) ||
-              total + MODEL_RESERVATION_MICRO_USD > budget.capMicroUsd) {
-            throw new ModelBudgetStopped('Live verification budget is exhausted or expired.');
+          const where = { entityType: MODEL_BUDGET_ENTITY, entityId: budget.id };
+          const [rows, checkpoints, [{ now }]] = await Promise.all([
+            tx.auditLog.findMany({ where: { ...where, actionType: ACTION }, select: { id: true, createdAt: true, newValue: true } }),
+            tx.auditLog.findMany({ where: { ...where, actionType: COST_CHECKPOINT_ACTION }, select: { newValue: true } }),
+            tx.$queryRaw<Array<{ now: Date }>>`SELECT CURRENT_TIMESTAMP AS now`,
+          ]);
+          let historicalCost: number;
+          try {
+            historicalCost = historicalCostFromCheckpoint(rows, checkpoints.map(row => row.newValue), budget.capMicroUsd, MODEL_RESERVATION_MICRO_USD, now, configuredCheckpointRequired());
+          } catch { throw new ModelBudgetStopped('Live verification cost checkpoint needs review.'); }
+          const report = summarizeBudgetLedger(rows.map(row => row.newValue), budget.capMicroUsd, MODEL_RESERVATION_MICRO_USD, historicalCost);
+          // Initial private store initialization remains supported; the hosted
+          // availability gate already refuses an empty campaign. A checkpoint
+          // cannot be carried into an empty/reset ledger.
+          const initialEmpty = rows.length === 0 && checkpoints.length === 0;
+          if (now.getTime() >= budget.expiresAt || (!initialEmpty && (report.status !== 'accounted' || !report.nextReservationFits))) {
+            throw new ModelBudgetStopped('Live verification budget is exhausted or needs review.');
           }
           const row = await tx.auditLog.create({ data: {
             entityType: MODEL_BUDGET_ENTITY, entityId: budget.id, actionType: ACTION,

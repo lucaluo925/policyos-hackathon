@@ -11,6 +11,7 @@ async function main() {
     if (mode === 'verify') await reserveSharedVerificationRun(new Date(timestamp), 3);
     else if (mode === 'research') await reserveSharedCountryResearch(timestamp, 'isolated CI concurrency test');
     else if (mode === 'budget') await sharedModelBudgetStore.reserve({ id: 'ci-shared-budget', capMicroUsd: 4_980_000, expiresAt: Date.now() + 60_000 });
+    else if (mode === 'checkpoint-budget') await sharedModelBudgetStore.reserve({ id: 'ci-checkpoint-budget', capMicroUsd: 4_980_000, expiresAt: Date.now() + 60_000 });
     else throw new Error('Unknown worker mode');
     console.log('QUOTA_RESULT:admitted');
   } catch (error) {

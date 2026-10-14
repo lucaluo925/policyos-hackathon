@@ -21,7 +21,8 @@
     "verify:smoke": "tsx --env-file=.env.local scripts/verify-smoke.ts",
     "verify:budget-audit": "node --import tsx scripts/verify-budget-audit.ts",
     "verify:seed": "tsx --env-file=.env.local scripts/seed-verify-examples.ts",
-    "verify:probe-faithfulness": "tsx --env-file=.env.local scripts/probe-decompose-faithfulness.ts"
+    "verify:probe-faithfulness": "tsx --env-file=.env.local scripts/probe-decompose-faithfulness.ts",
+    "verify:cost-checkpoint:preview": "node --import tsx scripts/verify-cost-checkpoint-preview.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

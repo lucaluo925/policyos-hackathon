@@ -1,7 +1,8 @@
 /** Pure operator diagnostics. This never reserves, settles or refunds money. */
-export function summarizeBudgetLedger(rows: readonly unknown[], capMicroUsd: number, reservationMicroUsd: number) {
+export function summarizeBudgetLedger(rows: readonly unknown[], capMicroUsd: number, reservationMicroUsd: number, historicalCostMicroUsd = 0) {
   if (!Number.isSafeInteger(capMicroUsd) || capMicroUsd < 1 ||
-      !Number.isSafeInteger(reservationMicroUsd) || reservationMicroUsd < 1) {
+      !Number.isSafeInteger(reservationMicroUsd) || reservationMicroUsd < 1 ||
+      !Number.isSafeInteger(historicalCostMicroUsd) || historicalCostMicroUsd < 0) {
     throw new Error('Invalid audit limits.');
   }
   let accountedMicroUsd = 0;
@@ -19,15 +20,18 @@ export function summarizeBudgetLedger(rows: readonly unknown[], capMicroUsd: num
     accountedMicroUsd += row.microUsd;
     if (row.state === 'reserved') unsettledReservations++;
   }
-  const complete = rows.length > 0 && invalidRows === 0 && Number.isSafeInteger(accountedMicroUsd);
+  const combinedMicroUsd = accountedMicroUsd + historicalCostMicroUsd;
+  const complete = rows.length > 0 && invalidRows === 0 && Number.isSafeInteger(combinedMicroUsd);
   // An empty campaign may be a wrong database or ID. Never report it as a reset budget.
   return {
     rowCount: rows.length,
     invalidRows,
     unsettledReservations,
     accountedMicroUsd: complete ? accountedMicroUsd : null,
-    remainingMicroUsd: complete ? Math.max(0, capMicroUsd - accountedMicroUsd) : null,
-    nextReservationFits: complete ? accountedMicroUsd + reservationMicroUsd <= capMicroUsd : null,
-    status: !complete ? 'needs_review' : accountedMicroUsd > capMicroUsd ? 'over_cap' : 'accounted',
+    historicalCostMicroUsd,
+    combinedMicroUsd: complete ? combinedMicroUsd : null,
+    remainingMicroUsd: complete ? Math.max(0, capMicroUsd - combinedMicroUsd) : null,
+    nextReservationFits: complete ? combinedMicroUsd + reservationMicroUsd <= capMicroUsd : null,
+    status: !complete ? 'needs_review' : combinedMicroUsd > capMicroUsd ? 'over_cap' : 'accounted',
   };
 }
