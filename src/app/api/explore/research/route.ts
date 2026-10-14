@@ -1,3 +1,4 @@
+import { judgeAccessFailure, JUDGE_HEADERS } from '@/lib/auth/judge';
 import { NextResponse } from 'next/server';
 import { CountryResearchQuotaExceeded, InvalidCountryResearchQuery, parseCountryResearchQuery, researchCountry } from '@/lib/research/country';
 import { isTavilyConfigured } from '@/lib/verify/tavily';
@@ -6,6 +7,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+  const judgeFailure = judgeAccessFailure(request);
+  if (judgeFailure) {
+    const { status, ...body } = judgeFailure;
+    return Response.json(body, { status, headers: JUDGE_HEADERS });
+  }
   if (process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1') {
     return NextResponse.json({ error: 'Live Tavily search is paused on this public workspace.' }, { status: 503 });
   }

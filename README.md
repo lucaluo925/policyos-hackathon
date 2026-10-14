@@ -339,3 +339,36 @@ their own keys can run fresh claims through the shared production pipeline;
 No World Monitor application code, dashboard assets or branding are used here.
 The map directory is sourced directly from the World Bank API; third-party
 terms and attribution boundaries are listed in [notices](THIRD_PARTY_NOTICES.md).
+
+### Prepared judge entrance (disabled)
+
+`/judge` is a separate testing entrance. It is prepared and tested, not activated
+for production. Leave `VERIFY_JUDGE_ACCESS_ENABLED` unset or `0` until the
+organizer confirms that the proposed isolation and existing limits meet the
+testing requirement. This preparation is not a claim of judging-period access
+compliance. No judge credential is distributed with this release.
+
+When explicitly activated with `VERIFY_JUDGE_ACCESS_ENABLED=1`, both
+`POST /api/verify` and `POST /api/explore/research` require the same separate judge
+session before body parsing, database queries, quota reservation or provider
+transport. Public maps, policy events, source links, recordings and exports
+remain available. `/api/verify/availability` tells unsigned visitors to sign in
+without querying the ledger. An invalid activation flag or missing/invalid
+credential configuration fails closed.
+
+The future server-only Sensitive `VERIFY_JUDGE_ACCESS_SECRET` must be a separate
+random credential of at least 32 characters, never an admin password or provider
+key. It must be supplied privately in testing instructions only after activation
+is authorized; never put it in this repository, frontend, URL or screenshots.
+The signed HttpOnly/SameSite Strict cookie expires after at most eight hours,
+bounded by the earlier of the existing model budget expiry and December 15,
+2026 at 20:00 UTC. Login/logout require a same-origin browser request; no external
+redirect is accepted. Logout clears the browser cookie; a copied session remains
+valid until its expiry, so rotate the separate secret to revoke all sessions
+if a credential is exposed. Sessions never grant admin or private review access.
+
+All original budget IDs, ledger rows and run/assertion/research caps continue
+to apply. Login neither reserves capacity nor increases funding. No separate
+judge budget, reset, recharge or limit bypass is introduced. Sign-in links open
+a new tab so the current claim, source lead or country selection is preserved;
+return to the original tab and check availability/retry explicitly.

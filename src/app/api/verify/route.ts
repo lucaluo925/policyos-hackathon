@@ -1,3 +1,4 @@
+import { judgeAccessFailure, JUDGE_HEADERS } from '@/lib/auth/judge';
 /**
  * POST /api/verify — streams a claim verification as Server-Sent Events.
  *
@@ -63,6 +64,11 @@ function sse(event: VerifyEvent): string {
 }
 
 export async function POST(request: Request) {
+  const judgeFailure = judgeAccessFailure(request);
+  if (judgeFailure) {
+    const { status, ...body } = judgeFailure;
+    return Response.json(body, { status, headers: JUDGE_HEADERS });
+  }
   if (process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1') {
     return Response.json(
       { error: 'This workspace shows a dated recorded run; live verification is paused.' },

@@ -1,0 +1,41 @@
+PolicyOS V85 — prepared, disabled judge isolation
+Date: 2026-10-14
+
+Prepared /judge, separate login/logout/session APIs and signed bounded sessions.
+Production activation is NOT authorized before organizer confirmation.
+No production judge code is created, shared or enabled by this release.
+
+Future enabled mode gates both paid routes (/api/verify and /api/explore/research)
+before database/quota/provider work. Availability directs unsigned users to login.
+Misconfigured activation, missing secret, malformed/forged/expired sessions fail
+closed. Signing key is separate from admin/provider credentials, rotates sessions,
+and sessions expire within eight hours and no later than the authorized deadline.
+Origin checks, HttpOnly/SameSite Strict and production Secure cookie are included.
+The judge cookie never grants admin/private-review access.
+
+Login links open a new tab to preserve the user's current claim/source/country.
+Default OFF/unset mode retains the current public live behavior. Original model
+budget campaign, cumulative authorization, persistent ledger and all caps remain.
+No paid provider test, recharge, redemption, database reset or capacity increase.
+
+Testing: offline signed-session and real route tests; disposable PostgreSQL CI
+asserts denied judge requests write no model/run/research reservations and an
+authenticated judge still fails on the same exhausted original budget.
+These are authentication/admission tests, not a new paid end-to-end verification,
+independent accuracy result or proof of unrestricted judging-period access.
+Organizer acceptance of existing limits and provider funding still need evidence.
+
+Validation completed before publication:
+- 582 offline tests, lint, type-check and production build pass.
+- Actual local production-mode browser: wrong code rejects; correct isolated
+  code signs in; sign-out clears access; unsigned Verify shows judge sign-in;
+  sign-in in a separate tab preserves the current claim. Missing shared DB
+  still prevents a live run even with valid judge authentication.
+- Browser test found/fixed NextURL loopback-host normalization rejecting valid
+  same-origin login; added a regression case that also rejects forwarded-host
+  spoofing. Non-JSON login errors now show a safe retry message.
+- OCR delegate and manual review covered 18/18 changed files (13 code files
+  selected by OCR; five config/docs/test files inspected separately), no
+  remaining blocking findings. No external LLM review or paid providers.
+- Production default-off state, CI and deployment must be checked on the
+  published commit; this file does not assert those future checks have passed.

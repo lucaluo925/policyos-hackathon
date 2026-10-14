@@ -9,6 +9,8 @@ import { requireDisposableDatabase } from './disposable-database';
 import { sharedModelBudgetStore, ModelBudgetStopped, MODEL_BUDGET_ENTITY } from '../../src/lib/verify/spend';
 import { readSharedVerificationAvailability } from '../../src/lib/verify/availability-server';
 import { POST as verifyPost } from '../../src/app/api/verify/route';
+import { POST as researchPost } from '../../src/app/api/explore/research/route';
+import { createJudgeSession, JUDGE_COOKIE } from '../../src/lib/auth/judge';
 import { GET as availabilityGet } from '../../src/app/api/verify/availability/route';
 
 // This test writes reservations. Only an explicitly disposable, empty local
@@ -110,7 +112,7 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
     globalThis.fetch = async () => { networkCalls++; throw new Error('No provider calls permitted in isolated CI'); };
     try {
       Object.assign(process.env, settings);
-      const statusResponse = await availabilityGet();
+      const statusResponse = await availabilityGet(new Request('http://localhost/api/verify/availability'));
       assert.equal(statusResponse.headers.get('Cache-Control'), 'no-store');
       assert.equal((await statusResponse.json()).status, 'budget_limit');
       const denied = await verifyPost(new Request('http://localhost/api/verify', {
@@ -119,6 +121,24 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
       assert.equal(denied.status, 503);
       assert.equal((await denied.json()).code, 'budget_limit');
       assert.equal(denied.headers.get('Retry-After'), null);
+      // Same original ledger/caps: judge auth is not an alternate funding bucket.
+      process.env.VERIFY_JUDGE_ACCESS_ENABLED = '1';
+      process.env.VERIFY_JUDGE_ACCESS_SECRET = 'disposable-ci-judge-code-at-least-32-characters';
+      try {
+        for (const post of [verifyPost, researchPost]) {
+          const blocked = await post(new Request('http://localhost/api/test', { method: 'POST', body: '{}' }));
+          assert.equal(blocked.status, 401);
+        }
+        assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit, 'anonymous judge denial writes no model, run or research quota rows');
+        const session = createJudgeSession(process.env.VERIFY_JUDGE_ACCESS_SECRET)!;
+        const authenticated = await verifyPost(new Request('http://localhost/api/verify', {
+          method: 'POST', headers: { cookie: `${JUDGE_COOKIE}=${session.value}`, origin: 'http://localhost', 'Content-Type': 'application/json' }, body: JSON.stringify({ claim: 'CI judge funding denial' }),
+        }));
+        assert.equal(authenticated.status, 503);
+        assert.equal((await authenticated.json()).code, 'budget_limit', 'judge session cannot bypass the same budget');
+      } finally {
+        delete process.env.VERIFY_JUDGE_ACCESS_ENABLED; delete process.env.VERIFY_JUDGE_ACCESS_SECRET;
+      }
       assert.equal(networkCalls, 0);
       assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit,
         'a known funding denial must not consume a run slot or model reservation');

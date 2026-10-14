@@ -18,7 +18,7 @@ export function useVerificationAvailability() {
       });
       if (!response.ok) throw new Error('Check unavailable');
       const result = await response.json() as VerificationAvailability;
-      if (!['available', 'daily_limit', 'budget_limit', 'expired', 'paused', 'unavailable'].includes(result.status) ||
+      if (!['available', 'daily_limit', 'budget_limit', 'expired', 'paused', 'unavailable', 'judge_required'].includes(result.status) ||
           !Number.isFinite(Date.parse(result.checkedAt)) ||
           (result.retryAt !== undefined && !Number.isFinite(Date.parse(result.retryAt)))) throw new Error('Invalid check');
       if (!controller.signal.aborted) setAvailability(result);

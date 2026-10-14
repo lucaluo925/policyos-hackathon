@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { CountryResearchResult, CountryResearchDomain, CountryResearchScope } from '@/lib/research/country';
 import { countryGovernmentSearchDomains } from '@/lib/verify/sources';
@@ -17,6 +18,7 @@ export default function CountryResearch({ countryIso, domain }: {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [activeScope, setActiveScope] = useState<CountryResearchScope | null>(null);
   const [result, setResult] = useState<CountryResearchResult | null>(null);
+  const [judgeRequired, setJudgeRequired] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => () => controller.current?.abort(), []);
@@ -38,6 +40,7 @@ export default function CountryResearch({ countryIso, domain }: {
     setStatus('loading');
     setResult(null);
     setError('');
+    setJudgeRequired(false);
     try {
       const response = await fetch('/api/explore/research', {
         method: 'POST',
@@ -47,9 +50,11 @@ export default function CountryResearch({ countryIso, domain }: {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(response.status === 429
-          ? t('The daily search budget has been reached. Try again tomorrow.', '今日检索额度已用完，请明天重试。')
-          : t('Live search is unavailable right now.', '实时检索暂时不可用。'));
+        setJudgeRequired(response.status === 401 && data.code === 'judge_required');
+        let message = t('Live search is unavailable right now.', '实时检索暂时不可用。');
+        if (response.status === 401 && data.code === 'judge_required') message = t('Sign in at the judge testing entrance, then retry this search.', '请通过评委测试入口登录，再重试这次检索。');
+        else if (response.status === 429) message = t('The daily search budget has been reached. Try again tomorrow.', '今日检索额度已用完，请明天重试。');
+        throw new Error(message);
       }
       setResult(data as CountryResearchResult);
       setStatus('done');
@@ -73,6 +78,7 @@ export default function CountryResearch({ countryIso, domain }: {
     </button>}
     <div aria-live="polite" className="space-y-2">
       {status === 'error' && <p role="alert" className="text-xs text-red-500">{t('Search failed: ', '检索失败：')}{error}</p>}
+      {judgeRequired && <Link href="/judge" target="_blank" rel="noopener noreferrer" className="text-xs text-accent underline">{t('Open judge sign-in in a new tab, then retry here', '在新标签页登录评委入口，再回到这里重试')}</Link>}
       {status === 'done' && result && <>
         <p className="text-[11px] text-muted">{t('Searched', '检索于')} {new Date(result.searchedAt).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US')} · Tavily {result.requestId || '—'}</p>
         {result.scope === 'country-government' && <p className="text-xs text-muted">{t('Restricted to known government domains for this country. Results may be source indexes or homepages, not policy announcements; inspect the exact issuing text and date.', '仅检索该国已知政府域名。结果可能是目录或主页，并非政策公告；请核对具体发布原文与日期。')}</p>}

@@ -1,7 +1,7 @@
 import { summarizeBudgetLedger } from './budget-audit';
 
 const DAY_MS = 86_400_000;
-export type VerificationAvailabilityStatus = 'available' | 'daily_limit' | 'budget_limit' | 'expired' | 'paused' | 'unavailable';
+export type VerificationAvailabilityStatus = 'available' | 'daily_limit' | 'budget_limit' | 'expired' | 'paused' | 'unavailable' | 'judge_required';
 /** Public application status only. Never expose ledger rows, amounts, IDs or credentials. */
 export interface VerificationAvailability {
   status: VerificationAvailabilityStatus;
@@ -54,6 +54,7 @@ export function availabilityFromSnapshot(snapshot: AvailabilitySnapshot): Verifi
 export function verificationAccessFailure(status: VerificationAvailability) {
   if (status.status === 'available') return null;
   const messages: Record<Exclude<VerificationAvailabilityStatus, 'available'>, string> = {
+    judge_required: 'Sign in at the judge testing entrance before starting a live request.',
     daily_limit: 'Live verification is at its shared rolling 24-hour limit. Check availability again before retrying.',
     budget_limit: 'Live verification is stopped by the project model spending limit. Operator review is required.',
     expired: 'The live verification access period has ended. Operator review is required.',
@@ -62,7 +63,9 @@ export function verificationAccessFailure(status: VerificationAvailability) {
   };
   const retryAfterSeconds = status.retryAt
     ? Math.max(1, Math.ceil((Date.parse(status.retryAt) - Date.parse(status.checkedAt)) / 1000)) : undefined;
-  return { error: messages[status.status], code: status.status,
-    httpStatus: status.status === 'daily_limit' ? 429 : 503,
+  let httpStatus = 503;
+  if (status.status === 'daily_limit') httpStatus = 429;
+  else if (status.status === 'judge_required') httpStatus = 401;
+  return { error: messages[status.status], code: status.status, httpStatus,
     retryAt: status.retryAt, retryAfterSeconds };
 }
