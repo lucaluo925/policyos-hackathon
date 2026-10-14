@@ -1,8 +1,9 @@
 # Public source scope
 
-For the latest deployed source and access limits, see
-[`RELEASE_V78.txt`](RELEASE_V78.txt). Historical checks below retain their
-original dates and do not establish continuous availability.
+For the dated deployed source, access state and outstanding submission gates,
+see [`RELEASE_STATUS.md`](RELEASE_STATUS.md). V78 records a historical deadline
+extension, not the latest application deployment. Historical checks below retain
+their original dates and do not establish continuous availability.
 
 This public repository was created from one clean source snapshot; it is not
 the older Production deployment. It retains the full

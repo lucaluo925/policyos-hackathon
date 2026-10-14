@@ -23,8 +23,10 @@ withheld source URLs, and preserves the recorded verdict and call counts. The
 separate BOE recording publishes its complete adjudication passages. Neither
 recording is a fresh check.
 
-The [V78 release receipt](RELEASE_V78.txt) records the latest deployment and
-the authorized budget-expiry extension through December 15, 2026, noon Pacific.
+The [dated release status](RELEASE_STATUS.md) identifies the deployed application
+source, its CI and the outstanding submission gates. The
+[V78 release receipt](RELEASE_V78.txt) records the historical budget-expiry
+extension through December 15, 2026, noon Pacific; it is not the latest deployment.
 The [V76 release receipt](RELEASE_V76.txt) records the earlier candidate's
 hosted browser check, evidence-download/database comparison and promotion.
 It is one known-case functionality check, not an accuracy estimate.

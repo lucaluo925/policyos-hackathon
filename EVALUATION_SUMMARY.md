@@ -2,6 +2,10 @@
 
 ## Release status
 
+The [dated application release status](RELEASE_STATUS.md) separates the current
+deployment and implementation checks from the provider-based evaluations below.
+Later recovery and access-preparation releases did not repeat paid verification.
+
 The V72–V75 implementation was subsequently released in [V76](RELEASE_V76.txt).
 That release records one familiar New Zealand hosted check, including an
 evidence-export/database comparison. [V78](RELEASE_V78.txt) records the later
