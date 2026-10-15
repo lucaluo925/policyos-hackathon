@@ -9,10 +9,10 @@ is complete, submitted, eligible for every award, or guaranteed to win.
   [policy events](https://policyos-app.vercel.app/monitor) and
   [country research](https://policyos-app.vercel.app/explore).
 - Independent Vercel project: `policyos-hackathon-demo`; no scheduled cron jobs.
-- Application source: [`e779293ffea39d690a8229ee5a5a1267f8061483`](https://github.com/lucaluo925/policyos-hackathon/commit/e779293ffea39d690a8229ee5a5a1267f8061483).
-- [CI for that exact source](https://github.com/lucaluo925/policyos-hackathon/actions/runs/38651493349):
-  successful, including 604 offline tests and disposable PostgreSQL checks.
-- Deployment: `dpl_PmePkhUaVZUDtJFDmNmkUJ8V4HhN`, READY. The public alias was
+- Application source: [`366578218596f030d7cbcb5e3c2c6543ce84ef5c`](https://github.com/lucaluo925/policyos-hackathon/commit/366578218596f030d7cbcb5e3c2c6543ce84ef5c).
+- [CI for that exact source](https://github.com/lucaluo925/policyos-hackathon/actions/runs/38661284512):
+  successful, including 620 offline tests and disposable PostgreSQL checks.
+- Deployment: `dpl_7TcqBXuioAc5ntCMwovAJW4RBZyW`, READY. The public alias was
   explicitly assigned to it. Anonymous page and read-only status checks passed.
 
 Repository documentation can advance independently of the compiled app. This
@@ -27,6 +27,12 @@ responses, with no provider credentials: timeout, manual stop, failed refresh,
 safe invalid-response handling, retained search details, downloaded JSON and
 source handoff were exercised. Opening a lead did not submit verification.
 These checks are implementation evidence, not new live Tavily/Nemotron acceptance.
+
+[V89](RELEASE_V89.txt) rejects broken historical records before replacing a
+usable report. Local fault injection reproduced the earlier failed-render page,
+then verified retained JSON/Markdown downloads after the fix and a successful
+valid-record retry. Both shipped examples retain their actual evidence and
+optional missing metadata. This is failure-recovery evidence, not a new verdict.
 
 [V76](RELEASE_V76.txt) remains the last paid hosted acceptance in this release
 packet: one familiar New Zealand claim, with its downloaded result compared to
