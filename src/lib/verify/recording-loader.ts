@@ -1,4 +1,5 @@
 import type { RecordedVerification } from './report';
+import { validatedPublicRecording } from './recording-contract';
 
 /** Bound both response headers and body parsing so a stalled recording cannot
  * indefinitely lock the live form. No provider request is made here. */
@@ -18,11 +19,7 @@ export async function loadPublicRecording(
     return await Promise.race([timeout, (async () => {
       const response = await (options.fetch ?? fetch)(url, { signal: controller.signal });
       if (!response.ok) throw new Error('Recording unavailable');
-      const example = await response.json() as RecordedVerification;
-      if (!['adjudication_only', 'selected_adjudication'].includes(example?.publicEvidenceScope ?? '') || !example.sourceAttribution) {
-        throw new Error('Unexpected recording scope');
-      }
-      return example;
+      return validatedPublicRecording(await response.json());
     })()]);
   } finally {
     clearTimeout(timer);

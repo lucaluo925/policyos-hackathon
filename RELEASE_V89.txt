@@ -1,0 +1,27 @@
+PolicyOS V89 — reject broken recordings before replacing a usable report
+Date: 2026-10-14
+
+A local browser fault-injection check reproduced a failed-render page after
+opening a historical recording whose JSON retained its scope/attribution but
+omitted assertions. The previous report's download controls became inaccessible.
+A regression test failed on the previous loader before the repair.
+
+The loader now validates the recording fields used by the page and exports
+before replacing React state: assertions, evidence, safe source links, statistics
+and optional provenance. Invalid nested trails/diagnostics are rejected too.
+Optional historical metadata may remain absent; no dates, model names or passages
+are invented. Both shipped recordings pass unchanged-data comparisons.
+
+Local production-mode browser acceptance used an isolated proxy, empty provider
+credentials and intercepted API routes. After an incomplete recording failed,
+the previous EU historical report stayed visible. Actual JSON and Markdown
+downloads retained its original claim/time, selected exact passages and withheld
+source list. An explicit retry with the valid BOE record succeeded. These are
+historical-record/recovery checks, not new policy-verdict or paid live acceptance.
+
+620 offline tests, type-check, lint and production build passed. OCR delegate
+and manual review covered all changed source/tests and this receipt. Deployment
+and exact-head CI are recorded separately after release. No production financial
+writes, checkpoint changes, budget/ID/cap/expiry changes, provider retest or new
+grant redemption. Existing missing-checkpoint protection stays enabled. Judge
+isolation remains off pending organizer confirmation; narration remains deferred.
