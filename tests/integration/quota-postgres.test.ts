@@ -7,7 +7,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { test } from 'node:test';
 import { getPrisma } from '../../src/lib/db/client';
-import { reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '../../src/lib/verify/admission';
+import { JUDGE_RUN_ACTION, JUDGE_RUN_ENTITY, JudgeRunAllowanceExhausted, reserveJudgeVerificationRun, reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '../../src/lib/verify/admission';
 import { reserveSharedCountryResearch, CountryResearchQuotaExceeded } from '../../src/lib/research/quota';
 import { requireDisposableDatabase } from './disposable-database';
 import { sharedModelBudgetStore, ModelBudgetStopped, MODEL_BUDGET_ENTITY } from '../../src/lib/verify/spend';
@@ -135,13 +135,20 @@ test('real PostgreSQL enforces verifier and research caps across processes', { t
         }
         assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit, 'anonymous judge denial writes no model, run or research quota rows');
         const session = createJudgeSession(process.env.VERIFY_JUDGE_ACCESS_SECRET)!;
-        const authenticated = await verifyPost(new Request('http://localhost/api/verify', {
+        const judgeRequest = () => new Request('http://localhost/api/verify', {
           method: 'POST', headers: { cookie: `${JUDGE_COOKIE}=${session.value}`, origin: 'http://localhost', 'Content-Type': 'application/json' }, body: JSON.stringify({ claim: 'CI judge funding denial' }),
-        }));
+        });
+        // Judge allowance has no default: a missing cap fails closed before any reservation.
+        delete process.env.VERIFY_JUDGE_RUN_CAP;
+        const unconfigured = await verifyPost(judgeRequest());
+        assert.equal(unconfigured.status, 503);
+        assert.equal((await unconfigured.json()).code, 'unavailable', 'missing judge allowance must fail closed');
+        process.env.VERIFY_JUDGE_RUN_CAP = '120';
+        const authenticated = await verifyPost(judgeRequest());
         assert.equal(authenticated.status, 503);
         assert.equal((await authenticated.json()).code, 'budget_limit', 'judge session cannot bypass the same budget');
       } finally {
-        delete process.env.VERIFY_JUDGE_ACCESS_ENABLED; delete process.env.VERIFY_JUDGE_ACCESS_SECRET;
+        delete process.env.VERIFY_JUDGE_ACCESS_ENABLED; delete process.env.VERIFY_JUDGE_ACCESS_SECRET; delete process.env.VERIFY_JUDGE_RUN_CAP;
       }
       assert.equal(networkCalls, 0);
       assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), beforeAudit,
@@ -219,6 +226,31 @@ test('reviewed cost checkpoint is append-only and enforces the same cap across p
     t.diagnostic(JSON.stringify({ outcomes, providerCalls: 0, originalAnchorRowsUnchanged: true }));
   } finally {
     await rm(directory, { recursive: true, force: true });
+    await db.$disconnect();
+  }
+});
+
+test('judge campaign allowance is a fixed PostgreSQL ceiling, separate from public rolling rows', { timeout: 60_000 }, async () => {
+  const db = getPrisma();
+  const campaign = 'ci-judge-allowance-campaign';
+  const where = { entityType: JUDGE_RUN_ENTITY, entityId: campaign, actionType: JUDGE_RUN_ACTION };
+  try {
+    const publicBefore = await db.auditLog.count({ where: { entityType: 'claim_verification' } });
+    const results = await Promise.allSettled(Array.from({ length: 5 }, () => reserveJudgeVerificationRun(campaign, 3)));
+    const admitted = results.filter(r => r.status === 'fulfilled').length;
+    assert.ok(admitted >= 1 && admitted <= 3, 'concurrent judge reservations never exceed the cap');
+    for (const r of results) if (r.status === 'rejected') assert.ok(r.reason instanceof JudgeRunAllowanceExhausted || r.reason?.code === 'P2034');
+    for (let i = admitted; i < 3; i++) await reserveJudgeVerificationRun(campaign, 3);
+    await assert.rejects(reserveJudgeVerificationRun(campaign, 3), JudgeRunAllowanceExhausted);
+    assert.equal(await db.auditLog.count({ where }), 3, 'denial writes nothing; no rolling reset');
+    assert.equal(await db.auditLog.count({ where: { entityType: 'claim_verification' } }), publicBefore, 'judge runs do not consume public rolling rows');
+    const budget = { id: campaign, capMicroUsd: 4_980_000, expiresAt: Date.now() + 300_000 };
+    await db.auditLog.create({ data: { entityType: MODEL_BUDGET_ENTITY, entityId: campaign, actionType: 'model_call_reserved', newValue: { microUsd: 10_000, capMicroUsd: budget.capMicroUsd, state: 'settled' } } });
+    const before = await db.auditLog.findMany({ orderBy: { id: 'asc' } });
+    assert.equal((await readSharedVerificationAvailability(db, 12, 12, budget, 3)).status, 'judge_limit');
+    assert.equal((await readSharedVerificationAvailability(db, 12, 12, budget, 4)).status, 'available');
+    assert.deepEqual(await db.auditLog.findMany({ orderBy: { id: 'asc' } }), before, 'availability read writes nothing');
+  } finally {
     await db.$disconnect();
   }
 });
