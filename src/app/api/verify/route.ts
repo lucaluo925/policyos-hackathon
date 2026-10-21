@@ -1,4 +1,4 @@
-import { judgeAccessFailure, JUDGE_HEADERS } from '@/lib/auth/judge';
+import { judgeAccessEnabled, judgeAccessFailure, JUDGE_HEADERS } from '@/lib/auth/judge';
 /**
  * POST /api/verify — streams a claim verification as Server-Sent Events.
  *
@@ -29,7 +29,7 @@ import { missingConfig } from '@/lib/verify/pipeline';
 import type { ReviewPersistence, Stage, VerificationResult, VerifyEvent } from '@/lib/verify/types';
 import { CLAIM_MAX_LENGTH } from '@/lib/verify/claim-text';
 import { isDatabaseConfigured } from '@/lib/db';
-import { reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '@/lib/verify/admission';
+import { JudgeRunAllowanceExhausted, reserveJudgeVerificationRun, reserveSharedVerificationRun, VerificationRunQuotaExceeded } from '@/lib/verify/admission';
 import { budgetedModelFetch, configuredModelBudget, ModelBudgetStopped, type ModelBudget } from '@/lib/verify/spend';
 import { getVerificationAvailability } from '@/lib/verify/availability-server';
 import { verificationAccessFailure } from '@/lib/verify/availability';
@@ -69,6 +69,10 @@ export async function POST(request: Request) {
     const { status, ...body } = judgeFailure;
     return Response.json(body, { status, headers: JUDGE_HEADERS });
   }
+  // With judge access enabled, reaching this line requires a valid signed
+  // judge session. Such runs use the judge campaign allowance instead of the
+  // public rolling 24-hour caps; the model budget, ledger and expiry still apply.
+  const judge = judgeAccessEnabled();
   if (process.env.NEXT_PUBLIC_STATIC_DEMO_MODE === '1') {
     return Response.json(
       { error: 'This workspace shows a dated recorded run; live verification is paused.' },
@@ -109,7 +113,7 @@ export async function POST(request: Request) {
 
   // Known blocked/unknown capacity must not consume an attempt or paid call.
   // This read does not reserve capacity; atomic admission below still applies.
-  const accessFailure = verificationAccessFailure(await getVerificationAvailability());
+  const accessFailure = verificationAccessFailure(await getVerificationAvailability(judge));
   if (accessFailure) {
     const { httpStatus, retryAfterSeconds, ...body } = accessFailure;
     return Response.json(body, { status: httpStatus,
@@ -131,10 +135,17 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Live verification budget needs operator review.' }, { status: 503 });
     }
   }
+  if (judge && (!modelBudget || !isDatabaseConfigured())) {
+    return Response.json({ error: 'Judge testing allowance is unavailable.' }, { status: 503 });
+  }
   if (isDatabaseConfigured()) {
     try {
-      await reserveSharedVerificationRun();
+      if (judge && modelBudget) await reserveJudgeVerificationRun(modelBudget.id);
+      else await reserveSharedVerificationRun();
     } catch (error) {
+      if (error instanceof JudgeRunAllowanceExhausted) {
+        return Response.json({ error: 'The judge testing allowance for this campaign is used up. Operator review is required.', code: 'judge_limit' }, { status: 503 });
+      }
       if (error instanceof VerificationRunQuotaExceeded) {
         return Response.json({ error: 'Live verification has reached its rolling 24-hour run limit.' }, { status: 429 });
       }

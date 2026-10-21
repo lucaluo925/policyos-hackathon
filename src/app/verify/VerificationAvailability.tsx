@@ -10,6 +10,7 @@ export default function VerificationAvailability({ availability, loading, refres
   const text = availability ? {
     judge_required: t('Sign in at the judge testing entrance to use live checks.', '请通过评委测试入口登录后使用实时核验。'),
     available: t('Application checks allow a live attempt now.', '应用检查通过，当前可尝试实时核验。'),
+    judge_limit: t('The judge testing allowance is used up. The owner must review access.', '评委测试额度已用完，需要项目负责人检查。'),
     daily_limit: t('Live checks are at the shared daily limit.', '实时核验已达到共享日限额。'),
     budget_limit: t('Live checks are stopped by the model spending limit. The owner must review access.', '实时核验已因模型费用上限停止，需要项目负责人检查。'),
     expired: t('The live-check access period has ended. The owner must review access.', '实时核验的开放期限已结束，需要项目负责人检查。'),

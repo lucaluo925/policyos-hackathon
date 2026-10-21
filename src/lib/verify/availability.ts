@@ -1,7 +1,7 @@
 import { summarizeBudgetLedger } from './budget-audit';
 
 const DAY_MS = 86_400_000;
-export type VerificationAvailabilityStatus = 'available' | 'daily_limit' | 'budget_limit' | 'expired' | 'paused' | 'unavailable' | 'judge_required';
+export type VerificationAvailabilityStatus = 'available' | 'daily_limit' | 'budget_limit' | 'expired' | 'paused' | 'unavailable' | 'judge_required' | 'judge_limit';
 /** Public application status only. Never expose ledger rows, amounts, IDs or credentials. */
 export interface VerificationAvailability {
   status: VerificationAvailabilityStatus;
@@ -16,6 +16,9 @@ export interface AvailabilitySnapshot {
   runDates: Date[];
   assertionDates: Date[];
   budget?: { capMicroUsd: number; expiresAt: number; reservationMicroUsd: number; rows: unknown[]; historicalCostMicroUsd?: number };
+  /** Signed-in judge session: the public rolling caps do not apply; a fixed
+   * campaign allowance does. Model budget and expiry checks still apply. */
+  judge?: { used: number; cap: number };
 }
 
 function nextSlot(dates: Date[], cap: number, now: number): number | null {
@@ -42,6 +45,11 @@ export function availabilityFromSnapshot(snapshot: AvailabilitySnapshot): Verifi
       if (ledger.status === 'needs_review') return { ...result, status: 'unavailable' };
       if (!ledger.nextReservationFits) return { ...result, status: 'budget_limit' };
     }
+    if (snapshot.judge) {
+      const { used, cap } = snapshot.judge;
+      if (!Number.isSafeInteger(used) || used < 0 || !Number.isSafeInteger(cap) || cap < 1) throw new Error('Invalid judge allowance');
+      return used >= cap ? { ...result, status: 'judge_limit' } : result;
+    }
     const waits = [nextSlot(snapshot.runDates, snapshot.runCap, now), nextSlot(snapshot.assertionDates, snapshot.assertionCap, now)];
     const retry = Math.max(...waits.map(value => value ?? 0));
     if (!retry) return result;
@@ -55,6 +63,7 @@ export function verificationAccessFailure(status: VerificationAvailability) {
   if (status.status === 'available') return null;
   const messages: Record<Exclude<VerificationAvailabilityStatus, 'available'>, string> = {
     judge_required: 'Sign in at the judge testing entrance before starting a live request.',
+    judge_limit: 'The judge testing allowance for this campaign is used up. Operator review is required.',
     daily_limit: 'Live verification is at its shared rolling 24-hour limit. Check availability again before retrying.',
     budget_limit: 'Live verification is stopped by the project model spending limit. Operator review is required.',
     expired: 'The live verification access period has ended. Operator review is required.',
