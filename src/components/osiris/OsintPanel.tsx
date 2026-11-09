@@ -1,0 +1,1507 @@
+'use client';
+
+import { useState, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LocateFixed,
+  Search, Radar, Globe, Shield, FileText, Radio,
+  ChevronDown, ChevronUp, Loader2, AlertTriangle, Server,
+  Wifi, Lock, MapPin, Bug, Code, Layers, Network, Fingerprint,
+  CheckCircle, XCircle, Clock, ExternalLink, Crosshair,
+  Maximize2, Minimize2, Phone, Terminal, ShieldAlert
+} from 'lucide-react';
+import { ipToNumber, numberToIp, calculateSubnetStart, classifyDevice, assessRisk, batchFetch, ShodanInternetDBResponse, SweepDevice } from '@/lib/osiris/osint-utils';
+
+// ── Scanner access token (OWASP A01) ──
+// On public deployments /api/scanner answers 401 unless the request carries
+// the operator-issued SCANNER_ACCESS_TOKEN. Prompt once on a 401 and keep the
+// token for this browser tab only (sessionStorage, not localStorage).
+const SCANNER_TOKEN_STORAGE_KEY = 'osiris.scannerAccessToken';
+
+function readScannerToken(): string {
+  try { return sessionStorage.getItem(SCANNER_TOKEN_STORAGE_KEY) || ''; } catch { return ''; }
+}
+
+function writeScannerToken(token: string | null): void {
+  try {
+    if (token) sessionStorage.setItem(SCANNER_TOKEN_STORAGE_KEY, token);
+    else sessionStorage.removeItem(SCANNER_TOKEN_STORAGE_KEY);
+  } catch { /* storage unavailable: token lives for this request only */ }
+}
+
+async function fetchScanner(url: string): Promise<Response> {
+  const send = (token: string) => fetch(url, token ? { headers: { 'X-Scanner-Token': token } } : undefined);
+  const stored = readScannerToken();
+  const res = await send(stored);
+  if (res.status !== 401) return res;
+  writeScannerToken(null);
+  const entered = window.prompt(
+    stored
+      ? 'The saved scanner access token was rejected. Enter the SCANNER_ACCESS_TOKEN for this OSIRIS instance:'
+      : 'This OSIRIS instance requires a scanner access token. Enter the SCANNER_ACCESS_TOKEN issued by its operator:',
+  )?.trim();
+  if (!entered) return res;
+  const retry = await send(entered);
+  if (retry.status !== 401) writeScannerToken(entered);
+  return retry;
+}
+
+const TABS = [
+  { id: 'scanner', label: 'PORT SCAN', icon: Radar, placeholder: 'IP or hostname', color: '#1A73E8' },
+  { id: 'vuln', label: 'VULN SWEEP', icon: Bug, placeholder: 'IP or hostname', color: '#FF3D3D' },
+
+  { id: 'dns', label: 'DNS', icon: Server, placeholder: 'Domain name', color: '#448AFF' },
+  { id: 'whois', label: 'WHOIS', icon: FileText, placeholder: 'Domain name', color: '#FFD700' },
+  { id: 'certs', label: 'CERTS', icon: Lock, placeholder: 'Domain name', color: '#C026D3' },
+  { id: 'threats', label: 'THREATS', icon: AlertTriangle, placeholder: 'IP, domain, or hash', color: '#FF9500' },
+  { id: 'headers', label: 'HEADERS', icon: Code, placeholder: 'URL to inspect', color: '#87CEEB' },
+  { id: 'ssl', label: 'SSL/TLS', icon: Shield, placeholder: 'Domain name', color: '#76FF03' },
+  { id: 'subdomains', label: 'SUBDOMAINS', icon: Layers, placeholder: 'Domain to enumerate', color: '#00BCD4' },
+  { id: 'tech', label: 'TECH DETECT', icon: Code, placeholder: 'URL to fingerprint', color: '#9C27B0' },
+  { id: 'shodan', label: 'SHODAN IOT', icon: Network, placeholder: 'IP address', color: '#FF3D3D' },
+  { id: 'bgp', label: 'BGP ROUTE', icon: Globe, placeholder: 'IP or ASN', color: '#1A73E8' },
+  { id: 'mac', label: 'MAC ADDR', icon: Fingerprint, placeholder: 'MAC address', color: '#FFD700' },
+  { id: 'phone', label: 'PHONE INTEL', icon: Phone, placeholder: 'Phone number (e.g. +1...)', color: '#FF9500' },
+  { id: 'leaks', label: 'DATA LEAKS', icon: ShieldAlert, placeholder: 'Email address', color: '#C026D3' },
+  { id: 'github', label: 'GITHUB RECON', icon: Terminal, placeholder: 'GitHub username', color: '#87CEEB' },
+  { id: 'sweep', label: 'IP SWEEP', icon: Crosshair, placeholder: 'Enter IP address (e.g. 8.8.8.8)', color: '#FF3D3D' },
+  { id: 'ismalicious', label: 'ISMALICIOUS', icon: ShieldAlert, placeholder: 'IP, domain, or hash', color: '#FF006E' },
+  { id: 'urlhaus', label: 'URLHAUS', icon: Bug, placeholder: 'Host, URL, or payload hash', color: '#1A73E8' },
+  { id: 'dnsthreat', label: 'DNS THREAT', icon: Network, placeholder: 'IP or domain', color: '#FFD700' },
+];
+
+export interface ReconFinding { id: string; tool: string; label: string; ip: string; malicious: boolean; verdict: string; lat?: number; lng?: number; ts: number; }
+interface OsintPanelProps { isOpen?: boolean; onClose?: () => void; isMobile?: boolean; theme?: any; setTheme?: any; onSweepVisualize?: (data: any) => void; onScanGeolocate?: (target: string, data: any) => void; onReconFinding?: (finding: ReconFinding) => void; }
+
+function OsintPanelInner({ isMobile, onSweepVisualize, onScanGeolocate, onReconFinding }: OsintPanelProps) {
+  const [activeTab, setActiveTab] = useState('scanner');
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [scanType, setScanType] = useState('quick');
+  const [expanded, setExpanded] = useState(true);
+  const [history, setHistory] = useState<{tab:string;query:string;time:string}[]>([]);
+  const [sweepResult, setSweepResult] = useState<any>(null);
+  const [sweepProgress, setSweepProgress] = useState<{ current: number; total: number } | null>(null);
+  const [sweepCidr, setSweepCidr] = useState(24);
+  const [cveCache, setCveCache] = useState<Record<string, any>>({});
+  const [expandedDevice, setExpandedDevice] = useState<string | null>(null);
+
+  // Fetch CVE details when a device is expanded in full-screen mode
+  const fetchCveDetails = useCallback(async (cveIds: string[]) => {
+    const missing = cveIds.filter(id => !cveCache[id]);
+    if (missing.length === 0) return;
+    // Mark as loading
+    setCveCache(prev => {
+      const next = { ...prev };
+      for (const id of missing) next[id] = { loading: true };
+      return next;
+    });
+    // Fetch in parallel
+    const results = await Promise.allSettled(
+      missing.map(id => fetch(`/api/osint/cve?cve=${encodeURIComponent(id)}`).then(r => r.json()).then(data => ({ id, data })))
+    );
+    setCveCache(prev => {
+      const next = { ...prev };
+      for (const r of results) {
+        if (r.status === 'fulfilled') {
+          next[r.value.id] = r.value.data;
+        }
+      }
+      return next;
+    });
+  }, [cveCache]);
+
+    const handleSelfTrack = () => {
+      setLoading(true);
+      setError('');
+      fetch('/api/geo')
+        .then(r => {
+          if (!r.ok) throw new Error(`Server returned ${r.status}`);
+          return r.json();
+        })
+        .then(geo => {
+          setLoading(false);
+          if (geo.status === 'success' && geo.lat && geo.lon && onScanGeolocate) {
+            onScanGeolocate(geo.query || 'local', {
+              lat: geo.lat,
+              lng: geo.lon,
+              city: geo.city || 'Unknown',
+              country: geo.country || 'Unknown',
+              isp: geo.isp || 'Unknown',
+              org: geo.org || 'Unknown',
+              as: geo.as || 'Unknown',
+              type: 'self_track'
+            });
+          } else {
+            setError("Could not retrieve your IP location.");
+          }
+        })
+        .catch(err => {
+          setLoading(false);
+          setError("Network error: " + err.message);
+        });
+    };
+
+  const runLookup = useCallback(async () => {
+    if (!query.trim() || loading) return;
+    setLoading(true); setError(''); setResults(null);
+
+    // IP Sweep / Vuln Scan — separate flow
+    if (activeTab === 'sweep' || activeTab === 'vuln') {
+      setSweepResult(null);
+      const cidr = sweepCidr;
+      const totalHosts = Math.pow(2, 32 - cidr);
+      setSweepProgress({ current: 0, total: totalHosts });
+      try {
+        const t0 = Date.now();
+        const res = await fetch(`/api/osint/sweep?ip=${encodeURIComponent(query)}&cidr=${cidr}`);
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Sweep failed (${res.status})`); }
+        const initData = await res.json();
+
+        const ipParts = initData.target_ip.split('.').map(Number) as [number, number, number, number];
+        const ipNum = ipToNumber(ipParts);
+        const subnetStart = calculateSubnetStart(ipNum, cidr);
+        const subnet = numberToIp(subnetStart);
+
+        const urls: string[] = [];
+        for (let i = 0; i < totalHosts; i++) {
+          urls.push(`https://internetdb.shodan.io/${numberToIp((subnetStart + i) >>> 0)}`);
+        }
+
+        const shodanResults = await batchFetch<ShodanInternetDBResponse>(urls, 15, async (u) => {
+          try {
+            const r = await fetch(u, { cache: 'no-store' });
+            if (r.status === 404) return null;
+            if (!r.ok) return null;
+            return await r.json();
+          } catch {
+            return null;
+          }
+        }, (done) => setSweepProgress({ current: done, total: totalHosts }));
+
+        const devices: SweepDevice[] = [];
+        const deviceBreakdown: Record<string, number> = {};
+        for (const sr of shodanResults) {
+          if (!sr) continue;
+          const classification = classifyDevice(sr.ports, sr.cpes, sr.tags);
+          const risk = assessRisk({ ports: sr.ports, vulns: sr.vulns });
+          devices.push({
+            ip: sr.ip, ports: sr.ports, hostnames: sr.hostnames,
+            cpes: sr.cpes, vulns: sr.vulns, tags: sr.tags,
+            device_type: classification.device_type,
+            device_icon: classification.device_icon,
+            device_color: classification.device_color,
+            risk_level: risk
+          });
+          deviceBreakdown[classification.device_type] = (deviceBreakdown[classification.device_type] || 0) + 1;
+        }
+
+        setSweepResult({
+          center: initData.center,
+          subnet: `${subnet}/${cidr}`,
+          cidr,
+          target_ip: initData.target_ip,
+          devices,
+          summary: { total_hosts: totalHosts, total_responsive: devices.length, device_breakdown: deviceBreakdown },
+          sweep_time_ms: Date.now() - t0
+        });
+        setSweepProgress(null);
+        setHistory(prev => [{ tab: activeTab, query, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+      } catch (err: any) {
+        setError(err.message);
+        setSweepProgress(null);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    try {
+      let url = '';
+      switch (activeTab) {
+
+        case 'dns': url = `/api/osint/dns?domain=${encodeURIComponent(query)}`; break;
+        case 'certs': url = `/api/osint/certs?domain=${encodeURIComponent(query)}`; break;
+        case 'whois': url = `/api/osint/whois?domain=${encodeURIComponent(query)}`; break;
+        case 'threats': url = `/api/osint/threats?query=${encodeURIComponent(query)}`; break;
+        case 'bgp': url = `/api/osint/bgp?query=${encodeURIComponent(query)}`; break;
+        case 'mac': url = `/api/osint/mac?mac=${encodeURIComponent(query)}`; break;
+        case 'phone': url = `/api/osint/phone?number=${encodeURIComponent(query)}`; break;
+        case 'leaks': url = `/api/osint/leaks?email=${encodeURIComponent(query)}`; break;
+        case 'crypto': url = `/api/osint/crypto?address=${encodeURIComponent(query)}`; break;
+        case 'github': url = `/api/osint/github?user=${encodeURIComponent(query)}`; break;
+        case 'scanner': url = `/api/scanner?target=${encodeURIComponent(query)}&type=${scanType}`; break;
+        case 'headers': url = `/api/scanner?target=${encodeURIComponent(query)}&type=headers`; break;
+        case 'ssl': url = `/api/scanner?target=${encodeURIComponent(query)}&type=ssl`; break;
+        case 'subdomains': url = `/api/scanner?target=${encodeURIComponent(query)}&type=subdomains`; break;
+        case 'tech': url = `/api/scanner?target=${encodeURIComponent(query)}&type=tech`; break;
+        case 'shodan': url = `https://internetdb.shodan.io/${encodeURIComponent(query)}`; break;
+        case 'ismalicious': url = `/api/osint/ismalicious?query=${encodeURIComponent(query)}&enrichment=standard`; break;
+        case 'urlhaus': {
+          if (query.match(/^https?:\/\//i)) {
+            url = `/api/osint/urlhaus?url=${encodeURIComponent(query)}`;
+          } else if (query.match(/^[a-fA-F0-9]{32}$|^[a-fA-F0-9]{40}$|^[a-fA-F0-9]{64}$/)) {
+            url = `/api/osint/urlhaus?hash=${encodeURIComponent(query)}`;
+          } else {
+            url = `/api/osint/urlhaus?host=${encodeURIComponent(query)}`;
+          }
+          break;
+        }
+        case 'dnsthreat': {
+          const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(query);
+          url = isIp ? `/api/osint/dns-threat?ip=${encodeURIComponent(query)}` : `/api/osint/dns-threat?domain=${encodeURIComponent(query)}`;
+          break;
+        }
+      }
+      const res = url.startsWith('/api/scanner')
+        ? await fetchScanner(url)
+        : await fetch(url, activeTab === 'shodan' ? { cache: 'no-store' } : undefined);
+      if (activeTab === 'shodan' && res.status === 404) {
+        setResults({ ip: query, status: 'No Shodan InternetDB records found', ports: [], cpes: [], hostnames: [], tags: [], vulns: [] });
+        setLoading(false);
+        return;
+      }
+      if (activeTab === 'leaks' && res.status === 404) {
+        setResults({ email: query, breached: false, breaches: [], data_exposed: [] });
+        setHistory(prev => [{ tab: activeTab, query, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+        setLoading(false);
+        return;
+      }
+      const data = await res.json();
+      if (res.ok) {
+        let parsedData = data;
+        // Legacy xposedornot shape parsing — only when that shape is present.
+        // The /api/osint/leaks backend already returns {email,breached,breaches,
+        // data_exposed}, so it passes through unchanged.
+        if (activeTab === 'leaks' && data && data.BreachesSummary) {
+           let breachList: string[] = [];
+           const dataExposed = new Set<string>();
+           if (data.BreachesSummary && data.BreachesSummary.site) {
+              breachList = data.BreachesSummary.site.split(';').filter(Boolean);
+           }
+           if (data.ExposedData && Array.isArray(data.ExposedData)) {
+              data.ExposedData.forEach((item: any) => {
+                 if (item.data_classes && Array.isArray(item.data_classes)) {
+                    item.data_classes.forEach((dc: string) => dataExposed.add(dc));
+                 }
+              });
+           }
+           parsedData = {
+              email: query,
+              breached: breachList.length > 0,
+              breaches: breachList,
+              data_exposed: Array.from(dataExposed).sort()
+           };
+        }
+
+        setResults(parsedData);
+        setHistory(prev => [{ tab: activeTab, query, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+        
+        // ── Emit a recon finding → Recon Findings list + map marker ──
+        // Compute a verdict + a geo-locatable IP per tool; geolocate when we can.
+        (async () => {
+          const tab = activeTab;
+          const pd: any = parsedData;
+          let ip = '', verdict = '', malicious = false;
+          let lat: number | undefined, lng: number | undefined;
+          if (tab === 'phone') { lat = data.lat; lng = data.lng; verdict = data.valid ? (data.region || 'valid') : 'invalid'; }
+          else if (tab === 'urlhaus') { ip = String(pd.query || query).replace(/^https?:\/\//, '').split('/')[0].split(':')[0]; malicious = pd.malicious === true; verdict = malicious ? `malware (${pd.total_urls} URLs)` : 'clean'; }
+          else if (tab === 'ismalicious') { ip = query; malicious = pd.malicious === true; verdict = malicious ? 'malicious' : 'clean'; }
+          else if (tab === 'dnsthreat') { ip = (pd.resolved_ips && pd.resolved_ips[0]) || query; malicious = !!(pd.risk_level && pd.risk_level !== 'LOW'); verdict = `risk ${pd.risk_level || '?'}`; }
+          else if (tab === 'shodan') { ip = pd.ip || query; malicious = (pd.vulns?.length || 0) > 0; verdict = `${pd.ports?.length || 0} ports · ${pd.vulns?.length || 0} CVEs`; }
+          else if (tab === 'bgp') { ip = query; verdict = pd.asn?.name || pd.ip?.prefixes?.[0]?.asn?.name || 'ASN route'; }
+          else if (tab === 'threats') { ip = query; malicious = pd.malicious === true || (pd.threat_level && pd.threat_level !== 'low' && pd.threat_level !== 'LOW'); verdict = pd.threat_level || 'threat intel'; }
+          else if (tab === 'ip') { ip = query; malicious = !!(pd.reputation && (pd.reputation.malicious || (pd.reputation.abuse_score || 0) > 50)); verdict = pd.geo?.country || 'IP'; }
+          else { ip = query; }
+          // Geolocate when we have a bare IPv4 and no coords yet.
+          if ((lat == null || lng == null) && /^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
+            try {
+              const lr = await fetch(`/api/osint/ip?ip=${encodeURIComponent(ip)}`).then(r => r.json());
+              if (lr?.geo?.lat) { lat = lr.geo.lat; lng = lr.geo.lon; }
+            } catch { /* list-only finding */ }
+          }
+          onReconFinding?.({ id: query, tool: tab, label: query, ip, malicious, verdict, lat, lng, ts: Date.now() });
+        })();
+      } else {
+        setError(data.error || 'Lookup failed');
+      }
+    } catch { setError('Network error'); }
+    finally { setLoading(false); }
+  }, [query, activeTab, scanType, loading, sweepCidr]);
+
+  const currentTab = TABS.find(t => t.id === activeTab);
+
+  // ── Shodan-style structured result renderers ──
+
+  const ResultRow = ({ label, value, color, mono = true }: { label: string; value: any; color?: string; mono?: boolean }) => {
+    if (value === undefined || value === null || value === '') return null;
+    return (
+      <div className="flex items-start gap-3 py-1.5 border-b border-[var(--border-secondary)]/20 last:border-0">
+        <span className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-wider w-[90px] flex-shrink-0 pt-0.5">{label}</span>
+        <span className={`text-[10px] ${mono ? 'font-mono' : ''} break-all flex-1`} style={{ color: color || 'var(--text-primary)' }}>
+          {String(value)}
+        </span>
+      </div>
+    );
+  };
+
+  const StatusBadge = ({ ok, label }: { ok: boolean; label: string }) => (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold ${ok ? 'bg-green-500/15 text-green-400 border border-green-500/30' : 'bg-red-500/15 text-red-400 border border-red-500/30'}`}>
+      {ok ? <CheckCircle className="w-2.5 h-2.5" /> : <XCircle className="w-2.5 h-2.5" />}
+      {label}
+    </span>
+  );
+
+  // Surfaces an inline OFAC-SDN hit (used by the WHOIS and IP-intel routes
+  // when their cross-check finds a sanctioned registrant / ASN owner).
+  const SanctionsBadge = ({ match }: { match: any }) => {
+    if (!match || !Array.isArray(match.hits) || match.hits.length === 0) return null;
+    return (
+      <div className="mb-2 px-2 py-2 rounded border border-red-500/40 bg-red-500/15">
+        <div className="flex items-center gap-2 mb-1.5">
+          <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+          <span className="text-[10px] font-mono font-bold text-red-400 tracking-wider">
+            SANCTIONED — {match.source || 'OFAC SDN'}
+          </span>
+        </div>
+        {match.hits.slice(0, 5).map((h: any, i: number) => (
+          <div key={i} className="text-[9px] font-mono text-red-200 break-all leading-tight">
+            <span className="text-[var(--text-muted)]">↳ {h.matched_value}:</span>{' '}
+            {(h.entries || []).slice(0, 2).map((e: any) => e.name).join('; ')}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const SectionHeader = ({ title, icon: Icon, color }: { title: string; icon: any; color: string }) => (
+    <div className="flex items-center gap-2 mt-3 mb-1.5 first:mt-0">
+      <Icon className="w-3.5 h-3.5" style={{ color }} />
+      <span className="text-[10px] font-mono font-bold tracking-widest" style={{ color }}>{title}</span>
+      <div className="flex-1 h-px" style={{ background: `${color}30` }} />
+    </div>
+  );
+
+  const PortRow = ({ port, state, service, version }: { port: number; state: string; service?: string; version?: string }) => (
+    <div className="flex items-center gap-2 py-1 px-2 rounded hover:bg-[var(--hover-accent)] transition-colors">
+      {/* Explicit light colours — the OSINT panel is dark, so the theme text
+          variables (near-black in light theme) were unreadable here. */}
+      <span className="text-[11px] font-mono font-bold w-[60px]" style={{ color: '#3DD6F5' }}>{port}</span>
+      <StatusBadge ok={state === 'open'} label={state.toUpperCase()} />
+      <span className="text-[10px] font-mono flex-1" style={{ color: '#E8EAED' }}>{service || 'unknown'}</span>
+      {version && <span className="text-[9px] font-mono" style={{ color: '#9AA0A6' }}>{version}</span>}
+    </div>
+  );
+
+  const renderStructuredResults = () => {
+    if (!results) return null;
+    const r = results;
+
+    // ── PORT SCAN ──
+    if (activeTab === 'scanner') {
+      const ports = r.ports || r.open_ports || r.results || [];
+      const host = r.host || r.target || query;
+      return (
+        <div>
+          <SectionHeader title="HOST INFO" icon={Server} color="#1A73E8" />
+          <ResultRow label="Target" value={host} color="#1A73E8" />
+          <ResultRow label="Scan Type" value={r.scan_type || scanType} color="#E8EAED" />
+          <ResultRow label="Duration" value={r.duration || r.scan_time} color="#E8EAED" />
+          {Array.isArray(ports) && ports.length > 0 && (
+            <>
+              <SectionHeader title={`OPEN PORTS (${ports.length})`} icon={Wifi} color="#00E676" />
+              <div className="space-y-0.5">
+                {ports.map((p: any, i: number) => (
+                  <PortRow key={i} port={p.port || p} state={p.state || 'open'} service={p.service || p.name} version={p.version} />
+                ))}
+              </div>
+            </>
+          )}
+          {(!Array.isArray(ports) || ports.length === 0) && renderFallback()}
+        </div>
+      );
+    }
+
+    // ── VULN SCAN ──
+    if (activeTab === 'vuln') {
+      const vulns = r.vulnerabilities || r.vulns || r.cves || [];
+      const exploits = vulns.filter((v: any) => v.is_exploit);
+      const regularVulns = vulns.filter((v: any) => !v.is_exploit);
+      
+      return (
+        <div>
+          <SectionHeader title="VULNERABILITY ASSESSMENT" icon={Bug} color="#FF3D3D" />
+          <ResultRow label="Target" value={r.target || query} color="#FF3D3D" />
+          <ResultRow label="Total CVEs" value={Array.isArray(vulns) ? vulns.length : 0} color={Array.isArray(vulns) && vulns.length > 0 ? '#FF3D3D' : '#00E676'} />
+          <ResultRow label="Risk Level" value={r.risk_level || r.severity} />
+          {Array.isArray(regularVulns) && regularVulns.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {regularVulns.slice(0, 20).map((v: any, i: number) => (
+                <div key={i} className="p-2 rounded-lg border border-red-500/20 bg-red-500/5 flex flex-col">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold text-red-400">{v.id || v.cve || v.name}</span>
+                    {v.severity && <span className={`text-[8px] font-mono font-bold px-1.5 py-0.5 rounded ${v.severity === 'CRITICAL' ? 'bg-red-500/20 text-red-400' : v.severity === 'HIGH' ? 'bg-orange-500/20 text-orange-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{v.severity}</span>}
+                  </div>
+                  {v.cvss && <div className="text-[9px] font-mono text-[var(--text-muted)] mt-1">CVSS: {v.cvss} ({v.type || 'cve'})</div>}
+                  {v.description && <p className="text-[9px] font-mono text-[var(--text-muted)] mt-1 line-clamp-2">{v.description}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {exploits.length > 0 && (
+            <div className="mt-4">
+              <SectionHeader title={`POSSIBLE EXPLOITS (${exploits.length})`} icon={AlertTriangle} color="#FF9500" />
+              <div className="mt-2 space-y-1">
+                {exploits.slice(0, 10).map((e: any, i: number) => (
+                  <div key={i} className="p-2 rounded-lg border border-orange-500/30 bg-orange-500/10 flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold text-orange-400">{e.id}</span>
+                      <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400">EXPLOIT</span>
+                    </div>
+                    <div className="text-[9px] font-mono text-[var(--text-muted)] mt-1 flex justify-between">
+                      <span>Source: {e.type?.toUpperCase() || 'UNKNOWN'}</span>
+                      {e.cvss && <span>CVSS: {e.cvss}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {(!Array.isArray(vulns) || vulns.length === 0) && renderFallback()}
+        </div>
+      );
+    }
+
+
+
+    // ── DNS ──
+    if (activeTab === 'dns') {
+      // Backend (/api/osint/dns) returns { records: { A:[{data}], MX:[{data}], ... } }.
+      // Read that nested shape; each record's value is in `.data`.
+      const rec = r.records || {};
+      const vals = (t: string): string[] => (Array.isArray(rec[t]) ? rec[t] : []).map((x: any) => x?.data ?? x).filter(Boolean);
+      return (
+        <div>
+          <SectionHeader title="DNS RECORDS" icon={Server} color="#448AFF" />
+          <ResultRow label="Domain" value={r.domain || query} color="#448AFF" />
+          {vals('A').length > 0 && <ResultRow label="A Records" value={vals('A').join(', ')} />}
+          {vals('AAAA').length > 0 && <ResultRow label="AAAA" value={vals('AAAA').join(', ')} />}
+          {vals('MX').length > 0 && <ResultRow label="MX" value={vals('MX').join(', ')} />}
+          {vals('NS').length > 0 && <ResultRow label="NS" value={vals('NS').join(', ')} />}
+          {vals('TXT').length > 0 && <ResultRow label="TXT" value={vals('TXT').join(' | ')} />}
+          {vals('CNAME').length > 0 && <ResultRow label="CNAME" value={vals('CNAME').join(', ')} />}
+          {vals('SOA').length > 0 && <ResultRow label="SOA" value={vals('SOA').join(', ')} />}
+          {renderFallbackExcluding(['domain','records','summary','timestamp','cached'])}
+        </div>
+      );
+    }
+
+    // ── WHOIS ──
+    if (activeTab === 'whois') {
+      return (
+        <div>
+          <SectionHeader title="WHOIS INTELLIGENCE" icon={FileText} color="#FFD700" />
+          <SanctionsBadge match={r.sanctions_match} />
+          <ResultRow label="Domain" value={r.domain_name || r.domainName || query} color="#FFD700" />
+          <ResultRow label="Registrar" value={r.registrar} />
+          <ResultRow label="Created" value={r.creation_date || r.createdDate} />
+          <ResultRow label="Expires" value={r.expiration_date || r.expiresDate} />
+          <ResultRow label="Updated" value={r.updated_date || r.updatedDate} />
+          <ResultRow label="Status" value={Array.isArray(r.status) ? r.status.join(', ') : r.status} />
+          <ResultRow label="Nameservers" value={Array.isArray(r.name_servers || r.nameServers) ? (r.name_servers || r.nameServers).join(', ') : r.name_servers} />
+          {renderFallbackExcluding(['domain_name','domainName','registrar','creation_date','createdDate','expiration_date','expiresDate','updated_date','updatedDate','status','name_servers','nameServers','timestamp','cached','raw','sanctions_match'])}
+        </div>
+      );
+    }
+
+    // ── SHODAN ──
+    if (activeTab === 'shodan') {
+      return (
+        <div>
+          <SectionHeader title="SHODAN IOT INTELLIGENCE" icon={Network} color="#FF3D3D" />
+          <ResultRow label="Target IP" value={r.ip || query} color="#FF3D3D" />
+          {r.hostnames?.length > 0 && <ResultRow label="Hostnames" value={r.hostnames.join(', ')} />}
+          {r.ports?.length > 0 && <ResultRow label="Open Ports" value={r.ports.join(', ')} color="#1A73E8" />}
+          {r.tags?.length > 0 && <ResultRow label="Tags" value={r.tags.join(', ')} color="#FF9500" />}
+          {r.vulns?.length > 0 && (
+            <div className="mt-2 p-2 border border-red-500/30 bg-red-500/10 rounded">
+              <span className="text-[10px] font-mono text-red-400 font-bold mb-1 block">VULNERABILITIES ({r.vulns.length})</span>
+              <div className="flex flex-wrap gap-1">
+                {r.vulns.slice(0, 10).map((v: string) => (
+                  <a key={v} href={`https://nvd.nist.gov/vuln/detail/${v}`} target="_blank" rel="noreferrer" className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#1A1A18] text-[#8A8880] hover:text-[#FF3D3D]">{v}</a>
+                ))}
+                {r.vulns.length > 10 && <span className="text-[9px] font-mono text-[#8A8880]">+{r.vulns.length - 10} more</span>}
+              </div>
+            </div>
+          )}
+          {renderFallbackExcluding(['ip','hostnames','ports','tags','vulns','cpes'])}
+        </div>
+      );
+    }
+
+    // ── BGP ──
+    if (activeTab === 'bgp') {
+      return (
+        <div>
+          <SectionHeader title="BGP ROUTING INTELLIGENCE" icon={Globe} color="#1A73E8" />
+          <ResultRow label="Query" value={r.query} color="#1A73E8" />
+          {r.type === 'ip' && r.ip && (
+            <>
+              {r.ip.prefixes?.map((p: any, i: number) => (
+                <div key={i} className="mt-2 p-2 border border-[#1A73E8]/20 bg-[#1A73E8]/5 rounded">
+                  <ResultRow label="ASN" value={`AS${p.asn.asn} - ${p.asn.name}`} color="#1A73E8" />
+                  <ResultRow label="Prefix" value={p.prefix} />
+                  <ResultRow label="Country" value={p.asn.country_code} />
+                  <ResultRow label="Description" value={p.asn.description} />
+                </div>
+              ))}
+            </>
+          )}
+          {r.type === 'asn' && r.asn && (
+            <div className="mt-2 p-2 border border-[#1A73E8]/20 bg-[#1A73E8]/5 rounded">
+              <ResultRow label="ASN" value={`AS${r.asn.asn}`} color="#1A73E8" />
+              <ResultRow label="Name" value={r.asn.name} />
+              <ResultRow label="Description" value={r.asn.description} />
+              <ResultRow label="Country" value={r.asn.country_code} />
+              {r.prefixes && <ResultRow label="Prefixes" value={`IPv4: ${r.prefixes.total_v4} | IPv6: ${r.prefixes.total_v6}`} />}
+              {r.peers && <ResultRow label="Peers" value={r.peers.total} />}
+            </div>
+          )}
+          {renderFallbackExcluding(['query', 'type', 'ip', 'asn', 'prefixes', 'peers', 'timestamp'])}
+        </div>
+      );
+    }
+
+    // ── MAC ──
+    if (activeTab === 'mac') {
+      return (
+        <div>
+          <SectionHeader title="MAC VENDOR LOOKUP" icon={Fingerprint} color="#FFD700" />
+          <ResultRow label="MAC Address" value={r.mac} color="#FFD700" />
+          <ResultRow label="Vendor" value={r.vendor} color={r.vendor === 'Not Found' ? '#FF3D3D' : '#00E676'} />
+        </div>
+      );
+    }
+
+    // ── PHONE ──
+    if (activeTab === 'phone') {
+      return (
+        <div>
+          <SectionHeader title="PHONE INTELLIGENCE" icon={Phone} color="#FF9500" />
+          <ResultRow label="Query" value={r.query} color="#FF9500" />
+          <ResultRow label="Valid" value={r.valid ? 'YES' : 'NO'} color={r.valid ? '#00E676' : '#FF3D3D'} />
+          {r.valid && (
+            <>
+              <ResultRow label="E.164 Format" value={r.number} />
+              <ResultRow label="Intl Format" value={r.international} />
+              <ResultRow label="Nat Format" value={r.national} />
+              <ResultRow label="Country" value={`${r.region} (${r.country_code})`} />
+              <ResultRow label="Line Type" value={r.line_type} color={r.line_type === 'MOBILE' ? '#1A73E8' : r.line_type === 'VOIP' ? '#FF9500' : undefined} />
+            </>
+          )}
+        </div>
+      );
+    }
+
+    // ── GITHUB ──
+    if (activeTab === 'github') {
+      return (
+        <div>
+          <SectionHeader title="GITHUB RECON" icon={Terminal} color="#87CEEB" />
+          <div className="flex items-center gap-3 mb-2">
+            {r.avatar_url && <img src={r.avatar_url} alt="avatar" className="w-10 h-10 rounded-full border border-[#87CEEB]/30" />}
+            <div>
+              <div className="text-[12px] font-mono font-bold text-[#87CEEB]">{r.name || r.username}</div>
+              <div className="text-[9px] font-mono text-[var(--text-muted)]">@{r.username} • {r.followers} followers</div>
+            </div>
+          </div>
+          <ResultRow label="Company" value={r.company} />
+          <ResultRow label="Location" value={r.location} />
+          <ResultRow label="Email" value={r.email} color="#00E676" />
+          <ResultRow label="Twitter" value={r.twitter} color="#448AFF" />
+          <ResultRow label="Website" value={r.blog} />
+          <ResultRow label="Bio" value={r.bio} />
+          {r.recent_repos?.length > 0 && (
+            <div className="mt-2 p-2 border border-[#87CEEB]/20 bg-[#87CEEB]/5 rounded">
+              <span className="text-[9px] font-mono text-[#87CEEB] block mb-1">RECENT REPOS</span>
+              {r.recent_repos.map((repo: any, i: number) => (
+                <div key={i} className="flex justify-between text-[9px] font-mono mb-0.5">
+                  <span className="text-[#E8EAED]">{repo.name}</span>
+                  <span className="text-[var(--text-muted)]">{repo.language || 'Unknown'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── LEAKS ──
+    if (activeTab === 'leaks') {
+      return (
+        <div>
+          <SectionHeader title="DATA LEAK SWEEP" icon={ShieldAlert} color="#C026D3" />
+          <ResultRow label="Email Target" value={r.email} color="#C026D3" />
+          <ResultRow label="Status" value={r.breached ? 'COMPROMISED' : 'SECURE'} color={r.breached ? '#FF1744' : '#00E676'} />
+          
+          {r.breached && r.data_exposed?.length > 0 && (
+            <div className="mt-2 p-2 border border-[#C026D3]/30 bg-[#C026D3]/10 rounded">
+              <span className="text-[10px] font-mono text-[#C026D3] font-bold mb-1 block">EXPOSED DATA POINTS</span>
+              <div className="flex flex-wrap gap-1">
+                {r.data_exposed.map((dc: string) => (
+                  <span key={dc} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#1A1A18] text-[#E8EAED] border border-[#C026D3]/20">{dc}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {r.breached && r.breaches?.length > 0 && (
+            <div className="mt-2 p-2 border border-red-500/30 bg-red-500/10 rounded">
+              <span className="text-[10px] font-mono text-red-400 font-bold mb-1 block">KNOWN BREACHES ({r.breaches.length})</span>
+              <div className="flex flex-col gap-1">
+                {r.breaches.map((b: string) => (
+                  <a key={b} href={`https://haveibeenpwned.com/PwnedWebsites#${b}`} target="_blank" rel="noreferrer" className="text-[9px] font-mono px-2 py-1 rounded bg-[#1A1A18] text-red-300 hover:text-white hover:bg-red-500/30 flex items-center justify-between transition-colors">
+                    <span>{b}</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ── CERTS ──
+    if (activeTab === 'certs') {
+      const certs = r.certificates || r.certs || (Array.isArray(r) ? r : []);
+      return (
+        <div>
+          <SectionHeader title="CERTIFICATE TRANSPARENCY" icon={Lock} color="#C026D3" />
+          <ResultRow label="Domain" value={query} color="#C026D3" />
+          <ResultRow label="Certificates" value={Array.isArray(certs) ? certs.length : 0} />
+          {Array.isArray(certs) && certs.slice(0, 15).map((c: any, i: number) => (
+            <div key={i} className="mt-1.5 p-2 rounded border border-[var(--border-secondary)]/30 bg-[var(--bg-tertiary)]/30">
+              <ResultRow label="Issuer" value={c.issuer_name || c.issuer} />
+              <ResultRow label="Common Name" value={c.common_name || c.name_value} />
+              <ResultRow label="Not Before" value={c.not_before} />
+              <ResultRow label="Not After" value={c.not_after} />
+            </div>
+          ))}
+          {(!Array.isArray(certs) || certs.length === 0) && renderFallback()}
+        </div>
+      );
+    }
+
+    // ── THREATS ──
+    if (activeTab === 'threats') {
+      return (
+        <div>
+          <SectionHeader title="THREAT INTELLIGENCE" icon={AlertTriangle} color="#FF9500" />
+          <ResultRow label="Query" value={query} color="#FF9500" />
+          <ResultRow label="Risk Score" value={r.risk_score || r.score} color={
+            (r.risk_score || r.score || 0) > 70 ? '#FF3D3D' : (r.risk_score || r.score || 0) > 40 ? '#FF9500' : '#00E676'
+          } />
+          <ResultRow label="Malicious" value={r.malicious !== undefined ? (r.malicious ? 'YES' : 'NO') : undefined} color={r.malicious ? '#FF3D3D' : '#00E676'} />
+          <ResultRow label="Category" value={r.category || r.type} />
+          <ResultRow label="Reports" value={r.total_reports || r.reports} />
+          <ResultRow label="Last Seen" value={r.last_seen || r.last_analysis} />
+          {r.tags && <ResultRow label="Tags" value={Array.isArray(r.tags) ? r.tags.join(', ') : r.tags} />}
+          {renderFallbackExcluding(['risk_score','score','malicious','category','type','total_reports','reports','last_seen','last_analysis','tags','timestamp','cached','query'])}
+        </div>
+      );
+    }
+
+    // ── SSL ──
+    if (activeTab === 'ssl') {
+      return (
+        <div>
+          <SectionHeader title="SSL/TLS ANALYSIS" icon={Shield} color="#76FF03" />
+          <ResultRow label="Target" value={query} color="#76FF03" />
+          <ResultRow label="Protocol" value={r.protocol || r.tls_version} />
+          <ResultRow label="Cipher" value={r.cipher || r.cipher_suite} />
+          <ResultRow label="Valid" value={r.valid !== undefined ? (r.valid ? 'YES' : 'NO') : undefined} color={r.valid ? '#00E676' : '#FF3D3D'} />
+          <ResultRow label="Issuer" value={r.issuer} />
+          <ResultRow label="Subject" value={r.subject} />
+          <ResultRow label="Expires" value={r.expires || r.not_after} />
+          <ResultRow label="SANs" value={Array.isArray(r.sans) ? r.sans.join(', ') : r.sans} />
+          {renderFallback()}
+        </div>
+      );
+    }
+
+
+
+    if (activeTab === 'ismalicious') {
+      const rep = r.reputation || {};
+      const total = rep.total || 0;
+      const malCount = rep.malicious || 0;
+      return (
+        <div>
+          <SectionHeader title="ISMALICIOUS THREAT INTELLIGENCE" icon={ShieldAlert} color="#FF006E" />
+          <ResultRow label="Query" value={r.query} color="#FF006E" />
+          <ResultRow label="Type" value={r.type} />
+          {r.malicious !== null && r.malicious !== undefined && (
+            <ResultRow label="Malicious" value={r.malicious ? 'YES' : 'NO'} color={r.malicious ? '#FF3D3D' : '#00E676'} />
+          )}
+          {r.risk_score !== null && r.risk_score !== undefined && (
+            <ResultRow label="Risk Score" value={r.risk_score} color={r.risk_score > 70 ? '#FF3D3D' : r.risk_score > 40 ? '#FF9500' : '#00E676'} />
+          )}
+
+          {total > 0 && (
+            <div className="mt-2 p-2 border border-[#FF006E]/20 bg-[#FF006E]/5 rounded">
+              <div className="text-[9px] font-mono text-[#FF006E] tracking-wider mb-1">REPUTATION SCORE</div>
+              <div className="flex h-2 rounded-full overflow-hidden bg-[#1A1A18] mb-1">
+                {malCount > 0 && <div className="bg-red-500 h-full" style={{ width: `${(malCount / total) * 100}%` }} title={`Malicious: ${malCount}`} />}
+                {(rep.suspicious || 0) > 0 && <div className="bg-orange-500 h-full" style={{ width: `${((rep.suspicious || 0) / total) * 100}%` }} title={`Suspicious: ${rep.suspicious}`} />}
+                {(rep.harmless || 0) > 0 && <div className="bg-green-500 h-full" style={{ width: `${((rep.harmless || 0) / total) * 100}%` }} title={`Harmless: ${rep.harmless}`} />}
+              </div>
+              <div className="flex justify-between text-[8px] font-mono text-[var(--text-muted)]">
+                <span className="text-red-400">{malCount} malicious</span>
+                <span className="text-orange-400">{rep.suspicious || 0} suspicious</span>
+                <span className="text-green-400">{rep.harmless || 0} harmless</span>
+                <span>{total} total</span>
+              </div>
+            </div>
+          )}
+
+          {r.blocklist_sources && r.blocklist_sources.length > 0 && (
+            <div className="mt-2">
+              <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">BLOCKLIST SOURCES ({r.total_blocklists})</span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {r.blocklist_sources.slice(0, 15).map((bs: any, i: number) => (
+                  <span key={i} className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[#1A1A18] border border-[var(--border-secondary)]/30"
+                    style={{ color: bs.status === 'malicious' ? '#FF3D3D' : bs.status === 'suspicious' ? '#FF9500' : '#1E293B' }}>
+                    {bs.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {r.whois && r.whois.domain && (
+            <SectionHeader title="WHOIS" icon={FileText} color="#FFD700" />
+          )}
+          {r.whois?.registrar && <ResultRow label="Registrar" value={r.whois.registrar} />}
+          {r.whois?.created_date && <ResultRow label="Created" value={r.whois.created_date} />}
+          {r.whois?.expiration_date && <ResultRow label="Expires" value={r.whois.expiration_date} />}
+          {r.whois?.name_servers?.length > 0 && <ResultRow label="Nameservers" value={r.whois.name_servers.join(', ')} />}
+
+          {r.geo && (
+            <>
+              <SectionHeader title="GEOLOCATION" icon={MapPin} color="#1A73E8" />
+              <ResultRow label="Country" value={`${r.geo.country} (${r.geo.country_code})`} />
+              <ResultRow label="City" value={r.geo.city} />
+              <ResultRow label="ISP" value={r.geo.isp} />
+              <ResultRow label="Organization" value={r.geo.org} />
+              {r.geo.as_number && <ResultRow label="ASN" value={r.geo.as_number} />}
+            </>
+          )}
+
+          {r.otx && r.otx.pulse_count > 0 && (
+            <>
+              <SectionHeader title="ALIENVAULT OTX" icon={Radio} color="#9C27B0" />
+              <ResultRow label="Reputation Score" value={r.otx.reputation_score} />
+              <ResultRow label="Pulses" value={r.otx.pulse_count} />
+              {r.otx.pulses?.map((p: any, i: number) => (
+                <div key={i} className="mt-1 p-1.5 border border-[#9C27B0]/20 bg-[#9C27B0]/5 rounded">
+                  <div className="text-[9px] font-mono font-bold text-[#E8EAED]">{p.name}</div>
+                  <div className="text-[8px] font-mono text-[var(--text-muted)]">{p.description}</div>
+                  {p.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {p.tags.map((t: string, ti: number) => (
+                        <span key={ti} className="text-[7px] font-mono px-1 py-0.5 rounded bg-[#1A1A18] text-[var(--text-muted)]">{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+
+          {r.labs_reputation && (
+            <>
+              <SectionHeader title="LEVELBLUE LABS" icon={Shield} color="#448AFF" />
+              <ResultRow label="Score" value={r.labs_reputation.score} />
+              <ResultRow label="Classification" value={r.labs_reputation.classification} color={r.labs_reputation.classification === 'malicious' ? '#FF3D3D' : r.labs_reputation.classification === 'suspicious' ? '#FF9500' : '#00E676'} />
+            </>
+          )}
+
+          {r.passive_dns && r.passive_dns.length > 0 && (
+            <>
+              <SectionHeader title="PASSIVE DNS" icon={Network} color="#00BCD4" />
+              {r.passive_dns.slice(0, 10).map((pd: any, i: number) => (
+                <div key={i} className="text-[8px] font-mono py-0.5 border-b border-[var(--border-secondary)]/10 last:border-0">
+                  <span className="text-[#E8EAED]">{pd.hostname}</span>
+                  <span className="text-[var(--text-muted)]"> ({pd.record_type})</span>
+                </div>
+              ))}
+            </>
+          )}
+
+          {r.file_analysis?.sha256 && (
+            <>
+              <SectionHeader title="FILE ANALYSIS" icon={Bug} color="#FF3D3D" />
+              <ResultRow label="File Name" value={r.file_analysis.file_name} />
+              <ResultRow label="File Type" value={r.file_analysis.file_type} />
+              <ResultRow label="Signature" value={r.file_analysis.signature} />
+              <ResultRow label="SHA256" value={r.file_analysis.sha256} mono={true} />
+            </>
+          )}
+          {renderFallbackExcluding(['source','query','type','malicious','risk_score','reputation','blocklist_sources','total_blocklists','whois','geo','otx','labs_reputation','passive_dns','file_analysis','api_key_configured','timestamp'])}
+        </div>
+      );
+    }
+
+    if (activeTab === 'urlhaus') {
+      const urls = r.urls || [];
+      return (
+        <div>
+          <SectionHeader title="URLHAUS MALWARE INTELLIGENCE" icon={Bug} color="#1A73E8" />
+          <ResultRow label="Query" value={r.query} color="#1A73E8" />
+          <ResultRow label="Type" value={r.type} />
+          <ResultRow label="Malicious" value={r.malicious !== undefined ? (r.malicious ? 'YES' : 'NO') : undefined} color={r.malicious ? '#FF3D3D' : '#00E676'} />
+          {r.total_urls !== undefined && <ResultRow label="Total URLs" value={r.total_urls} color={r.total_urls > 0 ? '#FF3D3D' : '#00E676'} />}
+
+          {r.type === 'hash' && (
+            <>
+              <SectionHeader title="PAYLOAD DETAILS" icon={Bug} color="#FF9500" />
+              {r.md5 && <ResultRow label="MD5" value={r.md5} />}
+              {r.sha1 && <ResultRow label="SHA1" value={r.sha1} />}
+              {r.sha256 && <ResultRow label="SHA256" value={r.sha256} />}
+              {r.file_type && <ResultRow label="File Type" value={r.file_type} />}
+              {r.signature && <ResultRow label="Signature" value={r.signature} />}
+              {r.first_seen && <ResultRow label="First Seen" value={r.first_seen} />}
+              {r.last_seen && <ResultRow label="Last Seen" value={r.last_seen} />}
+              {r.tags?.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {r.tags.map((t: string, i: number) => (
+                    <span key={i} className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[#1A1A18] border border-[#FF9500]/20 text-[#FF9500]">{t}</span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {r.type === 'url' && r.found && (
+            <>
+              <SectionHeader title="URL DETAILS" icon={Bug} color="#FF3D3D" />
+              <ResultRow label="Threat" value={r.threat} color="#FF3D3D" />
+              <ResultRow label="Status" value={r.status} />
+              <ResultRow label="Host" value={r.host} />
+              <ResultRow label="Date Added" value={r.date_added} />
+              <ResultRow label="Last Online" value={r.last_online} />
+              <ResultRow label="Filename" value={r.filename} />
+              {r.tags?.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {r.tags.map((t: string, i: number) => (
+                    <span key={i} className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[#1A1A18] border border-[#FF3D3D]/20 text-[#FF3D3D]">{t}</span>
+                  ))}
+                </div>
+              )}
+              {r.payload?.md5 && (
+                <div className="mt-2 p-2 border border-[#FF9500]/20 bg-[#FF9500]/5 rounded">
+                  <span className="text-[9px] font-mono text-[#FF9500] block mb-1">PAYLOAD</span>
+                  <ResultRow label="MD5" value={r.payload.md5} />
+                  <ResultRow label="SHA256" value={r.payload.sha256} />
+                  <ResultRow label="Signature" value={r.payload.signature} />
+                  <ResultRow label="File Type" value={r.payload.file_type} />
+                </div>
+              )}
+            </>
+          )}
+
+          {r.type === 'host' && urls.length > 0 && (
+            <>
+              <SectionHeader title={`MALICIOUS URLS (${urls.length})`} icon={Bug} color="#FF3D3D" />
+              {urls.slice(0, 15).map((u: any, i: number) => (
+                <div key={i} className="py-1.5 border-b border-[var(--border-secondary)]/10 last:border-0">
+                  <div className="flex items-start gap-2">
+                    <span className="text-[8px] font-mono mt-0.5 flex-shrink-0 px-1 py-0.5 rounded"
+                      style={{
+                        backgroundColor: u.status === 'online' ? '#FF3D3D20' : '#8A888020',
+                        color: u.status === 'online' ? '#FF3D3D' : '#8A8880',
+                        border: `1px solid ${u.status === 'online' ? '#FF3D3D40' : '#8A888040'}`
+                      }}>
+                      {u.status === 'online' ? 'LIVE' : u.status === 'offline' ? 'DOWN' : u.status}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[9px] font-mono text-[#E8EAED] break-all">{u.url}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[8px] font-mono text-[#FF9500]">{u.threat}</span>
+                        {u.date_added && <span className="text-[7px] font-mono text-[var(--text-muted)]">{u.date_added}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  {u.payload?.sha256 && (
+                    <div className="mt-1 ml-7 text-[7px] font-mono text-[var(--text-muted)]">
+                      Payload: {u.payload.signature || u.payload.file_type || 'N/A'} · {u.payload.sha256?.slice(0, 16)}...
+                    </div>
+                  )}
+                </div>
+              ))}
+              {urls.length > 15 && (
+                <div className="text-[8px] font-mono text-[var(--text-muted)] text-center py-1">
+                  + {urls.length - 15} more URLs · <a href={r.urlhaus_reference} target="_blank" rel="noreferrer" className="text-[#1A73E8] hover:underline">View all on URLhaus</a>
+                </div>
+              )}
+            </>
+          )}
+
+          {r.urlhaus_reference && (
+            <div className="mt-2 text-center">
+              <a href={r.urlhaus_reference} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1 text-[9px] font-mono text-[#1A73E8] hover:underline">
+                <ExternalLink className="w-2.5 h-2.5" /> View on URLhaus
+              </a>
+            </div>
+          )}
+          {renderFallbackExcluding(['source','query','type','malicious','total_urls','urls','urlhaus_reference','md5','sha1','sha256','file_type','signature','first_seen','last_seen','tags','threat','status','host','date_added','last_online','filename','found','urlhaus_id','payload','timestamp'])}
+        </div>
+      );
+    }
+
+    if (activeTab === 'dnsthreat') {
+      return (
+        <div>
+          <SectionHeader title="DNS THREAT CHECK" icon={Network} color="#FFD700" />
+          <ResultRow label="Query" value={r.query} color="#FFD700" />
+          <ResultRow label="Type" value={r.type} />
+
+          <div className="mt-1 p-2 rounded border"
+            style={{
+              borderColor: r.risk_level === 'HIGH' ? '#FF3D3D40' : r.risk_level === 'MEDIUM' ? '#FF950040' : '#00E67640',
+              backgroundColor: r.risk_level === 'HIGH' ? '#FF3D3D10' : r.risk_level === 'MEDIUM' ? '#FF950010' : '#00E67610'
+            }}>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono tracking-wider"
+                style={{ color: r.risk_level === 'HIGH' ? '#FF3D3D' : r.risk_level === 'MEDIUM' ? '#FF9500' : '#00E676' }}>
+                RISK: {r.risk_level}
+              </span>
+              <span className="text-[8px] font-mono text-[var(--text-muted)]">
+                {r.risk_factors?.join(', ') || 'No risk factors'}
+              </span>
+            </div>
+          </div>
+
+          {r.spamhaus && (
+            <>
+              <SectionHeader title="SPAMHAUS" icon={Shield} color="#FF9500" />
+              <ResultRow label="Host Listed" value={r.spamhaus.host_in_spamhaus ? 'YES' : 'NO'} color={r.spamhaus.host_in_spamhaus ? '#FF3D3D' : '#00E676'} />
+              <ResultRow label="CIDR Blocks" value={r.spamhaus.cidr_blocks_loaded} />
+              <ResultRow label="Malicious ASNs" value={r.spamhaus.malicious_asns_loaded} />
+              {r.spamhaus.cidr_matches?.length > 0 && (
+                <div className="mt-1 p-1.5 border border-red-500/20 bg-red-500/5 rounded">
+                  <span className="text-[8px] font-mono text-red-400">CIDR MATCHES</span>
+                  {r.spamhaus.cidr_matches.map((m: any, i: number) => (
+                    <div key={i} className="text-[8px] font-mono text-[#E8EAED]">{m.ip} &isin; {m.cidr}</div>
+                  ))}
+                </div>
+              )}
+              {r.spamhaus.asn_matches?.length > 0 && (
+                <div className="mt-1 p-1.5 border border-red-500/20 bg-red-500/5 rounded">
+                  <span className="text-[8px] font-mono text-red-400">ASN MATCHES</span>
+                  {r.spamhaus.asn_matches.map((m: any, i: number) => (
+                    <div key={i} className="text-[8px] font-mono text-[#E8EAED]">AS{m.asn} &mdash; {m.org}</div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {r.dnsbl && (
+            <>
+              <SectionHeader title="DNSBL STATUS" icon={Globe} color="#448AFF" />
+              <ResultRow label="Listed on DNSBL" value={r.dnsbl.listed ? 'YES' : 'NO'} color={r.dnsbl.listed ? '#FF3D3D' : '#00E676'} />
+              {r.dnsbl.blocklists?.length > 0 && (
+                <div className="space-y-1 mt-1">
+                  {r.dnsbl.blocklists.map((b: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between px-2 py-1 rounded bg-[#1A1A18] border border-[var(--border-secondary)]/20">
+                      <span className="text-[8px] font-mono text-[#E8EAED]">{b.dnsbl}</span>
+                      <span className="text-[7px] font-mono text-red-400">listed (rc: {b.return_code})</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {r.reputation && (
+            <>
+              <SectionHeader title="REPUTATION SUMMARY" icon={AlertTriangle} color="#FF9500" />
+              <ResultRow label="Unique IPs" value={r.reputation.unique_ips} />
+              <ResultRow label="ASN Count" value={r.reputation.asn_count} />
+              <ResultRow label="Spamhaus" value={r.reputation.on_spamhaus ? 'LISTED' : 'CLEAN'} color={r.reputation.on_spamhaus ? '#FF3D3D' : '#00E676'} />
+              <ResultRow label="DNSBL" value={r.reputation.on_dnsbl ? 'LISTED' : 'CLEAN'} color={r.reputation.on_dnsbl ? '#FF3D3D' : '#00E676'} />
+            </>
+          )}
+
+          {r.resolved_ips?.length > 0 && (
+            <div className="mt-1">
+              <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">RESOLVED IPs</span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {r.resolved_ips.map((ip: string, i: number) => (
+                  <span key={i} className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[#1A1A18] border border-[var(--border-secondary)]/30 text-[#E8EAED]">{ip}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {r.sanctions_match && <SanctionsBadge match={r.sanctions_match} />}
+          {renderFallbackExcluding(['source','query','type','risk_level','risk_factors','spamhaus','dnsbl','reputation','resolved_ips','sanctions_match','timestamp','checks'])}
+        </div>
+      );
+    }
+
+    // Fallback for other tools
+    return renderFallback();
+  };
+
+  const renderFallback = () => {
+    if (!results) return null;
+    return (
+      <div className="space-y-1">
+        {Object.entries(results).filter(([k]) => !['timestamp','cached'].includes(k)).map(([key, value]) => (
+          <ResultRow key={key} label={key.replace(/_/g, ' ')} value={typeof value === 'object' ? JSON.stringify(value, null, 1) : String(value)} />
+        ))}
+      </div>
+    );
+  };
+
+  const renderFallbackExcluding = (exclude: string[]) => {
+    if (!results) return null;
+    const extra = Object.entries(results).filter(([k]) => !exclude.includes(k));
+    if (extra.length === 0) return null;
+    return (
+      <div className="mt-2 space-y-1">
+        {extra.map(([key, value]) => (
+          <ResultRow key={key} label={key.replace(/_/g, ' ')} value={typeof value === 'object' ? JSON.stringify(value, null, 1) : String(value)} />
+        ))}
+      </div>
+    );
+  };
+
+  const renderContent = () => (
+    <div className="flex flex-col gap-2.5">
+      {/* Tool Grid */}
+      <div className="flex flex-col gap-1">
+        {/* Sweep & Self Track Actions */}
+        <div className="grid grid-cols-2 gap-2">
+          {TABS.filter(t => t.id === 'sweep').map(tab => (
+            <button key={tab.id} onClick={() => { 
+                  setActiveTab(tab.id); setQuery(''); setResults(null); setError(''); 
+                }}
+                className={`w-full py-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-all ${
+                  activeTab === tab.id ? 'bg-[var(--bg-tertiary)] border-opacity-50' : 'bg-[#0D0D0C] hover:bg-[var(--hover-accent)] border-transparent'
+                }`}
+                style={{ borderColor: activeTab === tab.id ? tab.color : 'rgba(255, 61, 61, 0.2)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <tab.icon className="w-5 h-5" style={{ color: tab.color }} />
+                  <span className="font-mono font-bold tracking-[0.1em] text-[11px]" style={{ color: tab.color }}>GLOBAL SWEEP</span>
+                </div>
+            </button>
+          ))}
+          <button onClick={handleSelfTrack}
+            disabled={loading}
+            className={`w-full py-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-all ${loading ? 'opacity-60 cursor-wait' : 'hover:bg-[var(--hover-accent)] hover:shadow-[0_0_20px_rgba(0,230,118,0.15)]'} bg-[#0D0D0C]`}
+            style={{ borderColor: 'rgba(0, 230, 118, 0.2)' }}
+          >
+            <div className="flex items-center gap-3">
+              <LocateFixed className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} style={{ color: '#00E676' }} />
+              <span className="font-mono font-bold tracking-[0.1em] text-[11px]" style={{ color: '#00E676' }}>{loading ? 'TRACKING...' : 'SELF TRACK'}</span>
+            </div>
+          </button>
+        </div>
+        {/* Other Tools */}
+        <div className="grid grid-cols-5 gap-1 mt-1">
+          {TABS.filter(t => t.id !== 'sweep').map(tab => (
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setQuery(''); setResults(null); setError(''); }}
+              className={`flex flex-col items-center gap-1 px-1 py-2 rounded-lg text-[8px] font-mono tracking-wider transition-all border ${activeTab === tab.id ? 'border-opacity-40 bg-opacity-15' : 'border-transparent hover:bg-[var(--hover-accent)]'}`}
+              style={{ borderColor: activeTab === tab.id ? tab.color : 'transparent', backgroundColor: activeTab === tab.id ? `${tab.color}15` : undefined, color: activeTab === tab.id ? tab.color : 'var(--text-muted)' }}>
+              <tab.icon className="w-3.5 h-3.5" />
+              <span className="leading-none text-center truncate w-full">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Input Area */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex gap-1.5">
+          <div className="flex-1 relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
+            <input type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && runLookup()}
+              placeholder={currentTab?.placeholder}
+              className="w-full bg-[var(--bg-primary)]/60 border border-[var(--border-primary)] rounded-lg pl-8 pr-3 py-2.5 text-[11px] font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/40 focus:outline-none transition-colors"
+              style={{ borderColor: query ? `${currentTab?.color}40` : undefined }} />
+          </div>
+          <button onClick={runLookup} disabled={loading || !query.trim()}
+            className="px-4 py-2 rounded-lg text-[10px] font-mono font-bold tracking-wider disabled:opacity-30 transition-all flex items-center justify-center min-w-[70px]"
+            style={{ backgroundColor: `${currentTab?.color}20`, border: `1px solid ${currentTab?.color}40`, color: currentTab?.color }}>
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'SCAN'}
+          </button>
+        </div>
+        
+        {/* Secondary Controls */}
+        {activeTab === 'scanner' && (
+          <select value={scanType} onChange={e => setScanType(e.target.value)}
+            className="bg-[var(--bg-primary)]/60 border border-[var(--border-primary)] rounded-lg px-2 py-1.5 text-[10px] font-mono text-[var(--text-muted)] outline-none w-full">
+            <option value="quick">QUICK SCAN</option><option value="deep">DEEP SCAN</option><option value="ports">TOP 1000 PORTS</option>
+          </select>
+        )}
+        {(activeTab === 'sweep' || activeTab === 'vuln') && (
+          <div className="flex items-center justify-between bg-[var(--bg-primary)]/60 border border-[var(--border-primary)] rounded-lg p-1">
+            <span className="text-[9px] font-mono text-[var(--text-muted)] pl-2">SUBNET MASK:</span>
+            <div className="flex items-center gap-0.5">
+              {[24, 25, 26, 27, 28].map(c => (
+                <button key={c} onClick={() => setSweepCidr(c)}
+                  className={`px-2 py-1 text-[10px] font-mono rounded transition-all ${
+                    sweepCidr === c ? 'bg-[#FF3D3D]/20 text-[#FF3D3D]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)]'
+                  }`}
+                >/{c}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <div className="p-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-[11px] font-mono text-red-400 flex items-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />{error}
+        </div>
+      )}
+
+      {/* Sweep Progress */}
+      {sweepProgress && loading && (
+        <div className="p-3 rounded-lg border border-[#FF3D3D]/30 bg-[#FF3D3D]/5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-mono tracking-wider text-[#FF3D3D]">SWEEPING SUBNET...</span>
+            <span className="text-[10px] font-mono text-[#E8EAED]">{sweepProgress.total} hosts</span>
+          </div>
+          <div className="w-full h-1.5 bg-[#1A1A18] rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: '100%', background: 'linear-gradient(90deg, #FF3D3D, #FF6B00, #FFD700)', animation: 'sweep-pulse 1.5s ease-in-out infinite' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Sweep Results */}
+      {sweepResult && !loading && (
+        <div className="border rounded-lg overflow-hidden max-h-[55vh] overflow-y-auto styled-scrollbar"
+          style={{ background: 'linear-gradient(180deg, rgba(12,14,22,0.98) 0%, rgba(8,10,16,0.98) 100%)', borderColor: 'rgba(255,255,255,0.10)' }}>
+          {/* Summary */}
+          <div className="p-3 border-b border-[#2A2A28]">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-[11px] font-mono tracking-wider text-[#E8EAED]">{sweepResult.subnet}</div>
+                <div className="text-[9px] font-mono text-[#6F8092]">{sweepResult.center.city}, {sweepResult.center.country} · {sweepResult.center.isp}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[18px] font-mono font-bold text-[#FF3D3D]">{sweepResult.summary.total_responsive}</div>
+                <div className="text-[8px] font-mono text-[#6F8092] tracking-wider">DEVICES FOUND</div>
+              </div>
+            </div>
+            {/* Breakdown Bar */}
+            <div className="flex h-2 rounded-full overflow-hidden bg-[#1A1A18] mb-2">
+              {Object.entries(sweepResult.summary.device_breakdown).map(([type, count]: [string, any]) => {
+                const device = sweepResult.devices.find((d: any) => d.device_type === type);
+                return <div key={type} style={{ width: `${(count / sweepResult.summary.total_responsive) * 100}%`, backgroundColor: device?.device_color || '#666' }} title={`${type}: ${count}`} />;
+              })}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {Object.entries(sweepResult.summary.device_breakdown).map(([type, count]: [string, any]) => {
+                const device = sweepResult.devices.find((d: any) => d.device_type === type);
+                return (
+                  <div key={type} className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: device?.device_color || '#666' }} />
+                    <span className="text-[9px] font-mono text-[#8A8880]">{type}</span>
+                    <span className="text-[9px] font-mono text-[#E8EAED] font-bold">{String(count)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Visualize Button */}
+          <div className="p-3 border-b border-[#2A2A28]">
+            <button onClick={() => onSweepVisualize?.(sweepResult)}
+              className="w-full py-2.5 rounded-lg font-mono text-[11px] tracking-wider font-bold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, rgba(255,61,61,0.2), rgba(255,107,0,0.2))', border: '1px solid rgba(255,61,61,0.5)', color: '#FF3D3D', textShadow: '0 0 10px rgba(255,61,61,0.5)' }}
+            >
+              <Globe className="w-4 h-4" /> VISUALIZE ON GLOBE
+            </button>
+          </div>
+          {/* Device List */}
+          <div className={isFullScreen ? "flex flex-col gap-3 p-4" : "divide-y divide-[#2A2A28]"}>
+            {sweepResult.devices.map((device: any) => {
+              const isExpanded = expandedDevice === device.ip;
+              return (
+              <div key={device.ip} className={isFullScreen
+                ? "bg-[#0D0D0C] border border-[#2A2A28] rounded-lg overflow-hidden hover:border-[#3A3A38] transition-colors"
+                : "px-3 py-2.5 hover:bg-[rgba(255,255,255,0.02)] transition-colors"
+              }>
+                {/* Device Header */}
+                <div
+                  className={isFullScreen
+                    ? "flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[#151514] transition-colors"
+                    : "flex items-center justify-between mb-1"
+                  }
+                  onClick={() => {
+                    if (!isFullScreen) return;
+                    const next = isExpanded ? null : device.ip;
+                    setExpandedDevice(next);
+                    if (next && device.vulns.length > 0) fetchCveDetails(device.vulns);
+                  }}
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: device.device_color }} />
+                    <span className={`flex-shrink-0 ${isFullScreen ? "text-[14px]" : "text-[11px]"} font-mono font-bold text-[#E8EAED]`}>{device.ip}</span>
+                    {device.hostnames.length > 0 && (
+                      <span className={`${isFullScreen ? "text-[11px]" : "text-[9px]"} font-mono text-[#6F8092] truncate min-w-0`}>{device.hostnames[0]}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {device.vulns.length > 0 && (
+                      <span className={`${isFullScreen ? "text-[10px]" : "text-[8px]"} font-mono px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/30 whitespace-nowrap`}>
+                        {device.vulns.length} CVEs
+                      </span>
+                    )}
+                    <span className={`${isFullScreen ? "text-[10px]" : "text-[8px]"} font-mono px-1.5 py-0.5 rounded whitespace-nowrap`} style={{ backgroundColor: device.device_color + '20', color: device.device_color, border: `1px solid ${device.device_color}40` }}>{device.device_type}</span>
+                    {isFullScreen && (
+                      <ChevronDown className={`w-4 h-4 text-[#6F8092] transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                    )}
+                  </div>
+                </div>
+
+                {/* Compact info (sidebar mode) */}
+                {!isFullScreen && (
+                  <>
+                    <div className="flex items-center gap-2 text-[9px] font-mono text-[#6F8092]">
+                      <span>Ports: {device.ports.slice(0, 8).join(', ')}{device.ports.length > 8 ? ` +${device.ports.length - 8}` : ''}</span>
+                      {device.vulns.length > 0 && (
+                        <div className="group relative flex items-center gap-1 cursor-help">
+                          <span className="text-[#FF3D3D] flex items-center gap-1">
+                            <AlertTriangle className="w-2.5 h-2.5" /> {device.vulns.length} CVEs
+                          </span>
+                          <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-50 p-2 bg-[#1A1A18] border border-[#FF3D3D50] rounded-md shadow-xl min-w-[140px] max-w-[220px] max-h-[150px] overflow-y-auto styled-scrollbar">
+                            <div className="text-[8px] font-mono text-[#FF3D3D] mb-1 tracking-wider uppercase border-b border-[#FF3D3D30] pb-1">Identified Vulnerabilities</div>
+                            <div className="flex flex-col gap-0.5">
+                              {device.vulns.map((cve: string) => (
+                                <a key={cve} href={`https://nvd.nist.gov/vuln/detail/${cve}`} target="_blank" rel="noreferrer" className="text-[9px] font-mono text-[#E8EAED] hover:text-[#FF3D3D] transition-colors truncate">
+                                  {cve}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {device.hostnames.length > 0 && <div className="text-[9px] font-mono text-[#8A8880] mt-0.5 truncate">{device.hostnames[0]}</div>}
+                  </>
+                )}
+
+                {/* Full-Screen Expanded Detail */}
+                {isFullScreen && isExpanded && (
+                  <div className="border-t border-[#2A2A28]">
+                    {/* Ports + Hostnames Row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#2A2A28]">
+                      <div className="bg-[#0D0D0C] p-4">
+                        <div className="text-[10px] font-mono text-[#6F8092] tracking-widest uppercase mb-2">Open Ports</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {device.ports.map((port: number) => (
+                            <span key={port} className="px-2 py-1 bg-[#1A1A18] border border-[#2A2A28] rounded text-[11px] font-mono text-[var(--cyan-primary)]">{port}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="bg-[#0D0D0C] p-4">
+                        <div className="text-[10px] font-mono text-[#6F8092] tracking-widest uppercase mb-2">Hostnames</div>
+                        {device.hostnames.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {device.hostnames.map((h: string) => (
+                              <span key={h} className="text-[11px] font-mono text-[#E8EAED]">{h}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[11px] font-mono text-[#3A3A38]">No reverse DNS</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* CVE Intelligence */}
+                    {device.vulns.length > 0 && (
+                      <div className="p-4 border-t border-[#2A2A28]">
+                        <div className="text-[10px] font-mono text-[#6F8092] tracking-widest uppercase mb-3">Vulnerabilities ({device.vulns.length})</div>
+                        <div className="flex flex-col gap-2">
+                          {device.vulns.map((cveId: string) => {
+                            const info = cveCache[cveId];
+                            const isLoading = !info || info.loading;
+                            const severityColor = !info?.severity ? '#6F8092'
+                              : info.severity === 'CRITICAL' ? '#FF3D3D'
+                              : info.severity === 'HIGH' ? '#FF6B00'
+                              : info.severity === 'MEDIUM' ? '#FFD700'
+                              : '#76FF03';
+                            return (
+                              <div key={cveId} className="bg-[#111] border border-[#2A2A28] rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[12px] font-mono font-bold text-[#E8EAED]">{cveId}</span>
+                                    {info?.cvss != null && (
+                                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded" style={{ backgroundColor: severityColor + '15', color: severityColor, border: `1px solid ${severityColor}40` }}>CVSS {info.cvss}</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {info?.severity && (
+                                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded" style={{ backgroundColor: severityColor + '15', color: severityColor, border: `1px solid ${severityColor}40` }}>{info.severity}</span>
+                                    )}
+                                    <a href={`https://nvd.nist.gov/vuln/detail/${cveId}`} target="_blank" rel="noreferrer" className="text-[#6F8092] hover:text-[#E8EAED] transition-colors">
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                  </div>
+                                </div>
+                                {isLoading ? (
+                                  <div className="flex items-center gap-2 py-1">
+                                    <Loader2 className="w-3 h-3 animate-spin text-[#6F8092]" />
+                                    <span className="text-[10px] font-mono text-[#6F8092]">Fetching vulnerability intelligence...</span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <p className="text-[11px] font-mono text-[#8A8880] leading-relaxed">{info.description}</p>
+                                    {info.cwe && <div className="text-[10px] font-mono text-[#6F8092] mt-2">Weakness: {info.cwe}</div>}
+                                    {info.affected && info.affected.length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {info.affected.map((a: any, i: number) => (
+                                          <span key={i} className="text-[9px] font-mono px-1.5 py-0.5 bg-[#1A1A18] border border-[#2A2A28] rounded text-[#8A8880]">
+                                            {a.vendor}/{a.product}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+            })}
+          </div>
+          <div className="px-3 py-2 border-t border-[#2A2A28]">
+            <div className="text-[8px] font-mono text-[#6F8092] tracking-wider">SWEPT {sweepResult.summary.total_hosts} HOSTS IN {(sweepResult.sweep_time_ms / 1000).toFixed(1)}s · ASN {sweepResult.center.asn}</div>
+          </div>
+        </div>
+      )}
+
+      {results && !(sweepResult && !loading) && (
+        <div className="border rounded-lg p-3 max-h-[50vh] overflow-y-auto styled-scrollbar"
+          style={{
+            // Self-contained DARK results card for EVERY recon tool. The OSINT
+            // panel can be light or dark (theme-dependent), so we pin a solid
+            // dark background + light text here. That makes results readable in
+            // both themes (previously light-theme text was near-black on dark, or
+            // light text washed out on the light panel).
+            background: 'linear-gradient(180deg, rgba(12,14,22,0.98) 0%, rgba(8,10,16,0.98) 100%)',
+            borderColor: 'rgba(255,255,255,0.10)',
+            ['--text-primary' as string]: '#E8EAED',
+            ['--text-secondary' as string]: '#C4C7CC',
+            ['--text-muted' as string]: '#9AA0A6',
+            ['--bg-primary' as string]: 'rgba(0,0,0,0.3)',
+            ['--bg-tertiary' as string]: 'rgba(255,255,255,0.06)',
+            ['--border-primary' as string]: 'rgba(255,255,255,0.10)',
+            ['--border-secondary' as string]: 'rgba(255,255,255,0.12)',
+            ['--cyan-primary' as string]: '#3DD6F5',
+            ['--gold-primary' as string]: '#E5C158',
+            ['--hover-accent' as string]: 'rgba(255,255,255,0.06)',
+          } as React.CSSProperties}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[9px] font-mono tracking-widest" style={{ color: currentTab?.color }}>{currentTab?.label} RESULTS</span>
+            <span className="text-[8px] font-mono text-[var(--text-muted)] flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{new Date().toLocaleTimeString()}</span>
+          </div>
+          {renderStructuredResults()}
+        </div>
+      )}
+
+      {history.length > 0 && !results && (
+        <div className="space-y-1">
+          <span className="text-[9px] font-mono tracking-widest text-[var(--text-muted)]">RECENT SCANS</span>
+          {history.slice(0, 5).map((h, i) => (
+            <button key={i} onClick={() => { setActiveTab(h.tab); setQuery(h.query); }}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-[var(--hover-accent)] transition-colors text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-mono" style={{ color: TABS.find(t => t.id === h.tab)?.color }}>{TABS.find(t => t.id === h.tab)?.label}</span>
+                <span className="text-[10px] font-mono text-[var(--text-secondary)]">{h.query}</span>
+              </div>
+              <span className="text-[8px] font-mono text-[var(--text-muted)]">{h.time}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (isMobile) return renderContent();
+
+  if (isFullScreen) {
+    const fullScreenNode = (
+      <div className="fixed top-4 bottom-4 right-4 w-[40vw] min-w-[600px] max-w-[800px] z-[999] glass-panel bg-[#0a0a09]/95 backdrop-blur-2xl border border-[var(--cyan-primary)]/40 rounded-xl flex flex-col overflow-hidden shadow-2xl shadow-[var(--cyan-primary)]/20 transition-all duration-300">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-secondary)] bg-[#111]">
+          <div className="flex items-center gap-3">
+            <Radar className="w-5 h-5 text-[var(--cyan-primary)]" />
+            <span className="hud-text text-[16px] text-[var(--text-primary)]">OSIRIS RECON TOOLKIT</span>
+            <span className="gotham-tag gotham-tag--info" style={{ fontSize: '9px' }}>EXPANDED VIEW</span>
+            <span className="gotham-tag gotham-tag--classified" style={{ fontSize: '8px' }}>{TABS.length} MODULES</span>
+          </div>
+          <button onClick={() => setIsFullScreen(false)} className="p-2 hover:bg-white/5 rounded transition-colors text-[var(--text-muted)] hover:text-white">
+            <Minimize2 className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 styled-scrollbar">
+          <div className="w-full full-screen-mode-content">
+             {renderContent()}
+          </div>
+        </div>
+      </div>
+    );
+    return typeof document !== 'undefined' ? createPortal(fullScreenNode, document.body) : fullScreenNode;
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.6 }} className="glass-panel flex flex-col overflow-hidden pointer-events-auto shrink-0 h-[500px] max-h-[80vh] resize-y">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.3)] hover:bg-[var(--hover-accent)] transition-colors">
+        <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-2 flex-1">
+          <Radar className="w-3.5 h-3.5 text-[var(--cyan-primary)]" />
+          <span className="hud-text text-[12px] text-[var(--text-primary)]">RECON TOOLKIT</span>
+          <span className="gotham-tag gotham-tag--info" style={{ fontSize: '7px', padding: '1px 5px' }}>{TABS.length} TOOLS</span>
+        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setIsFullScreen(true)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors" title="Full Screen">
+             <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--cyan-primary)] animate-osiris-pulse" />
+          <button onClick={() => setExpanded(!expanded)}>
+            {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+          </button>
+        </div>
+      </div>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-y-auto px-3 py-3 flex-1 min-h-0 styled-scrollbar">
+            {renderContent()}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+const OsintPanel = memo(OsintPanelInner);
+export default OsintPanel;

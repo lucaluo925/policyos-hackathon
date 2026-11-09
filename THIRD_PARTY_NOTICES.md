@@ -115,3 +115,44 @@ announcement sources supply the inputs. Textual candidate grouping is not
 AIHOT's full event engine and does not establish policy identity, legal
 effect, independent confirmation or truth. AIHOT service terms are separate
 from its code license; no production request to aihot.news is introduced.
+
+## OSIRIS intelligence module
+
+The `/osiris` route, the OSIRIS API routes under `src/app/api`, the code under
+`src/lib/osiris`, `src/components/osiris` and `src/workers`, `src/middleware.ts`,
+`backend/docker-compose.data.yml`, `vitest.config.ts` and the map data files in
+`public/data` are derived from
+[carbon-evolution/osiris](https://github.com/carbon-evolution/osiris) at commit
+`fabbc8291183ad64d62cd58207bfc9942cb45fa0`, which is distributed under the MIT
+license, Copyright (c) 2026 simplifaisoul. The upstream license text is retained
+verbatim at [`licenses/osiris-MIT.txt`](licenses/osiris-MIT.txt). PolicyOS's own
+MIT license does not relicense that material, and this merge does not imply any
+endorsement by the upstream project.
+
+What was deliberately **not** copied, and why:
+
+- The upstream root layout's site identity — `metadataBase`, the canonical URL,
+  Open Graph and Twitter cards, and the JSON-LD `WebApplication` block, all
+  pointing at `osirisai.live` and crediting the Osiris Project. Publishing
+  another site's canonical URL and authorship from this deployment would be
+  both an SEO error and a false attribution. The functional parts of that
+  layout (viewport, dark color scheme, icon set, font preconnects, error
+  boundary) are retained.
+- `public/robots.txt`, `public/sitemap.xml`, `public/manifest.json`,
+  `public/site.webmanifest`, `public/og-image.png`, `public/favicon.ico` and the
+  upstream brand marks (`eye-of-horus.svg`, `osiris-icon.png`, `casaos-icon.png`).
+  These are site-identity files that would override PolicyOS's own.
+- The upstream `Dockerfile`, `nginx/` reverse-proxy config, `docs/`, `intel/`
+  sidecar service and `scripts/start-osiris.sh`, which configure a self-hosted
+  OSIRIS deployment rather than this Vercel-deployed application.
+
+Upstream data sources carried in `public/data` retain their own terms and are
+not relicensed here: land polygons derive from Natural Earth via TopoJSON
+(public domain), `power-plants.json` from the
+[WRI Global Power Plant Database](https://datasets.wri.org/dataset/globalpowerplantdatabase),
+and the submarine-cable files from TeleGeography's published cable metadata.
+Every other OSIRIS layer is fetched live at request time from its own upstream
+provider (ADS-B, Celestrak, NASA FIRMS, USGS, GDELT, national CCTV operators,
+abuse.ch and others); those responses are publishers' material, served through
+this application rather than redistributed by it, and each provider's terms
+apply to its own feed.

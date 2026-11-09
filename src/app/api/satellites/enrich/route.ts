@@ -1,0 +1,195 @@
+import { NextResponse } from 'next/server';
+import { stealthFetch } from '@/lib/osiris/stealthFetch';
+
+/**
+ * OSIRIS — Satellite Enrichment API
+ *
+ * Proxies SatNOGS DB (free, no-key) to enrich a satellite click with:
+ *   - Satellite metadata: country, status, operator, launch date, image
+ *   - Transmitter details: frequencies, modulation, baud rate, type, description
+ *
+ * Caches per NORAD ID for 60 minutes — satellite metadata changes rarely.
+ */
+
+const SATNOGS_BASE = 'https://db.satnogs.org/api';
+
+// The SatNOGS transmitter fields this route reads.
+interface SatnogsTransmitter {
+  uuid?: string;
+  description?: string;
+  alive?: boolean;
+  type?: string;
+  mode?: string;
+  uplink_low?: number;
+  downlink_low?: number;
+  baud?: number;
+  status?: string;
+  service?: string;
+}
+
+interface SatEnrichResult {
+  noradId: string;
+  satellite?: Record<string, unknown>;
+  transmitters?: Record<string, unknown>[];
+  orbital?: Record<string, unknown>;
+}
+
+// In-memory cache keyed by noradId, TTL = 60 min
+const cache = new Map<string, { ts: number; data: SatEnrichResult }>();
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+function getCached(key: string) {
+  const entry = cache.get(key);
+  if (entry && Date.now() - entry.ts < CACHE_TTL_MS) return entry.data;
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: SatEnrichResult) {
+  cache.set(key, { ts: Date.now(), data });
+  // Evict oldest entries if cache > 200
+  if (cache.size > 200) {
+    const oldest = [...cache.entries()].sort((a, b) => a[1].ts - b[1].ts)[0];
+    if (oldest) cache.delete(oldest[0]);
+  }
+}
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const noradId = searchParams.get('noradId') || '';
+  const noradIdClean = noradId.trim();
+
+  if (!noradIdClean || !/^\d{1,8}$/.test(noradIdClean)) {
+    return NextResponse.json(
+      { error: 'Requires numeric noradId parameter' },
+      { status: 400 },
+    );
+  }
+
+  const result: SatEnrichResult = { noradId: noradIdClean };
+
+  // ── 1. Check cache ──
+  const cached = getCached(noradIdClean);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+      },
+    });
+  }
+
+  // ── 2. Satellite metadata from SatNOGS satellites API ──
+  try {
+    const res = await stealthFetch(
+      `${SATNOGS_BASE}/satellites/?format=json&norad_cat_id=${noradIdClean}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    if (res.ok) {
+      const body = await res.json();
+      if (Array.isArray(body) && body.length > 0) {
+        const sat = body[0];
+        result.satellite = {
+          sat_id: sat.sat_id,
+          name: sat.name,
+          names: sat.names || null,
+          status: sat.status || null,
+          decayed: sat.decayed || null,
+          countries: sat.countries || null,
+          operator: sat.operator || null,
+          website: sat.website || null,
+          image: sat.image
+            ? `https://db.satnogs.org/media/${sat.image}`
+            : null,
+          launched: sat.launched || null,
+          citation: sat.citation || null,
+          telemetries: sat.telemetries || [],
+        };
+      }
+    }
+  } catch (e) {
+    console.warn(
+      '[SAT-ENRICH] satellite metadata error:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+
+  // ── 3. Transmitters from SatNOGS transmitters API ──
+  try {
+    const res = await stealthFetch(
+      `${SATNOGS_BASE}/transmitters/?format=json&norad_cat_id=${noradIdClean}`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    if (res.ok) {
+      const body = await res.json();
+      if (Array.isArray(body)) {
+        result.transmitters = body.map((tx: SatnogsTransmitter) => ({
+          uuid: tx.uuid,
+          description: tx.description || null,
+          alive: tx.alive ?? null,
+          type: tx.type || null,
+          mode: tx.mode || null,
+          uplink_low: tx.uplink_low || null,
+          downlink_low: tx.downlink_low || null,
+          baud: tx.baud ?? null,
+          status: tx.status || null,
+          service: tx.service || null,
+        }));
+      }
+    }
+  } catch (e) {
+    console.warn(
+      '[SAT-ENRICH] transmitters error:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+
+  // ── 4. Orbital catalog metadata from Celestrak SATCAT (free, no key) ──
+  // KeepTrack-style fields: intl designator, type, owner/country, launch
+  // date & site, orbital period, inclination, apogee, perigee, RCS.
+  try {
+    const res = await stealthFetch(
+      `https://celestrak.org/satcat/records.php?CATNR=${noradIdClean}&FORMAT=json`,
+      { signal: AbortSignal.timeout(10000) },
+    );
+    if (res.ok) {
+      const body = await res.json();
+      if (Array.isArray(body) && body.length > 0) {
+        const s = body[0];
+        result.orbital = {
+          intl_designator: s.OBJECT_ID || null,   // COSPAR
+          object_type: s.OBJECT_TYPE || null,     // PAYLOAD / ROCKET BODY / DEBRIS
+          ops_status: s.OPS_STATUS_CODE || null,
+          owner: s.OWNER || null,                 // country / org
+          launch_date: s.LAUNCH_DATE || null,
+          launch_site: s.LAUNCH_SITE || null,
+          decay_date: s.DECAY_DATE || null,
+          period_min: s.PERIOD ?? null,           // minutes
+          inclination_deg: s.INCLINATION ?? null,
+          apogee_km: s.APOGEE ?? null,
+          perigee_km: s.PERIGEE ?? null,
+          rcs_m2: s.RCS ?? null,                  // radar cross-section
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('[SAT-ENRICH] celestrak satcat error:', e instanceof Error ? e.message : e);
+  }
+
+  if (!result.satellite && !result.orbital && (!result.transmitters || result.transmitters.length === 0)) {
+    return NextResponse.json(
+      { error: 'No enrichment data found for this NORAD ID', noradId: noradIdClean },
+      { status: 404 },
+    );
+  }
+
+  // Cache before returning
+  setCache(noradIdClean, result);
+
+  return NextResponse.json(result, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+    },
+  });
+}
