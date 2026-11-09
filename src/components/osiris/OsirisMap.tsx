@@ -301,14 +301,19 @@ function OsirisMap({ data, activeLayers, onEntityClick, onMouseCoords, onRightCl
       center: [25.48, 42.70], zoom: 6.5, minZoom: 1.5, maxZoom: 18,
       attributionControl: false,
       maxPitch: 85,
-      transformRequest: (url: string) => {
-        // Route all CARTO CDN requests through the internal Next.js proxy API
-        if (url.includes('cartocdn.com')) {
-          const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-          return { url: `${baseUrl}/api/proxy-tiles?url=${encodeURIComponent(url)}` };
-        }
-        return { url };
-      },
+      // The basemap is fetched straight from CARTO by the browser.
+      //
+      // Upstream routes every cartocdn.com request through /api/proxy-tiles so
+      // the server can cache tiles for a year. That works on a self-hosted
+      // deployment but not here: CARTO answers 403 to the serverless function's
+      // request (datacenter origin, non-browser User-Agent), the proxy
+      // faithfully forwards the 403, the style never loads and the map renders
+      // blank. The same style.json loads fine directly in the browser, CORS
+      // headers included, so the proxy hop is pure loss on this deployment.
+      //
+      // /api/proxy-tiles and its hardening tests are left in place — only this
+      // redirect is dropped. Tiles are now cached by the browser rather than by
+      // the server. Revisit when syncing from upstream. See CODE_REVIEW.md.
     });
 
     map.on('load', () => {
