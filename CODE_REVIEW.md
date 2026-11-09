@@ -128,3 +128,56 @@ behaviour, not a merge regression.
 Separately: `next build` reports that **Next 16.4.0 is affected by a known
 security advisory** and recommends `next upgrade --agent=security`. Not
 introduced by this merge — it is the version the repository was already on.
+
+---
+
+## 2026-11-08 — Basemap loaded directly instead of through /api/proxy-tiles
+
+First production deployment of the merged branch went up at
+`policyos-hackathon.vercel.app` (new Vercel project on `lucaluo925/policyos-hackathon`;
+the existing `policyos` and `policyos-hackathon-demo` projects were left alone).
+`INTERNAL_ORIGIN` is set there, which fixed finding 3 of the previous entry —
+`/api/stats` now returns real counts instead of blanks.
+
+The OSIRIS map rendered blank on that deployment. Diagnosis, in order:
+
+1. Console showed `AJAXError (403)` on
+   `/api/proxy-tiles?url=https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json`.
+2. Requesting that proxy URL directly returned `{"error":"Failed to fetch tile"}`,
+   not `{"error":"Forbidden domain"}` — so the route's own allowlist passed and it
+   was forwarding an upstream 403, not rejecting the host itself.
+3. Loading `https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json` directly in
+   a browser returned the full 57 KB style.
+
+So CARTO refuses the serverless function's request (datacenter origin, and the proxy
+sends `User-Agent: Osiris-Tile-Proxy/1.0`) while serving the browser normally.
+Upstream's server-side tile proxy is built for a self-hosted deployment; on Vercel it
+converts a working basemap into a blank one.
+
+**Change:** dropped the `transformRequest` hook in `src/components/osiris/OsirisMap.tsx`
+that rewrote every `cartocdn.com` URL to the proxy. The browser now fetches the style,
+sprites, glyphs and vector tiles straight from CARTO, which sends CORS headers. Tiles
+are cached by the browser rather than by the server for a year.
+
+`/api/proxy-tiles/route.ts` and its two hardening tests in `api/route-hardening.test.ts`
+were deliberately **kept**, even though no application code calls the route any more.
+Reading it as dead code and deleting it would make the next upstream sync a manual
+merge of a file that still exists upstream, and the tests still pass unchanged. Treat
+it as retained-for-sync, not as an oversight.
+
+Verified: tsc clean, `eslint --max-warnings 0` clean, `next build` clean, PolicyOS
+tests 629/629, OSIRIS tests 118 passed / 6 skipped. Checked that nothing else depends
+on the removed hook: no other caller of `/api/proxy-tiles` in application code, and no
+Content-Security-Policy anywhere in `next.config.ts`, `vercel.json` or the proxy that
+would block the browser reaching `cartocdn.com` directly.
+
+### Still open from the previous entry
+
+- The High finding stands: the OSIRIS rate limiter fails open without Redis, and
+  `/api/ai/analyze` and `/api/ai/briefing` fall back to `GEMINI_API_KEY_1..8`. Those
+  variables are **not** set on this deployment, which is what keeps it safe. Do not set
+  them without first making `guardRequest` fail closed when `REDIS_URL` is absent.
+- `/api/stats` reports `flights`, `weather` and `incidents` as 0 on this deployment
+  while `sats`, `cctv` and `nuclear` return real numbers. Not investigated yet —
+  it could be upstream keyless feeds rate-limiting the datacenter origin, the same
+  class of problem as the CARTO 403 above, or simply empty responses at that moment.
